@@ -1,56 +1,114 @@
 :- use_module(library(random)).
 :- use_module(printer).
+:- use_module(hex).
+:- module(map, [matrix/3,
+                generate_random_map/1,
+                empty_map/1,
+                map_size/1,
+                inside_map/2,
+                get_hex/4,
+                set_tile/5,
+                set_owner/5]).
 
-map_size(16).
+% Map parameters
+map_size(4).
 smooth(2).
-sea(0).
-desert(1).
-wood(2).
 walkers(X):-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth.
+walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth .
+
+% Generate a matrix Size x Size and fill it with Value
+matrix(Size,Matrix, Value):-
+    length(Matrix, Size),
+    maplist(same_length(Matrix), Matrix),
+    maplist(maplist(=(Value)), Matrix).
 
 % Generates a random map
 generate_random_map(Map) :-
     map_size(MapSize),
     walkers(Walkers),
     % Generate a map with only sea tiles
-    empty_map(MapSize, EmptyMap),
+    empty_map(EmptyMap),
     % Spawn a bunch of walkers to place terrain tiles
     MaxX is MapSize-1, MaxY = MaxX,
     random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
     % Print the map
     print_map(Map),!.
 
-% Generates an empty map of the specified size
-empty_map(Size, Map) :-
-    length(Map, Size),
-    empty_rows(Size, Map),!.
+% Generates an empty map of the specified size ========================
+empty_map(Map) :-
+    map_size(MapSize),
+    length(Map, MapSize),
+    empty_rows(MapSize, Map,0),!.
 
 % Generates an empty row of the specified size
-empty_rows(_, []).
-empty_rows(Size, [Row|Rest]) :-
+empty_rows(_, [],_).
+empty_rows(Size, [Row|Rest],Count) :-
     length(Row, Size),
-    maplist(sea, Row),
-    empty_rows(Size, Rest).
+    empty_hex(Row, Size, Count,0),
+    NewCount is Count+1,
+    empty_rows(Size, Rest,NewCount).
 
-% Replace the Nth element of List with El
+empty_hex([],_,_,_).
+empty_hex([Hex|Rest], Size, RowCount,ColCount):-
+    hex_tile(Hex, sea),
+    Index is RowCount*Size + ColCount,
+    Hex=hex(Index, [RowCount,ColCount],_,none),
+    NewColCount is ColCount +1,
+    empty_hex(Rest, Size, RowCount, NewColCount).
+
+% Replace the Nth element of List with El ==============================
 replace_nth(N, List, El, Result) :-
     nth0(N, List, _, Before),
     nth0(N, Result, El, Before).
 
-% Checks or returns the tile in a given location
-check_tile(Map,X,Y,Type):-
+% Returns the Hex at a given location on the map
+get_hex(Map,X,Y,Hex):-
+    inside_map(X,Y),
     nth0(X, Map, Row),
-    nth0(Y, Row, Type).
+    nth0(Y, Row, Hex).
 
-% Simulate a bunch of walkers walks
+% Checks or returns the tile in a given location
+check_tile(Map,X,Y,Tile):-
+    get_hex(Map,X,Y,Hex),
+    hex_tile(Hex,Tile).
+
+% Change an hex tile type
+set_tile(Map, X, Y, Tile, UpdatedMap) :-
+    get_hex(Map, X, Y, Hex),
+    nth0(X, Map, Row),
+    change_hex_tile(Hex, Tile, NewHex),
+    replace_nth(Y, Row, NewHex, NewRow),
+    replace_nth(X, Map, NewRow, UpdatedMap).
+
+% Change an hex owner
+set_owner(Map, X, Y, Owner, UpdatedMap) :-
+    get_hex(Map, X, Y, Hex),
+    nth0(X, Map, Row),
+    change_hex_owner(Hex, Owner, NewHex),
+    replace_nth(Y, Row, NewHex, NewRow),
+    replace_nth(X, Map, NewRow, UpdatedMap).
+
+
+% Check if a location dwells within the map boundaries
+inside_map(X, Y) :-
+    map_size(MapSize),
+    X >= 0, X < MapSize,
+    Y >= 0, Y < MapSize.
+
+% Check if the map contains at least one sea tile
+sea_in_map(Map):-
+    member(Row,Map),
+    member(Hex,Row),
+    hex_tile(Hex,sea).
+
+
+% Simulate a bunch of walkers walks ====================================
 random_walkers(Map, _, _, Count, Map):-Count=<0.
 random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
-    desert(Desert),
     (
         % If there is at least one terrain tile, choose one of them as the new walker spawn point
-        findall([X, Y], (nth0(X, Map, Row), nth0(Y, Row, Desert)), DesertTiles),
-        random_member([X,Y],DesertTiles)
+        findall([X, Y], (nth0(X, Map, Row), nth0(Y, Row, Hex), hex_tile(Hex,terrain)), TerrainHexes),
+        random_member([X,Y],TerrainHexes)
         ;
         % Else, choose the center of the map as the new walker spawn point
         map_size(MapSize),
@@ -68,10 +126,10 @@ random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
 % Simulate a walker random walk
 walk(Map, _, _, Count, Map):-Count=<0.
 walk(Map, X, Y, Count, NewMap) :-
-    desert(Desert),
-    sea(Sea),
-    % Add a desert at the walker location
-    set_tile(Map, X, Y, Desert, UpdatedMap),
+    findall(Terrain,terrain(Terrain),Terrains),
+    random_member(Terrain,Terrains),
+    % Change the sea hex to a desert hex at the walker location
+    set_tile(Map, X, Y, Terrain, UpdatedMap),
     % Choose a random direction and move along it
     random_move(X,Y,NewX,NewY),
     (
@@ -79,7 +137,7 @@ walk(Map, X, Y, Count, NewMap) :-
       inside_map(NewX, NewY),!,
       (
           % If the next step falls on a sea tile, decrease the walker lifespan
-          check_tile(Map,NewX,NewY,Sea),
+          check_tile(Map,NewX,NewY,sea),
           NewCount is Count-1
           ;
           % Else if there is at least one sea tile, do not decrease the walker lifespan if
@@ -94,24 +152,6 @@ walk(Map, X, Y, Count, NewMap) :-
       % Else, choose another step direction
       walk(Map,X,Y,Count,NewMap)
     ).
-
-% Set the tile at Row, Col to Value in the map
-set_tile(Map, X, Y, Value, UpdatedMap) :-
-    nth0(X, Map, Row),
-    replace_nth(Y, Row, Value, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap).
-
-% Check if a location dwells within the map boundaries
-inside_map(X, Y) :-
-    map_size(MapSize),
-    X >= 0, X < MapSize,
-    Y >= 0, Y < MapSize.
-
-% Check if the map contains at least one sea tile
-sea_in_map(Map):-
-    sea(Sea),
-    member(Row,Map),
-    member(Sea,Row).
 
 % Move in one of the four directions (up, down, left, right)
 move(X, Y, NewX, Y) :- NewX is X - 1; NewX is X + 1.
