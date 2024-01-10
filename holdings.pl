@@ -7,7 +7,7 @@
                      province_boundary/3]).
 
 % Province struct ==================================================
-province(Owner, _):-owner(Owner).
+province(Owner, Hexes):- owner(Owner).
 
 % Search for adjacent hexes around the given one
 boundary8(Map,X,Y,Boundary):-
@@ -62,7 +62,7 @@ find_provinces_(Map,Index,Found,Provinces):-
 find_province(Map, [X,Y], Province) :-
     % Check that the hex has an owner and retrieve it
     hex_owned(Map,X,Y,Owner, Hex),
-    % Find all the connected hexes with a depth first search
+    % Find all the connected hexes with a breadth first search
     province_bfs(Map,Owner,[Hex],[],Hexes),
     Hexes \= [],
     Province=province(Owner,Hexes),!.
