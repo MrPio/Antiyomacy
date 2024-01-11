@@ -1,6 +1,6 @@
 :- use_module(printer).
 :- use_module(hex).
-:- module(holdings, [boundary8/4,
+:- module(province, [boundary8/4,
                      boundary4/4,
                      find_provinces/2,
                      find_province/3,

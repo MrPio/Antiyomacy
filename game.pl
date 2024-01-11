@@ -1,6 +1,6 @@
 :- use_module(printer).
 :- use_module(map).
-:- use_module(holdings).
+:- use_module(province).
 
 play:-
     generate_random_map(Map),
