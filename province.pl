@@ -1,5 +1,9 @@
+:- consult("map.pl").
+:- consult("province.pl").
+:- consult("hex.pl").
 :- use_module(printer).
 :- use_module(hex).
+:- use_module(map).
 :- module(province, [boundary8/4,
                      boundary4/4,
                      find_provinces/2,

@@ -1,3 +1,6 @@
+:- consult("map.pl").
+:- consult("province.pl").
+:- consult("hex.pl").
 :- use_module(library(random)).
 :- use_module(printer).
 :- use_module(hex).

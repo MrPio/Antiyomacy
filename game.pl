@@ -1,3 +1,5 @@
+:- consult("map.pl").
+:- consult("province.pl").
 :- use_module(printer).
 :- use_module(map).
 :- use_module(province).
