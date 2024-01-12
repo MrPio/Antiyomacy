@@ -1,7 +1,7 @@
 :- use_module("province").
 :- module(unit, [unit/5]).
 
-% Unit struct ========================================
+% Unit enum ========================================
 % unit(Name, Strength, Protection, Cost, Income)
 unit(peasant, 1, 1, 10, -2).
 unit(spearman, 2, 2, 20, -6).

@@ -2,7 +2,7 @@
 :- module(building, [building/4,
     tower_nearby/4]).
 
-% Building struct =========================================
+% Building enum =========================================
 % building(Name, Protection, Cost, Income) 
 building(farm, 0, 12, 4).
 building(tower, 2, 15, -1).

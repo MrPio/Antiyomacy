@@ -11,8 +11,10 @@
 % Province struct ===================================================
 province(Owner, Hexes, Money):- 
     owner(Owner), 
-    maplist(=(hex(_,_,_,_,_,_)),hex),
+    maplist(=(hex(_,_,_,_,_,_)),Hexes),
     integer(Money).
+% Change a provinve money amount
+change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, Money)).
 
 % Add an income to the province money
 province_apply_income(province(Owner,Hexes,Money),Income,province(Owner,Hexes,NewMoney)):-
@@ -55,7 +57,6 @@ boundary4(Map,X,Y,Boundary):-
 
 % Caller predicate for find_provinces_
 find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces),!.
-
 % Find all the provinces in the map
 find_provinces_(_,Index,Provinces,Provinces):-
     % If all the map has been scanned, break the recursion
@@ -121,7 +122,6 @@ hex_owned(Map, X, Y, Owner,Hex):-
 
 % Caller predicate for province_boundary_
 province_boundary(Map,province(_,Hexes,_), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).
-
 % Find all hexes bordering the given province
 province_boundary_(_,[],_,Boundary,Boundary).
 province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-

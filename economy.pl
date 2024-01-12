@@ -1,7 +1,7 @@
 :- use_module(province).
 :- use_module(building).
 :- use_module(unit).
-:- module(economy, [get_income/2]).
+:- module(economy, [get_income/2, buy/2]).
 
 % Calculate a province income. This will be added to the province money at the end of the turn.
 get_income(province(Owner, Hexes, Money), Income):-
@@ -20,3 +20,12 @@ get_income(province(Owner, Hexes, Money), Income):-
         unit(UnitName, _, _, _, I)
     ), UnitIncomes) -> sumlist(UnitIncomes, TotalUnitIncome) ; TotalUnitIncome = 0),
     Income is ProvinceSize + TotalBuildingIncome + TotalUnitIncome.
+
+% Check whether a building or unit purchase can be achieved
+% It is useful to list all the possible purchase actions of a given province
+buy(province(_, _, Money), Building) :-
+    building(Building, Protection, Cost, Income),
+    Money>=Cost.
+buy(province(_, _, Money), Unit) :-
+    unit(Unit, Strength, Protection, Cost, Income),
+    Money>=Cost.

@@ -17,7 +17,6 @@ map_size(4).
 smooth(2).
 walkers(X):-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
 walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth .
-
 % Generate a matrix Size x Size and fill it with Value
 matrix(Size,Matrix, Value):-
     length(Matrix, Size),
@@ -173,7 +172,6 @@ walk(Map, X, Y, Count, NewMap) :-
 % Move in one of the four directions (up, down, left, right)
 move(X, Y, NewX, Y) :- NewX is X - 1; NewX is X + 1.
 move(X, Y, X, NewY) :- NewY is Y - 1; NewY is Y + 1.
-
 % Randomly choose one of the four directions
 random_move(X,Y,NewX,NewY) :-
     findall([NewX,NewY],move(X,Y,NewX,NewY),Moves),
