@@ -1,4 +1,5 @@
 :- use_module("province").
+:- module(building, [unit/5]).
 
 % Unit struct ========================================
 unit(Name, Strength, Protection, Cost, Income):-

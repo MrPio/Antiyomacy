@@ -1,13 +1,20 @@
+:- use_module(building).
+:- use_module(unit).
 :- module(hex, [tile/1,
                 sea/1,
                 terrain/1,
                 owner/1,
-                hex/4,
+                hex/6,
                 hex_tile/2,
                 change_hex_tile/3,
                 hex_owner/2,
                 change_hex_owner/3,
-               hex_coord/2]).
+                hex_coord/2,
+                change_hex_coord/3,
+                hex_building/2,
+                change_hex_building/3,
+                hex_unit/2,
+                change_hex_unit/3]).
 
 % Tiles
 tile(X):-sea(X);terrain(X).
@@ -22,19 +29,32 @@ hex(Index,[X,Y], Tile, Owner, Building, Unit):-
     number(Index),
     X>=0,Y>=0,
     tile(Tile),
-    owner(Owner).
+    owner(Owner),
+    \+ (building(Building,_,_,_), unit(Unit,_,_,_,_)).
 
 % Check/Get hex tile type
-hex_tile(hex(_,_,Tile,_),Checker):-call(Checker,Tile).
+hex_tile(hex(_,_,Tile,_,_,_),Checker):-call(Checker,Tile).
 
 % Change an hex tile type
-change_hex_tile(hex(Index,Coord,_,Owner),NewTile,NewHex):-NewHex=hex(Index,Coord,NewTile,Owner).
+change_hex_tile(hex(Index,Coord,_,Owner,Building,Unit),NewTile,NewHex):-NewHex=hex(Index,Coord,NewTile,Owner,Building,Unit).
 
 % Check/Get hex owner
-hex_owner(hex(_,_, _, Owner), Owner).
+hex_owner(hex(_,_, _, Owner,_,_), Owner).
 
 % Change an hex owner
-change_hex_owner(hex(Index,Coord,Tile,_),NewOwner,NewHex):-NewHex=hex(Index,Coord,Tile,NewOwner).
+change_hex_owner(hex(Index,Coord,Tile,_,Building,Unit),NewOwner,NewHex):-NewHex=hex(Index,Coord,Tile,NewOwner,Building,Unit).
 
 % Check/Get hex coordinates
-hex_coord(hex(_,Coord, _, _), Coord).
+hex_coord(hex(_,Coord, _, _,_,_), Coord).
+
+% Check/Get hex building
+hex_building(hex(_,_, _, _,Building,_), Building).
+
+% Change an hex building
+change_hex_building(hex(Index,Coord,Tile,Owner,_,Unit),NewBuilding,NewHex):-NewHex=hex(Index,Coord,Tile,Owner,NewBuilding,Unit).
+
+% Check/Get hex unit
+hex_unit(hex(_,_, _, _,_,Unit), Unit).
+
+% Change an hex unit
+change_hex_unit(hex(Index,Coord,Tile,Owner,Building,_),NewUnit,NewHex):-NewHex=hex(Index,Coord,Tile,Owner,Building,NewUnit).

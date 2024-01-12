@@ -1,14 +1,27 @@
 :- use_module(printer).
 :- use_module(hex).
 :- use_module(map).
-:- module(province, [boundary8/4,
+:- module(province, [boundary24/4,
+                     boundary8/4,
                      boundary4/4,
                      find_provinces/2,
                      find_province/3,
                      province_boundary/3]).
 
-% Province struct ==================================================
+% Province struct ===================================================
 province(Owner, Hexes):- owner(Owner).
+
+% Search for hexes around the hexes adjacent to the given one
+boundary24(Map,X,Y,Boundary):-
+    inside_map(X,Y),
+    findall(Hex, (
+                Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
+                between(Left, Right, X1), between(Down, Up, Y1),
+                \+ (X1 = X, Y1 = Y),
+                inside_map(X1,Y1),
+                nth0(X1, Map, Row),
+                nth0(Y1, Row, Hex)
+            ), Boundary).
 
 % Search for adjacent hexes around the given one
 boundary8(Map,X,Y,Boundary):-
@@ -34,7 +47,7 @@ boundary4(Map,X,Y,Boundary):-
             ), Boundary).
 
 % Caller predicate for find_provinces_
-find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces).
+find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces),!.
 
 % Find all the provinces in the map
 find_provinces_(_,Index,Provinces,Provinces):-

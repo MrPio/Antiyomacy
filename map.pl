@@ -8,7 +8,9 @@
                 inside_map/2,
                 get_hex/4,
                 set_tile/5,
-                set_owner/5]).
+                set_owner/5,
+                set_building/5,
+                set_unit/5]).
 
 % Map parameters
 map_size(4).
@@ -32,7 +34,7 @@ generate_random_map(Map) :-
     MaxX is MapSize-1, MaxY = MaxX,
     random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
     % Print the map
-    print_map(Map),!.
+    print_map(Map),nl,!.
 
 % Generates an empty map of the specified size ========================
 empty_map(Map) :-
@@ -52,7 +54,7 @@ empty_hex([],_,_,_).
 empty_hex([Hex|Rest], Size, RowCount,ColCount):-
     hex_tile(Hex, sea),
     Index is RowCount*Size + ColCount,
-    Hex=hex(Index, [RowCount,ColCount],_,none),
+    Hex=hex(Index, [RowCount,ColCount],_,none,none,none),
     NewColCount is ColCount +1,
     empty_hex(Rest, Size, RowCount, NewColCount).
 
@@ -88,6 +90,21 @@ set_owner(Map, X, Y, Owner, UpdatedMap) :-
     replace_nth(Y, Row, NewHex, NewRow),
     replace_nth(X, Map, NewRow, UpdatedMap).
 
+% Change an hex building
+set_building(Map, X, Y, Building, UpdatedMap) :-
+    get_hex(Map, X, Y, Hex),
+    nth0(X, Map, Row),
+    change_hex_building(Hex, Building, NewHex),
+    replace_nth(Y, Row, NewHex, NewRow),
+    replace_nth(X, Map, NewRow, UpdatedMap).
+
+% Change an hex unit
+set_unit(Map, X, Y, Unit, UpdatedMap) :-
+    get_hex(Map, X, Y, Hex),
+    nth0(X, Map, Row),
+    change_hex_unit(Hex, Unit, NewHex),
+    replace_nth(Y, Row, NewHex, NewRow),
+    replace_nth(X, Map, NewRow, UpdatedMap).
 
 % Check if a location dwells within the map boundaries
 inside_map(X, Y) :-
