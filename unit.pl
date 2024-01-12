@@ -24,9 +24,9 @@ move_unit(Map, Province, FromHex, ToHex):-
     % The destination should be in one of those two boundaries
     (member(ToHex, Frontier); member(ToHex, Boundary)),
     % The destination should not host another unit
-    hex_unit(ToHex, none), % Check
+    hex_unit(ToHex, none), % Check TODO: EXPAND
     % The destination should not host a building
-    hex_building(ToHex, none), % Check
+    hex_building(ToHex, none), % Check TODO: EXPAND
     % The destination should not be located near an enemy tower
     province_owner(Province, Player), % Get
     hex_coord(ToHex, [ToX, ToY]), % Get
