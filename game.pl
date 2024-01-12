@@ -20,6 +20,8 @@ play:-
     set_owner(Map5,2,2,blue,Map6),
     set_owner(Map6,2,1,blue,Map7),
     set_building(Map7,2,2,strong_tower,Map8),
-    find_provinces(Map8,[P1| _]),
-    province_boundary(Map7,P1,B),
-    tower_nearby(Map8,0,0,red).
+    find_provinces(Map8,[P1,P2]),
+    %province_boundary(Map7,P1,B),
+    %tower_nearby(Map8,0,0,red).
+    get_income(P2,P2Income), 
+    writeln(P2Income).

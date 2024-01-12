@@ -9,7 +9,14 @@
                      province_boundary/3]).
 
 % Province struct ===================================================
-province(Owner, Hexes):- owner(Owner).
+province(Owner, Hexes, Money):- 
+    owner(Owner), 
+    maplist(=(hex(_,_,_,_,_,_)),hex),
+    integer(Money).
+
+% Add an income to the province money
+province_apply_income(province(Owner,Hexes,Money),Income,province(Owner,Hexes,NewMoney)):-
+    NewMoney is Money + Income.
 
 % Search for hexes around the hexes adjacent to the given one
 boundary24(Map,X,Y,Boundary):-
@@ -61,7 +68,7 @@ find_provinces_(Map,Index,Found,Provinces):-
     (
       % Check if the current hex belongs to one of the previously found provinces,
       % if that's the case, do not search again for a province around it.
-      \+ (member(province(_,Hexes),Found), member(Hex,Hexes), hex_coord(Hex,[X,Y])),
+      \+ (member(province(_,Hexes,_),Found), member(Hex,Hexes), hex_coord(Hex,[X,Y])),
       % Search for a province around the hex and append to Found only if it isn't empty
       find_province(Map,[X,Y], Province),
       append(Found, [Province], NewFound)
@@ -79,7 +86,7 @@ find_province(Map, [X,Y], Province) :-
     % Find all the connected hexes with a breadth first search
     province_bfs(Map,Owner,[Hex],[],Hexes),
     Hexes \= [],
-    Province=province(Owner,Hexes),!.
+    Province=province(Owner,Hexes,0),!.
 
 % Find a province from a start Hex using Breadth-first-like search
 province_bfs(_,_,[],Hexes,Hexes):-!.
@@ -113,7 +120,7 @@ hex_owned(Map, X, Y, Owner,Hex):-
 
 
 % Caller predicate for province_boundary_
-province_boundary(Map,province(_,Hexes), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).
+province_boundary(Map,province(_,Hexes,_), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).
 
 % Find all hexes bordering the given province
 province_boundary_(_,[],_,Boundary,Boundary).

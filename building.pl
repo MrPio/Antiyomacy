@@ -3,12 +3,7 @@
     tower_nearby/4]).
 
 % Building struct =========================================
-building(Name, Protection, Cost, Income):- 
-    string(Name),
-    integer(Protection),
-    integer(Cost),
-    integer(Income).
-
+% building(Name, Protection, Cost, Income) 
 building(farm, 0, 12, 4).
 building(tower, 2, 15, -1).
 building(strong_tower, 3, 35, -6).
