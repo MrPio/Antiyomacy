@@ -6,7 +6,8 @@
                      boundary4/4,
                      find_provinces/2,
                      find_province/3,
-                     province_boundary/3]).
+                     province_boundary/3,
+                     frontier/3]).
 
 % Province struct ===================================================
 province(Owner, Hexes, Money):- 
@@ -55,6 +56,17 @@ boundary4(Map,X,Y,Boundary):-
                 nth0(Y1, Row, Hex)
             ), Boundary).
 
+% Retrieve the frontier from a given province
+frontier(Map, province(_, Hexes, _), Frontier):-   
+    findall(Hex,(
+        % For each hex in the province...
+        member(Hex, Hexes),
+        % ...checks that in the midst of its boundary8...
+        hex_coord(Hex, [X, Y]),
+        boundary8(Map, X, Y, Boundary),
+        % ... at least one hex is outside the province
+        \+ maplist(member,Boundary,Hexes)
+    ), Frontier).
 % Caller predicate for find_provinces_
 find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces),!.
 % Find all the provinces in the map

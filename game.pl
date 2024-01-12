@@ -28,4 +28,6 @@ play:-
     % change_province_money(P2,24,P),
     % findall(B,(buy(P,B)),BList),
     % write(BList),
+    frontier(Map8,P1,Frontier),
+    write(Frontier),
     nl.
