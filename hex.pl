@@ -18,7 +18,11 @@ terrain(X):- member(X,[desert,wood,rock,sheep,clay,hay]).
 owner(X):-member(X,[none,red,blue]).
 
 % Hex struct ====================================================================
-hex(Index,[X,Y], Tile, Owner):- number(Index),X>=0,Y>=0, tile(Tile), owner(Owner).
+hex(Index,[X,Y], Tile, Owner, Building, Unit):- 
+    number(Index),
+    X>=0,Y>=0,
+    tile(Tile),
+    owner(Owner).
 
 % Check/Get hex tile type
 hex_tile(hex(_,_,Tile,_),Checker):-call(Checker,Tile).
