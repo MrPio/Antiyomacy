@@ -1,6 +1,3 @@
-:- consult("map.pl").
-:- consult("province.pl").
-:- consult("hex.pl").
 :- use_module(printer).
 :- use_module(hex).
 :- use_module(map).
