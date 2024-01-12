@@ -21,8 +21,9 @@ get_income(province(Owner, Hexes, Money), Income):-
     ), UnitIncomes) -> sumlist(UnitIncomes, TotalUnitIncome) ; TotalUnitIncome = 0),
     Income is ProvinceSize + TotalBuildingIncome + TotalUnitIncome.
 
+% Moves ======================================================
 % Check whether a building or unit purchase can be achieved
-% It is useful to list all the possible purchase actions of a given province
+% This is useful to list all the possible purchase moves for a given province
 buy(province(_, _, Money), Building) :-
     building(Building, Protection, Cost, Income),
     Money>=Cost.

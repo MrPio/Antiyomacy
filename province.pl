@@ -1,7 +1,14 @@
 :- use_module(printer).
 :- use_module(hex).
 :- use_module(map).
-:- module(province, [boundary24/4,
+:- module(province, [province/3,
+                     province_owner/2,
+                     change_province_owner/3,
+                     province_hexes/3,
+                     change_province_hexes/3,
+                     province_money/2,
+                     change_province_money/3,
+                     boundary24/4,
                      boundary8/4,
                      boundary4/4,
                      find_provinces/2,
@@ -14,7 +21,23 @@ province(Owner, Hexes, Money):-
     owner(Owner), 
     maplist(=(hex(_,_,_,_,_,_)),Hexes),
     integer(Money).
-% Change a provinve money amount
+
+% Check/Get province owner
+province_owner(province(Owner, _, _), Owner).
+
+% Change a province owner
+change_province_owner(province(_, Hexes, Money), Owner, province(Owner, Hexes, Money)).
+
+% Check/Get province hexes
+province_hexes(province(_, Hexes, _), Hexes).
+
+% Change a province hexes
+change_province_hexes(province(Owner, _, Money), Hexes, province(Owner, Hexes, Money)).
+
+% Check/Get province money
+province_money(province(_, _, Money), Money).
+
+% Change a province money amount
 change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, Money)).
 
 % Add an income to the province money
@@ -56,17 +79,6 @@ boundary4(Map,X,Y,Boundary):-
                 nth0(Y1, Row, Hex)
             ), Boundary).
 
-% Retrieve the frontier from a given province
-frontier(Map, province(_, Hexes, _), Frontier):-   
-    findall(Hex,(
-        % For each hex in the province...
-        member(Hex, Hexes),
-        % ...checks that in the midst of its boundary8...
-        hex_coord(Hex, [X, Y]),
-        boundary8(Map, X, Y, Boundary),
-        % ... at least one hex is outside the province
-        \+ maplist(member,Boundary,Hexes)
-    ), Frontier).
 % Caller predicate for find_provinces_
 find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces),!.
 % Find all the provinces in the map
@@ -153,3 +165,15 @@ province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
             ValidNeighborHexes),
     append(Found, ValidNeighborHexes, NewFound),
     province_boundary_(Map,RestHexes,ProvinceHexes,NewFound,Boundary).
+
+% Retrieve the frontier from a given province
+frontier(Map, province(_, Hexes, _), Frontier):-   
+    findall(Hex,(
+        % For each hex in the province...
+        member(Hex, Hexes),
+        % ...checks that in the midst of its boundary8...
+        hex_coord(Hex, [X, Y]),
+        boundary8(Map, X, Y, Boundary),
+        % ... at least one hex is outside the province
+        \+ maplist(member,Boundary,Hexes)
+    ), Frontier).

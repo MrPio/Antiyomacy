@@ -13,10 +13,10 @@
                 set_unit/5]).
 
 % Map parameters
-map_size(4).
+map_size(5).
 smooth(2).
 walkers(X):-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth .
+walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % TODO remove
 % Generate a matrix Size x Size and fill it with Value
 matrix(Size,Matrix, Value):-
     length(Matrix, Size),
@@ -31,9 +31,7 @@ generate_random_map(Map) :-
     empty_map(EmptyMap),
     % Spawn a bunch of walkers to place terrain tiles
     MaxX is MapSize-1, MaxY = MaxX,
-    random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
-    % Print the map
-    print_map(Map),nl,!.
+    random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),!.
 
 % Generates an empty map of the specified size ========================
 empty_map(Map) :-
