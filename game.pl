@@ -4,6 +4,7 @@
 :- consult("unit.pl").
 :- consult("building.pl").
 :- consult("economy.pl").
+:- consult("printer.pl").
 :- use_module(printer).
 :- use_module(map).
 :- use_module(province).
@@ -17,28 +18,45 @@
 % 2 | | |b| | |
 % 3 | | |b|b|b|
 % 4 | | | |b| |
-play:-
-    generate_random_map(Map),
-    set_owner(Map,0,0,red,Map1),
-    set_owner(Map1,1,0,red,Map2),
-    set_owner(Map2,1,1,red,Map3),
-    set_owner(Map3,1,2,red,Map4),
-    set_owner(Map4,0,2,red,Map5),
-    set_owner(Map5,2,2,blue,Map6),
-    set_owner(Map6,3,2,blue,Map7),
-    set_owner(Map7,3,3,blue,Map8),
-    set_owner(Map8,3,4,blue,Map9),
-    set_owner(Map9,4,3,blue,Map10),
-    set_building(Map10,2,2,tower,Map11),
-    set_unit(Map11,0,0,peasant,Map12),
-    find_provinces(Map12,[ProvinceRed,ProvinceBlue]),
-    % province_boundary(Map12,ProvinceRed,B),
-    % tower_nearby(Map12,0,0,red),
-    % get_income(ProvinceBlue,P2Income),
-    % change_province_money(ProvinceBlue,24,P),
-    % findall(B,(buy(P,B)),BList),
-    % frontier(Map12,ProvinceRed,Frontier),
-    get_hex(Map12,0,0,HexRedWithUnit),
-    findall(Dest,move_unit(Map12,ProvinceRed,HexRedWithUnit,Dest),DestList),
-    write(DestList),
-    nl.
+test:-
+    generate_random_map(_),
+
+    % Manually populating the map
+    RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
+    BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
+    Buildings=[[2,2]-tower],
+    Units=[[0,0]-peasant],
+    foreach(member(Coord,RedHexes),set_owner(Coord,red)),
+    foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
+    foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
+    foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
+    map(Map), print_map(Map),
+
+    % Test: find_provinces
+    find_provinces([ProvinceRed, ProvinceBlue]),
+    ProvinceRed= province(red,[hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],0),
+    ProvinceBlue = province(blue,[hex(19,[3,4],_,blue,none,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none)],0),
+
+    % Test: province_boundary
+    province_boundary(Map,ProvinceRed,ProvinceRedBoundary),
+    ProvinceRedBoundary=[hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(8,[1,3],_,none,none,none),hex(11,[2,1],_,none,none,none),hex(12,[2,2],_,blue,tower,none),hex(13,[2,3],_,none,none,none),hex(10,[2,0],_,none,none,none)],
+    
+    % Test: tower_nearby
+    tower_nearby(Map,[2,1],red),
+
+    % Test: tower_nearby
+    get_income(ProvinceBlue, 4),
+
+    % Test: buy
+    change_province_money(ProvinceBlue,24,ProvinceBlue2),
+    findall(Building,(buy(ProvinceBlue2,Building)),BuildingsList),
+    BuildingsList = [farm,tower,peasant,spearman],
+
+    % Test: frontier
+    frontier(Map,ProvinceRed,Frontier),
+    Frontier = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],
+
+    % Test: move_unit
+    get_hex([0,0],HexRedWithUnit),
+    findall(Dest,move_unit(Map,ProvinceRed,HexRedWithUnit,Dest),DestList),
+    DestList = [hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)].

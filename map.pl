@@ -5,18 +5,25 @@
                 generate_random_map/1,
                 empty_map/1,
                 map_size/1,
-                inside_map/2,
-                get_hex/4,
-                set_tile/5,
-                set_owner/5,
-                set_building/5,
-                set_unit/5]).
-
+                inside_map/1,
+                get_hex/2,
+                check_tile/2,
+                set_tile/2,
+                set_owner/2,
+                set_building/2,
+                set_unit/2]).
 % Map parameters
+:- dynamic(map/1).
 map_size(5).
 smooth(2).
 walkers(X):-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % TODO remove
+walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % This makes a map without sea tiles
+
+% Update the stored map
+update_map(Map):-
+    retractall(map(_)),
+    assert(map(Map)).
+
 % Generate a matrix Size x Size and fill it with Value
 matrix(Size,Matrix, Value):-
     length(Matrix, Size),
@@ -29,9 +36,11 @@ generate_random_map(Map) :-
     walkers(Walkers),
     % Generate a map with only sea tiles
     empty_map(EmptyMap),
+    update_map(EmptyMap),
     % Spawn a bunch of walkers to place terrain tiles
     MaxX is MapSize-1, MaxY = MaxX,
-    random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),!.
+    random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
+    update_map(Map), !.
 
 % Generates an empty map of the specified size ========================
 empty_map(Map) :-
@@ -61,50 +70,59 @@ replace_nth(N, List, El, Result) :-
     nth0(N, Result, El, Before).
 
 % Returns the Hex at a given location on the map
-get_hex(Map,X,Y,Hex):-
-    inside_map(X,Y),
+get_hex([X, Y],Hex):-
+    inside_map([X,Y]),
+    map(Map),
     nth0(X, Map, Row),
     nth0(Y, Row, Hex).
 
 % Checks or returns the tile in a given location
-check_tile(Map,X,Y,Tile):-
-    get_hex(Map,X,Y,Hex),
+check_tile([X, Y],Tile):-
+    get_hex([X,Y],Hex),
     hex_tile(Hex,Tile).
 
 % Change an hex tile type
-set_tile(Map, X, Y, Tile, UpdatedMap) :-
-    get_hex(Map, X, Y, Hex),
+set_tile([X, Y], Tile) :-
+    get_hex([X, Y], Hex),
+    map(Map),
     nth0(X, Map, Row),
     change_hex_tile(Hex, Tile, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap),
+    update_map(UpdatedMap).
 
 % Change an hex owner
-set_owner(Map, X, Y, Owner, UpdatedMap) :-
-    get_hex(Map, X, Y, Hex),
+set_owner([X, Y], Owner) :-
+    get_hex([X, Y], Hex),
+    map(Map),
     nth0(X, Map, Row),
     change_hex_owner(Hex, Owner, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap),
+    update_map(UpdatedMap).
 
 % Change an hex building
-set_building(Map, X, Y, Building, UpdatedMap) :-
-    get_hex(Map, X, Y, Hex),
+set_building([X, Y], Building) :-
+    get_hex([X, Y], Hex),
+    map(Map),
     nth0(X, Map, Row),
     change_hex_building(Hex, Building, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap),
+    update_map(UpdatedMap).
 
 % Change an hex unit
-set_unit(Map, X, Y, Unit, UpdatedMap) :-
-    get_hex(Map, X, Y, Hex),
+set_unit([X, Y], Unit) :-
+    map(Map),
+    get_hex([X, Y], Hex),
     nth0(X, Map, Row),
     change_hex_unit(Hex, Unit, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap),
+    update_map(UpdatedMap).
 
 % Check if a location dwells within the map boundaries
-inside_map(X, Y) :-
+inside_map([X, Y]) :-
     map_size(MapSize),
     X >= 0, X < MapSize,
     Y >= 0, Y < MapSize.
@@ -140,18 +158,19 @@ random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
 % Simulate a walker random walk
 walk(Map, _, _, Count, Map):-Count=<0.
 walk(Map, X, Y, Count, NewMap) :-
-    findall(Terrain,terrain(Terrain),Terrains),
+    findall(Terrain,terrain(Terrain), Terrains),
     random_member(Terrain,Terrains),
     % Change the sea hex to a desert hex at the walker location
-    set_tile(Map, X, Y, Terrain, UpdatedMap),
+    set_tile([X, Y], Terrain),
+    map(UpdatedMap),
     % Choose a random direction and move along it
     random_move(X,Y,NewX,NewY),
     (
       % If the new position dwells within the map boundaries, continue the walk
-      inside_map(NewX, NewY),!,
+      inside_map([NewX, NewY]),!,
       (
           % If the next step falls on a sea tile, decrease the walker lifespan
-          check_tile(Map,NewX,NewY,sea),
+          check_tile([NewX,NewY],sea),
           NewCount is Count-1
           ;
           % Else if there is at least one sea tile, do not decrease the walker lifespan if

@@ -30,5 +30,5 @@ move_unit(Map, Province, FromHex, ToHex):-
     % The destination should not be located near an enemy tower
     province_owner(Province, Player), % Get
     hex_coord(ToHex, [ToX, ToY]), % Get
-    \+ tower_nearby(Map, ToX, ToY, Player).
+    \+ tower_nearby(Map, [ToX, ToY], Player).
 

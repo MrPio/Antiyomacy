@@ -8,10 +8,10 @@
                      change_province_hexes/3,
                      province_money/2,
                      change_province_money/3,
-                     boundary24/4,
-                     boundary8/4,
-                     boundary4/4,
-                     find_provinces/2,
+                     boundary24/3,
+                     boundary8/3,
+                     boundary4/3,
+                     find_provinces/1,
                      find_province/3,
                      province_boundary/3,
                      frontier/3]).
@@ -45,42 +45,42 @@ province_apply_income(province(Owner,Hexes,Money),Income,province(Owner,Hexes,Ne
     NewMoney is Money + Income.
 
 % Search for hexes around the hexes adjacent to the given one
-boundary24(Map,X,Y,Boundary):-
-    inside_map(X,Y),
+boundary24(Map, [X,Y],Boundary):-
+    inside_map([X,Y]),
     findall(Hex, (
                 Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
                 between(Left, Right, X1), between(Down, Up, Y1),
                 \+ (X1 = X, Y1 = Y),
-                inside_map(X1,Y1),
+                inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
             ), Boundary).
 
 % Search for adjacent hexes around the given one
-boundary8(Map,X,Y,Boundary):-
-    inside_map(X,Y),
+boundary8(Map, [X,Y],Boundary):-
+    inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
                 between(Left, Right, X1), between(Down, Up, Y1),
                 \+ (X1 = X, Y1 = Y),
-                inside_map(X1,Y1),
+                inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
             ), Boundary).
 
 % Search for orthogonally adjacent hexes around the given one
-boundary4(Map,X,Y,Boundary):-
-    inside_map(X,Y),
+boundary4(Map, [X,Y],Boundary):-
+    inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
                 member([X1,Y1],[[Left,Y],[Right,Y],[X,Down],[X,Up]]),
-                inside_map(X1,Y1),
+                inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
             ), Boundary).
 
 % Caller predicate for find_provinces_
-find_provinces(Map,Provinces):-find_provinces_(Map,0,[],Provinces),!.
+find_provinces(Provinces):-map(Map),find_provinces_(Map,0,[],Provinces),!.
 % Find all the provinces in the map
 find_provinces_(_,Index,Provinces,Provinces):-
     % If all the map has been scanned, break the recursion
@@ -107,7 +107,7 @@ find_provinces_(Map,Index,Found,Provinces):-
 % Find a single province by searching around the given coordinates
 find_province(Map, [X,Y], Province) :-
     % Check that the hex has an owner and retrieve it
-    hex_owned(Map,X,Y,Owner, Hex),
+    hex_owned([X,Y],Owner, Hex),
     % Find all the connected hexes with a breadth first search
     province_bfs(Map,Owner,[Hex],[],Hexes),
     Hexes \= [],
@@ -121,7 +121,7 @@ province_bfs(Map, Owner, [Hex|Tail], Visited,Hexes) :-
     % Scan the neighbor hexes
     % note: use boundary8/4 if the map is made of hexagons
     % else use boundary4/4 if the map is made of squares
-    boundary4(Map, X, Y, NeighborHexes),
+    boundary4(Map,[X, Y], NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
                 % Pick one neighbor hex to validate
@@ -137,8 +137,8 @@ province_bfs(Map, Owner, [Hex|Tail], Visited,Hexes) :-
     province_bfs(Map,Owner,ToVisit, [Hex|Visited],Hexes).
 
 % Checks if an hex is a terrain and has an owner
-hex_owned(Map, X, Y, Owner,Hex):-
-    get_hex(Map,X,Y,Hex),
+hex_owned(Coord, Owner,Hex):-
+    get_hex(Coord, Hex),
     hex_tile(Hex, terrain),
     hex_owner(Hex,Owner),
     \+ Owner = none.
@@ -151,7 +151,7 @@ province_boundary_(_,[],_,Boundary,Boundary).
 province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
     hex_coord(Hex,[X,Y]),
     % Scan the neighbor hexes
-    boundary8(Map,X,Y,NeighborHexes),
+    boundary8(Map, [X,Y],NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
                 % Pick one neighbor hex to validate
@@ -173,7 +173,7 @@ frontier(Map, province(_, Hexes, _), Frontier):-
         member(Hex, Hexes),
         % ...checks that in the midst of its boundary8...
         hex_coord(Hex, [X, Y]),
-        boundary8(Map, X, Y, Boundary),
+        boundary8(Map, [X, Y], Boundary),
         % ... at least one hex is outside the province
         \+ maplist(member,Boundary,Hexes)
     ), Frontier).
