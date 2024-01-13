@@ -146,7 +146,7 @@ hex_owned(Coord, Owner,Hex):-
 
 % Caller predicate for province_boundary_
 province_boundary(Map,province(_,Hexes,_), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).
-% Find all hexes bordering the given province
+% Find all hexagons that border the given province externally
 province_boundary_(_,[],_,Boundary,Boundary).
 province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
     hex_coord(Hex,[X,Y]),
@@ -166,7 +166,7 @@ province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
     append(Found, ValidNeighborHexes, NewFound),
     province_boundary_(Map,RestHexes,ProvinceHexes,NewFound,Boundary).
 
-% Retrieve the frontier from a given province
+% Find all hexagons that border the given province internally
 frontier(Map, province(_, Hexes, _), Frontier):-   
     findall(Hex,(
         % For each hex in the province...

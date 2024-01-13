@@ -10,7 +10,7 @@ unit(baron, 3, 3, 30, -18).
 unit(knight, 4, 3, 40, -36).
 
 % Moves ======================================================
-% Check whether a given unit can be moved to a certain hex
+% Checks whether a given unit can be moved to a certain hex
 % This is useful to list all the possible displacement moves for a given unit
 move_unit(Map, Province, FromHex, ToHex):-
     province_hexes(Province, ProvinceHexes), % Get

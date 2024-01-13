@@ -16,12 +16,12 @@
                 hex_unit/2,
                 change_hex_unit/3]).
 
-% Tiles
+% Tile enum
 tile(X):-sea(X);terrain(X).
 sea(ocean).
 terrain(X):- member(X,[desert,wood,rock,sheep,clay,hay]).
 
-% Owners
+% Owners enum
 owner(X):-member(X,[none,red,blue]).
 
 % Hex struct ====================================================================
