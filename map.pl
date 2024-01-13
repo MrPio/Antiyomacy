@@ -64,6 +64,67 @@ empty_hex([Hex|Rest], Size, RowCount,ColCount):-
     NewColCount is ColCount +1,
     empty_hex(Rest, Size, RowCount, NewColCount).
 
+% Simulate a bunch of walkers walks ====================================
+random_walkers(Map, _, _, Count, Map):-Count=<0.
+random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
+    (
+        % If there is at least one terrain tile, choose one of them as the new walker spawn point
+        findall([X, Y], (nth0(X, Map, Row), nth0(Y, Row, Hex), hex_tile(Hex,terrain)), TerrainHexes),
+        random_member([X,Y],TerrainHexes)
+        ;
+        % Else, choose the center of the map as the new walker spawn point
+        map_size(MapSize),
+        X is round(MapSize/2), Y=X
+    ),
+    % Randomly calculate the new walker lifespan
+    walker_steps(MaxWalkerSteps), MinWalkerSteps is MaxWalkerSteps /2,
+    random_between(MinWalkerSteps,MaxWalkerSteps,Steps),
+    % Spawn the new walker
+    walk(Map, X,Y,Steps,NewMap),
+    % Spawn the remaining walkers
+    NewCount is Count - 1,
+    random_walkers(NewMap, MaxX, MaxY,NewCount, ResultMap).
+
+% Simulate a walker random walk
+walk(Map, _, _, Count, Map):-Count=<0.
+walk(Map, X, Y, Count, NewMap) :-
+    findall(Terrain,terrain(Terrain), Terrains),
+    random_member(Terrain,Terrains),
+    % Change the sea hex to a desert hex at the walker location
+    set_tile([X, Y], Terrain),
+    map(UpdatedMap),
+    % Choose a random direction and move along it
+    random_move(X,Y,NewX,NewY),
+    (
+      % If the new position dwells within the map boundaries, continue the walk
+      inside_map([NewX, NewY]),!,
+      (
+          % If the next step falls on a sea tile, decrease the walker lifespan
+          check_tile([NewX,NewY],sea),
+          NewCount is Count-1
+          ;
+          % Else if there is at least one sea tile, do not decrease the walker lifespan if
+          sea_in_map(Map),
+          NewCount=Count
+          ;
+          % Else, kill the walker
+          NewCount = 0
+      ),
+      walk(UpdatedMap, NewX, NewY, NewCount, NewMap)
+      ;
+      % Else, choose another step direction
+      walk(Map,X,Y,Count,NewMap)
+    ).
+
+% Move in one of the four directions (up, down, left, right)
+move(X, Y, NewX, Y) :- NewX is X - 1; NewX is X + 1.
+move(X, Y, X, NewY) :- NewY is Y - 1; NewY is Y + 1.
+% Randomly choose one of the four directions
+random_move(X,Y,NewX,NewY) :-
+    findall([NewX,NewY],move(X,Y,NewX,NewY),Moves),
+    random_member(Move,Moves),
+    [NewX,NewY]=Move.
+
 % Replace the Nth element of List with El ==============================
 replace_nth(N, List, El, Result) :-
     nth0(N, List, _, Before),
@@ -132,65 +193,3 @@ sea_in_map(Map):-
     member(Row,Map),
     member(Hex,Row),
     hex_tile(Hex,sea).
-
-
-% Simulate a bunch of walkers walks ====================================
-random_walkers(Map, _, _, Count, Map):-Count=<0.
-random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
-    (
-        % If there is at least one terrain tile, choose one of them as the new walker spawn point
-        findall([X, Y], (nth0(X, Map, Row), nth0(Y, Row, Hex), hex_tile(Hex,terrain)), TerrainHexes),
-        random_member([X,Y],TerrainHexes)
-        ;
-        % Else, choose the center of the map as the new walker spawn point
-        map_size(MapSize),
-        X is round(MapSize/2), Y=X
-    ),
-    % Randomly calculate the new walker lifespan
-    walker_steps(MaxWalkerSteps), MinWalkerSteps is MaxWalkerSteps /2,
-    random_between(MinWalkerSteps,MaxWalkerSteps,Steps),
-    % Spawn the new walker
-    walk(Map, X,Y,Steps,NewMap),
-    % Spawn the remaining walkers
-    NewCount is Count - 1,
-    random_walkers(NewMap, MaxX, MaxY,NewCount, ResultMap).
-
-% Simulate a walker random walk
-walk(Map, _, _, Count, Map):-Count=<0.
-walk(Map, X, Y, Count, NewMap) :-
-    findall(Terrain,terrain(Terrain), Terrains),
-    random_member(Terrain,Terrains),
-    % Change the sea hex to a desert hex at the walker location
-    set_tile([X, Y], Terrain),
-    map(UpdatedMap),
-    % Choose a random direction and move along it
-    random_move(X,Y,NewX,NewY),
-    (
-      % If the new position dwells within the map boundaries, continue the walk
-      inside_map([NewX, NewY]),!,
-      (
-          % If the next step falls on a sea tile, decrease the walker lifespan
-          check_tile([NewX,NewY],sea),
-          NewCount is Count-1
-          ;
-          % Else if there is at least one sea tile, do not decrease the walker lifespan if
-          sea_in_map(Map),
-          NewCount=Count
-          ;
-          % Else, kill the walker
-          NewCount = 0
-      ),
-      walk(UpdatedMap, NewX, NewY, NewCount, NewMap)
-      ;
-      % Else, choose another step direction
-      walk(Map,X,Y,Count,NewMap)
-    ).
-
-% Move in one of the four directions (up, down, left, right)
-move(X, Y, NewX, Y) :- NewX is X - 1; NewX is X + 1.
-move(X, Y, X, NewY) :- NewY is Y - 1; NewY is Y + 1.
-% Randomly choose one of the four directions
-random_move(X,Y,NewX,NewY) :-
-    findall([NewX,NewY],move(X,Y,NewX,NewY),Moves),
-    random_member(Move,Moves),
-    [NewX,NewY]=Move.
