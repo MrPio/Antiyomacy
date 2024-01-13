@@ -1,10 +1,7 @@
-:- use_module(printer).
-:- use_module(hex).
-:- use_module(map).
 :- module(province, [province/3,
                      province_owner/2,
                      change_province_owner/3,
-                     province_hexes/3,
+                     province_hexes/2,
                      change_province_hexes/3,
                      province_money/2,
                      change_province_money/3,
@@ -15,6 +12,7 @@
                      find_province/3,
                      province_boundary/3,
                      frontier/3]).
+:- use_module([printer, map, hex]).
 
 % Province struct ===================================================
 province(Owner, Hexes, Money):- 
@@ -50,7 +48,7 @@ boundary24(Map, [X,Y],Boundary):-
     findall(Hex, (
                 Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
                 between(Left, Right, X1), between(Down, Up, Y1),
-                \+ (X1 = X, Y1 = Y),
+                \+ (X1 == X, Y1 == Y),
                 inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
@@ -62,7 +60,7 @@ boundary8(Map, [X,Y],Boundary):-
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
                 between(Left, Right, X1), between(Down, Up, Y1),
-                \+ (X1 = X, Y1 = Y),
+                \+ (X1 == X, Y1 == Y),
                 inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
@@ -141,8 +139,7 @@ hex_owned(Coord, Owner,Hex):-
     get_hex(Coord, Hex),
     hex_tile(Hex, terrain),
     hex_owner(Hex,Owner),
-    \+ Owner = none.
-
+    Owner \= none.
 
 % Caller predicate for province_boundary_
 province_boundary(Map,province(_,Hexes,_), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).

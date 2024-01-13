@@ -1,10 +1,8 @@
-:- use_module(province).
-:- use_module(building).
-:- use_module(unit).
 :- module(economy, [get_income/2, buy/2]).
+:- use_module([hex, province, unit, building]).
 
 % Calculate a province income. This will be added to the province money at the end of the turn.
-get_income(province(Owner, Hexes, Money), Income):-
+get_income(province(_, Hexes, _), Income):-
     % Calculate the income contribution given by the number of hexes in the province
     length(Hexes, ProvinceSize),
     % Calculate the income contribution given by the province buildings
@@ -25,8 +23,8 @@ get_income(province(Owner, Hexes, Money), Income):-
 % Checks whether a building or unit purchase can be achieved
 % This is useful to list all the possible purchase moves for a given province
 buy(province(_, _, Money), Building) :-
-    building(Building, Protection, Cost, Income),
+    building(Building, _, Cost, _),
     Money>=Cost.
 buy(province(_, _, Money), Unit) :-
-    unit(Unit, Strength, Protection, Cost, Income),
+    unit(Unit, _, _, Cost, _),
     Money>=Cost.

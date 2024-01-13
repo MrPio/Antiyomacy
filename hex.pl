@@ -1,5 +1,3 @@
-:- use_module(building).
-:- use_module(unit).
 :- module(hex, [tile/1,
                 sea/1,
                 terrain/1,
@@ -10,11 +8,11 @@
                 hex_owner/2,
                 change_hex_owner/3,
                 hex_coord/2,
-                change_hex_coord/3,
                 hex_building/2,
                 change_hex_building/3,
                 hex_unit/2,
                 change_hex_unit/3]).
+:- use_module([unit, building]).
 
 % Tile enum
 tile(X):-sea(X);terrain(X).

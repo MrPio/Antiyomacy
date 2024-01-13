@@ -1,5 +1,5 @@
-:- use_module(hex).
 :- module(print_map, [print_map/1]).
+:- use_module([hex]).
 
 % Print a map row with lateral coordinates
 print_map(Map):- 

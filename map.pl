@@ -1,10 +1,8 @@
-:- use_module(library(random)).
-:- use_module(printer).
-:- use_module(hex).
 :- module(map, [matrix/3,
                 generate_random_map/1,
                 empty_map/1,
                 map_size/1,
+                map/1,
                 inside_map/1,
                 get_hex/2,
                 check_tile/2,
@@ -12,6 +10,9 @@
                 set_owner/2,
                 set_building/2,
                 set_unit/2]).
+:- use_module(library(random)).
+:- use_module([printer, hex]).
+
 % Map parameters
 :- dynamic(map/1).
 map_size(5).
@@ -60,7 +61,7 @@ empty_hex([],_,_,_).
 empty_hex([Hex|Rest], Size, RowCount,ColCount):-
     hex_tile(Hex, sea),
     Index is RowCount*Size + ColCount,
-    Hex=hex(Index, [RowCount,ColCount],_,none,none,none),
+    Hex = hex(Index, [RowCount,ColCount],_,none,none,none),
     NewColCount is ColCount +1,
     empty_hex(Rest, Size, RowCount, NewColCount).
 
