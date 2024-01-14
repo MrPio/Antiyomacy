@@ -23,7 +23,7 @@ The code is structured as follows, listing the main predicates for each file:
 - `map.pl`
     - **generate_random_map/1** : Generates a random map using the Random Walkers algorithm
     - **inside_map/1** : Checks if a coordinate lies within the map boundaries
-    - **get_hex/2** : Retrieves the hex at the given coordinate
+    - **get_hex/3** : Retrieves the hex at the given coordinate
     - **set_owner/2** : Change an hex owner
     - **set_building/2** : Spawns a building on a given coordinate
     - **set_unit/** : Spawns a unit on a given coordinate
@@ -31,21 +31,26 @@ The code is structured as follows, listing the main predicates for each file:
 - `province.pl`
     - **province/3** : The struct of a player's province
     - **boundary/3** : Search for adjacent hexes around the given one
-    - **find_provinces/1** : Find all the provinces in the map
+    - **find_provinces/2** : Find all the provinces in the map
     - **province_boundary/3** : Find all hexagons that border the given province externally
     - **frontier/3** : Find all hexagons that border the given province internally
-
-- `building.pl`
-    - **building/4** : The list of the buildings that can be built
-    - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move 
+    - **units_location/3** : Check/Get a unit possible location on the given province (non-deterministic)
+    - **buildings_location/3** : Check/Get a building possible location on the given province (non-deterministic)
+    - **buy/6** : Purchase a building or a unit and place it on the map at the given location
+    - **displace_unit** : Displace a unit on a given valid hex
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought
-    - **move_unit/4** : Checks whether a given unit can be moved to a certain
+    - **unit_placement/4** : Checks/Get a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit
+
+- `building.pl`
+    - **building/4** : The list of the buildings that can be built
+    - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
+    - **building_placement/3** : Checks/Get a building valid location on the given province. This is useful to list all the possible placement moves for a given building
 
 - `economy.pl`
-    - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn.
-    - **buy/2** : Checks whether a building or unit purchase can be achieved
+    - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
+    - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
 ---
 ### Other files
 

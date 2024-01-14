@@ -2,7 +2,7 @@
 :- use_module([hex]).
 
 % Print a map row with lateral coordinates
-print_map(Map):- 
+print_map(Map) :- 
     nl,write("    "),foreach(nth0(Index,Map,_),format(" ~w  ",Index)),nl,nl,
     foreach(nth0(Index, Map, Row),(format("~w   ",Index),print_row(Row))).
 

@@ -8,42 +8,58 @@
                      boundary24/3,
                      boundary8/3,
                      boundary4/3,
-                     find_provinces/1,
+                     find_provinces/2,
                      find_province/3,
                      province_boundary/3,
-                     frontier/3]).
-:- use_module([printer, map, hex]).
+                     frontier/3,
+                     units_location/3,
+                     buildings_location/3,
+                     buy/6,
+                     displace_unit/6]).
+:- use_module([printer, map, hex, unit, building, economy]).
 
 % Province struct ===================================================
-province(Owner, Hexes, Money):- 
+province(Owner, Hexes, Money) :- 
     owner(Owner), 
     maplist(=(hex(_,_,_,_,_,_)),Hexes),
     integer(Money).
 
 % Check/Get province owner
 province_owner(province(Owner, _, _), Owner).
-
 % Change a province owner
 change_province_owner(province(_, Hexes, Money), Owner, province(Owner, Hexes, Money)).
 
 % Check/Get province hexes
 province_hexes(province(_, Hexes, _), Hexes).
-
 % Change a province hexes
 change_province_hexes(province(Owner, _, Money), Hexes, province(Owner, Hexes, Money)).
 
 % Check/Get province money
 province_money(province(_, _, Money), Money).
-
 % Change a province money amount
 change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, Money)).
 
+% Reload all the hexes in the old province hex list, remove conquered hexes
+% from the enemy and add the hexes conquered by the player
+% Note: The the old province money is preserved
+% update_province(+Map, +OldProvince, -UpdatedProvince)
+update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
+    % Select one hex from the old province
+    member(OldHex, OldHexes),
+    % Check that the hex has not been conquered by the enemy
+    hex_coord(OldHex, [X,Y]), % Get
+    get_hex(Map, [X,Y], NewHex), % Get
+    hex_owner(NewHex, Owner), % Check
+    % Look for new province hexes
+    find_province(Map, [X,Y], province(_,NewHexes,_)),
+    UpdatedProvince=province(Owner,NewHexes,Money).
+
 % Add an income to the province money
-province_apply_income(province(Owner,Hexes,Money),Income,province(Owner,Hexes,NewMoney)):-
+province_apply_income(province(Owner,Hexes,Money), Income, province(Owner,Hexes,NewMoney)) :-
     NewMoney is Money + Income.
 
 % Search for hexes around the hexes adjacent to the given one
-boundary24(Map, [X,Y],Boundary):-
+boundary24(Map, [X,Y],Boundary) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
@@ -55,7 +71,7 @@ boundary24(Map, [X,Y],Boundary):-
             ), Boundary).
 
 % Search for adjacent hexes around the given one
-boundary8(Map, [X,Y],Boundary):-
+boundary8(Map, [X,Y],Boundary) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
@@ -67,7 +83,7 @@ boundary8(Map, [X,Y],Boundary):-
             ), Boundary).
 
 % Search for orthogonally adjacent hexes around the given one
-boundary4(Map, [X,Y],Boundary):-
+boundary4(Map, [X,Y],Boundary) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
@@ -78,16 +94,15 @@ boundary4(Map, [X,Y],Boundary):-
             ), Boundary).
 
 % Caller predicate for find_provinces_
-find_provinces(Provinces):-map(Map),find_provinces_(Map,0,[],Provinces),!.
+% find_provinces(+Map, -Provinces)
+find_provinces(Map, Provinces) :- find_provinces_(Map,0,[],Provinces),!.
 % Find all the provinces in the map
-find_provinces_(_,Index,Provinces,Provinces):-
+find_provinces_(_,Index,Provinces,Provinces) :-
     % If all the map has been scanned, break the recursion
     map_size(MapSize), Index is MapSize^2.
-find_provinces_(Map,Index,Found,Provinces):-
-    map_size(MapSize),
+find_provinces_(Map,Index,Found,Provinces) :-
     % Calculate the coordinates from the index
-    X is truncate(Index/MapSize),
-    Y is Index mod MapSize,
+    index2coord(Index, [X,Y]),
     (
       % Check if the current hex belongs to one of the previously found provinces,
       % if that's the case, do not search again for a province around it.
@@ -103,19 +118,21 @@ find_provinces_(Map,Index,Found,Provinces):-
     find_provinces_(Map,NewIndex,NewFound,Provinces).
 
 % Find a single province by searching around the given coordinates
+% find_province(+Map, +Coord, -Province)
 find_province(Map, [X,Y], Province) :-
     % Check that the hex has an owner and retrieve it
-    hex_owned([X,Y],Owner, Hex),
+    hex_owned(Map, [X,Y], Owner, Hex),
     % Find all the connected hexes with a breadth first search
     province_bfs(Map,Owner,[Hex],[],Hexes),
     Hexes \= [],
     Province=province(Owner,Hexes,0),!.
 
-% Find a province from a start Hex using Breadth-first-like search
-province_bfs(_,_,[],Hexes,Hexes):-!.
-province_bfs(Map, Owner, [Hex|Tail], Visited,Hexes) :-
-    hex_owner(Hex,Owner),
-    hex_coord(Hex,[X,Y]),
+% Find a province from a start hex using Breadth-first-like search
+province_bfs(_,_,[],Hexes,Hexes) :-!.
+province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
+    % Stop this branch if the hex is not owned by the player
+    hex_owner(Hex, Owner), % Check
+    hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
     % note: use boundary8/4 if the map is made of hexagons
     % else use boundary4/4 if the map is made of squares
@@ -127,7 +144,9 @@ province_bfs(Map, Owner, [Hex|Tail], Visited,Hexes) :-
                 % To be part of the province, the hex needs to be owned by the same owner
                 hex_owner(NeighborHex, Owner),
                 % Check that the hex has no already been visited
-                \+ member(NeighborHex, Visited)
+                \+ member(NeighborHex, Visited),
+                % Check that the hex has no already been added to the ToVisit list
+                \+ member(NeighborHex, Tail)
             ),
             ValidNeighborHexes),
     % All the valid neighbour hexes need to be expanded further
@@ -135,17 +154,19 @@ province_bfs(Map, Owner, [Hex|Tail], Visited,Hexes) :-
     province_bfs(Map,Owner,ToVisit, [Hex|Visited],Hexes).
 
 % Checks if an hex is a terrain and has an owner
-hex_owned(Coord, Owner,Hex):-
-    get_hex(Coord, Hex),
+% hex_owned(+Map, +Coord, -Owner, -Hex)
+hex_owned(Map, Coord, Owner, Hex) :-
+    get_hex(Map, Coord, Hex),
     hex_tile(Hex, terrain),
     hex_owner(Hex,Owner),
     Owner \= none.
 
 % Caller predicate for province_boundary_
-province_boundary(Map,province(_,Hexes,_), Boundary):-province_boundary_(Map,Hexes,Hexes,[],Boundary).
+% province_boundary(+Map, +Province, -Boundary)
+province_boundary(Map, province(_,Hexes,_), Boundary) :-province_boundary_(Map,Hexes,Hexes,[],Boundary).
 % Find all hexagons that border the given province externally
 province_boundary_(_,[],_,Boundary,Boundary).
-province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
+province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary) :-
     hex_coord(Hex,[X,Y]),
     % Scan the neighbor hexes
     boundary8(Map, [X,Y],NeighborHexes),
@@ -164,7 +185,7 @@ province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary):-
     province_boundary_(Map,RestHexes,ProvinceHexes,NewFound,Boundary).
 
 % Find all hexagons that border the given province internally
-frontier(Map, province(_, Hexes, _), Frontier):-   
+frontier(Map, province(_, Hexes, _), Frontier) :-
     findall(Hex,(
         % For each hex in the province...
         member(Hex, Hexes),
@@ -174,3 +195,74 @@ frontier(Map, province(_, Hexes, _), Frontier):-
         % ... at least one hex is outside the province
         \+ maplist(member,Boundary,Hexes)
     ), Frontier).
+
+% Check/Get a unit possible location on the given province (non-deterministic)
+% Note: The validity is determined solely based on the province's geometric
+%       conformation, further checks should be made by the caller.
+% units_location(+Map, +Province, ?Hex)
+units_location(Map, Province, Hex) :-
+    % Calculate the province inner and outer boundaries
+    frontier(Map, Province, Frontier),
+    province_boundary(Map, Province, Boundary),
+    % The destination should be in one of those two boundaries
+    (member(Hex, Frontier); member(Hex, Boundary)).
+
+% Check/Get a building possible location on the given province (non-deterministic)
+% Note: The validity is determined solely based on the province's geometric
+%       conformation, further checks should be made by the caller.
+% Note: It is assumed that a building can only be constructed on the inner
+%       boundary of the province, not within it.
+% units_location(+Map, +Province, ?Hex)
+buildings_location(Map, Province, Hex) :-
+    % The destination should be in the province inner boundary
+    frontier(Map, Province, Frontier),
+    member(Hex, Frontier).
+
+% Purchase a building or a unit and place it on the map at the given location
+% buy(+Map, +Province, +BuildingOrUnitName, +DestHex, -NewMap, -NewProvince)
+buy(Map, Province, BuildingOrUnitName, DestHex, NewMap, NewProvince) :- 
+    % Check if the purchase is valid
+    check_buy(Province, BuildingOrUnitName, LeftMoney),
+    % Subtract the cost from the province's money
+    change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
+    % Check if DestHex is a valid placement destination
+    hex_coord(DestHex, [X, Y]), % Get
+    (
+        unit_placement(Map, Province, BuildingOrUnitName, DestHex), % Check
+        % Place the unit on the map
+        set_unit(Map, [X, Y], BuildingOrUnitName, MapWithUnit),
+        % Ensure the player now owns the hex.
+        province_owner(Province, Player),
+        set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
+        % Destroy any enemy building in the destination hex.
+        set_building(MapWithUnitOwned, [X, Y], none, NewMap)
+        ;
+        building(BuildingOrUnitName, _, _, _), % Check
+        building_placement(Map, Province, DestHex), % Check
+        % Place the building on the map
+        set_building(Map, [X, Y], BuildingOrUnitName, NewMap)
+    ),
+    update_province(NewMap, ProvinceWithNewMoney, NewProvince).
+
+% Displace a unit on a given valid hex
+% displace_unit(+Map, +Province, +FromHex, +ToHex, -NewMap, -NewProvince)
+displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :- 
+        % Check if the FromHex contains a unit
+        hex_unit(FromHex, UnitName),
+        UnitName \= none,
+        % Check if the displacement is valid
+        unit_placement(Map, Province, UnitName, ToHex), % Check
+
+        % Place the unit on the map
+        hex_coord(ToHex, [ToX, ToY]), % Get
+        set_unit(Map, [ToX, ToY], UnitName, MapWithUnit),
+        % Ensure the player now owns the hex.
+        province_owner(Province, Player),
+        set_owner(MapWithUnit, [ToX, ToY], Player, MapWithUnitOwned),
+        % Destroy any enemy building in the destination hex.
+        set_building(MapWithUnitOwned, [ToX, ToY], none, NewMapWithDuplicateUnit),
+        % Remove the unit from its old hex location
+        hex_coord(FromHex, [FromX, FromY]), % Get
+        set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap),
+
+        update_province(NewMap, Province, NewProvince).

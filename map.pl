@@ -1,32 +1,43 @@
 :- module(map, [matrix/3,
+                index2coord/2,
                 generate_random_map/1,
                 empty_map/1,
                 map_size/1,
                 map/1,
                 inside_map/1,
-                get_hex/2,
-                check_tile/2,
-                set_tile/2,
-                set_owner/2,
-                set_building/2,
-                set_unit/2]).
+                get_hex/3,
+                check_tile/3,
+                set_tile/2, set_tile/4,
+                set_owner/2, set_owner/4,
+                set_building/2, set_building/4,
+                set_unit/2, set_unit/4
+                ]).
 :- use_module(library(random)).
+:- use_module(library(clpfd)).
 :- use_module([printer, hex]).
 
 % Map parameters
 :- dynamic(map/1).
 map_size(5).
 smooth(2).
-walkers(X):-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X):-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % This makes a map without sea tiles
+walkers(X) :-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
+walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % This makes a map without sea tiles
+
+% Convert index to coordinate and vice versa. Can also be used as checker
+% index2coord(?Index, ?Coord)
+index2coord(Index, [X, Y]) :-
+    map_size(MapSize),
+    X #= Index // MapSize,
+    Y #= Index mod MapSize,
+    inside_map([X, Y]).
 
 % Update the stored map
-update_map(Map):-
+update_map(Map) :-
     retractall(map(_)),
     assert(map(Map)).
 
 % Generate a matrix Size x Size and fill it with Value
-matrix(Size,Matrix, Value):-
+matrix(Size, Matrix, Value) :-
     length(Matrix, Size),
     maplist(same_length(Matrix), Matrix),
     maplist(maplist(=(Value)), Matrix).
@@ -58,7 +69,7 @@ empty_rows(Size, [Row|Rest],Count) :-
     empty_rows(Size, Rest,NewCount).
 
 empty_hex([],_,_,_).
-empty_hex([Hex|Rest], Size, RowCount,ColCount):-
+empty_hex([Hex|Rest], Size, RowCount,ColCount) :-
     hex_tile(Hex, sea),
     Index is RowCount*Size + ColCount,
     Hex = hex(Index, [RowCount,ColCount],_,none,none,none),
@@ -66,7 +77,7 @@ empty_hex([Hex|Rest], Size, RowCount,ColCount):-
     empty_hex(Rest, Size, RowCount, NewColCount).
 
 % Simulate a bunch of walkers walks ====================================
-random_walkers(Map, _, _, Count, Map):-Count=<0.
+random_walkers(Map, _, _, Count, Map) :-Count=<0.
 random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
     (
         % If there is at least one terrain tile, choose one of them as the new walker spawn point
@@ -87,7 +98,7 @@ random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
     random_walkers(NewMap, MaxX, MaxY,NewCount, ResultMap).
 
 % Simulate a walker random walk
-walk(Map, _, _, Count, Map):-Count=<0.
+walk(Map, _, _, Count, Map) :-Count=<0.
 walk(Map, X, Y, Count, NewMap) :-
     findall(Terrain,terrain(Terrain), Terrains),
     random_member(Terrain,Terrains),
@@ -101,7 +112,7 @@ walk(Map, X, Y, Count, NewMap) :-
       inside_map([NewX, NewY]),!,
       (
           % If the next step falls on a sea tile, decrease the walker lifespan
-          check_tile([NewX,NewY],sea),
+          check_tile(Map, [NewX,NewY],sea),
           NewCount is Count-1
           ;
           % Else if there is at least one sea tile, do not decrease the walker lifespan if
@@ -131,57 +142,69 @@ replace_nth(N, List, El, Result) :-
     nth0(N, List, _, Before),
     nth0(N, Result, El, Before).
 
-% Returns the Hex at a given location on the map
-get_hex([X, Y],Hex):-
-    inside_map([X,Y]),
-    map(Map),
+% Returns the Hex at a given coordinate or index on the map
+get_hex(Map, [X, Y], Hex) :-
+    !,
+    inside_map([X, Y]),
+    nth0(X, Map, Row),
+    nth0(Y, Row, Hex).
+get_hex(Map, Index, Hex) :-
+    index2coord(Index,[X,Y]), % Get [X,Y]
     nth0(X, Map, Row),
     nth0(Y, Row, Hex).
 
 % Checks or returns the tile in a given location
-check_tile([X, Y],Tile):-
-    get_hex([X,Y],Hex),
+check_tile(Map, [X, Y], Tile) :-
+    get_hex(Map, [X,Y],Hex),
     hex_tile(Hex,Tile).
 
 % Change an hex tile type
 set_tile([X, Y], Tile) :-
-    get_hex([X, Y], Hex),
     map(Map),
+    set_tile(Map,[X, Y], Tile, UpdatedMap),
+    update_map(UpdatedMap).
+set_tile(Map, [X, Y], Tile, UpdatedMap) :-
+    get_hex(Map, [X, Y], Hex),
     nth0(X, Map, Row),
     change_hex_tile(Hex, Tile, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap),
-    update_map(UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap).
 
 % Change an hex owner
 set_owner([X, Y], Owner) :-
-    get_hex([X, Y], Hex),
     map(Map),
+    set_owner(Map, [X, Y], Owner, UpdatedMap),
+    update_map(UpdatedMap).
+set_owner(Map, [X, Y], Owner, UpdatedMap) :-
+    get_hex(Map, [X, Y], Hex),
     nth0(X, Map, Row),
     change_hex_owner(Hex, Owner, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap),
-    update_map(UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap).
 
 % Change an hex building
 set_building([X, Y], Building) :-
-    get_hex([X, Y], Hex),
     map(Map),
+    set_building(Map, [X, Y], Building, UpdatedMap),
+    update_map(UpdatedMap).
+set_building(Map, [X, Y], Building, UpdatedMap) :-
+    get_hex(Map, [X, Y], Hex),
     nth0(X, Map, Row),
     change_hex_building(Hex, Building, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap),
-    update_map(UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap).
 
 % Change an hex unit
 set_unit([X, Y], Unit) :-
     map(Map),
-    get_hex([X, Y], Hex),
+    set_unit(Map, [X, Y], Unit, UpdatedMap),
+    update_map(UpdatedMap).
+set_unit(Map, [X, Y], Unit, UpdatedMap) :-
+    get_hex(Map, [X, Y], Hex),
     nth0(X, Map, Row),
     change_hex_unit(Hex, Unit, NewHex),
     replace_nth(Y, Row, NewHex, NewRow),
-    replace_nth(X, Map, NewRow, UpdatedMap),
-    update_map(UpdatedMap).
+    replace_nth(X, Map, NewRow, UpdatedMap).
 
 % Check if a location dwells within the map boundaries
 inside_map([X, Y]) :-
@@ -190,7 +213,7 @@ inside_map([X, Y]) :-
     Y >= 0, Y < MapSize.
 
 % Check if the map contains at least one sea tile
-sea_in_map(Map):-
+sea_in_map(Map) :-
     member(Row,Map),
     member(Hex,Row),
     hex_tile(Hex,sea).
