@@ -4,11 +4,13 @@
 :- use_module([hex, province]).
 
 % Building enum ==============================================
-% building(Name, Protection, Cost, Income) 
-building(farm,         0,     12,    4).
-building(tower,        2,     15,   -1).
-building(strong_tower, 3,     35,   -6).
+% building(Name, Protection, BaseCost, Income) 
+building(farm,         0,     12,      4).
+building(tower,        2,     15,     -1).
+building(strong_tower, 3,     35,     -6).
 tower(X) :- member(X,[tower, strong_tower]).
+
+building_cost().
 
 % Checks if there is an enemy tower nearby that prevents a unit move 
 % tower_nearby(+Map, +Coord, +ToHex)

@@ -51,6 +51,7 @@ The code is structured as follows, listing the main predicates for each file:
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
     - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
+    - **check_buy_comb**
 ---
 ### Other files
 

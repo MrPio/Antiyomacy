@@ -26,7 +26,7 @@ walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. 
 % Convert index to coordinate and vice versa. Can also be used as checker
 % index2coord(?Index, ?Coord)
 index2coord(Index, [X, Y]) :-
-    map_size(MapSize),
+    map_size(MapSize),   
     X #= Index // MapSize,
     Y #= Index mod MapSize,
     inside_map([X, Y]).

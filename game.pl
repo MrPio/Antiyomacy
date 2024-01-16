@@ -2,14 +2,22 @@
 
 /* 
     TODO:
-    • The farm cost should increase with the number of already bought farms,
+    (Federica)• The farm cost should increase with the number of already bought farms,
       so a predicate to count the number of farms in a given province is needed.
-    • Is the placement of the building independent of the type of building being built?
+    X Is the placement of the building independent of the type of building being built?
       That is not true for the units.
-    • When applying a move, should I update both the Map and the Province or just the former?
-    • The newly placed unit should not move before the next turn; that is because it can be
+    (Federico)• Farm should be placed inside the province and near other farms. The first farm can be
+      placed anywhere inside the province
+    • Provinces spawn at start
+    • Multiple purchase actions if enough money
+    • Test unit attack 
+    • Baron and Knight should ignore the enemy towers
+    • Province money managment and bankruptcy
+    • Test province split due to enemy attack. Money should split based on provinces size
+    X When applying a move, should I update both the Map and the Province or just the former?
+    X The newly placed unit should not move before the next turn; that is because it can be
       placed directly outside the province boundary already at purchase time.
-    •library(clpfd) was used to achieve two-way unifications
+    X library(clpfd) was used to achieve two-way unifications
  */
 
 % Test the code
@@ -110,5 +118,6 @@ test:-
     get_hex(Map2, [2,1], UnitDisplaceTo1),
     \+ displace_unit(Map3, ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _),
     writeln('Ok!'),
+    
 
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
