@@ -1,24 +1,29 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
-/* 
-    TODO:
-    (Federica)• The farm cost should increase with the number of already bought farms,
-      so a predicate to count the number of farms in a given province is needed.
-    X Is the placement of the building independent of the type of building being built?
-      That is not true for the units.
-    (Federico)• Farm should be placed inside the province and near other farms. The first farm can be
-      placed anywhere inside the province
-    • Provinces spawn at start
-    • Multiple purchase actions if enough money
-    • Test unit attack 
-    • Baron and Knight should ignore the enemy towers
-    • Province money managment and bankruptcy
-    • Test province split due to enemy attack. Money should split based on provinces size
+/* TODO:
+    • The farm cost should increase with the number of already bought farms,
+      so a predicate to count the number of farms in a given province is needed. (Federica)
+    • Farm should be placed inside the province and near other farms. The first farm can be
+      placed anywhere inside the province. (Federico)
+    • At the beginning of the game, the two provinces are randomly generated and located far apart.
+    • Multiple purchase actions if enough money.
+    • Test units attack.
+    • Baron and Knight should ignore the enemy towers.
+    • Province money managment and bankruptcy.
+    • Test province split due to enemy attack. Money should split based on provinces size.
+    • Two units of the same level may join together to form a stronger unit.
+    -------------------------------------------------------------------------------------------------
     X When applying a move, should I update both the Map and the Province or just the former?
     X The newly placed unit should not move before the next turn; that is because it can be
       placed directly outside the province boundary already at purchase time.
-    X library(clpfd) was used to achieve two-way unifications
  */
+
+/* Things to write in the paper:
+    • Library "clpfd" was used to achieve two-way unifications.
+    • Tests were used to prevent any issues with code updates affecting existing functionalities.
+    • The terrain on the map was randomly generated using the random walker's algorithm.
+    • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
+*/
 
 % Test the code
 %    0 1 2 3 4
