@@ -32,11 +32,11 @@ The code is structured as follows, listing the main predicates for each file:
     - **province/3** : The struct of a player's province
     - **boundary/3** : Search for adjacent hexes around the given one
     - **find_provinces/2** : Find all the provinces in the map
-    - **province_boundary/3** : Find all hexagons that border the given province externally
-    - **frontier/3** : Find all hexagons that border the given province internally
+    - **outer_border/3** : Find all hexagons that border the given province externally
+    - **inner_border/3** : Find all hexagons that border the given province internally
     - **units_location/3** : Check/Get a unit possible location on the given province (non-deterministic)
     - **buildings_location/3** : Check/Get a building possible location on the given province (non-deterministic)
-    - **buy/6** : Purchase a building or a unit and place it on the map at the given location
+    - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
     - **displace_unit** : Displace a unit on a given valid hex
 
 - `unit.pl`

@@ -16,13 +16,13 @@ building_cost().
 % tower_nearby(+Map, +Coord, +ToHex)
 tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy towers
-    boundary8(Map, [X, Y], Hexes),
+    near8(Map, [X, Y], Hexes),
     member(Hex, Hexes),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, tower)
     ;
     % Look for enemy strong towers
-    boundary24(Map, [X, Y], Hexes),
+    near24(Map, [X, Y], Hexes),
     member(Hex, Hexes),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, strong_tower).

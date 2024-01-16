@@ -5,16 +5,16 @@
                      change_province_hexes/3,
                      province_money/2,
                      change_province_money/3,
-                     boundary24/3,
-                     boundary8/3,
-                     boundary4/3,
+                     near24/3,
+                     near8/3,
+                     near4/3,
                      find_provinces/2,
                      find_province/3,
-                     province_boundary/3,
-                     frontier/3,
+                     outer_border/3,
+                     inner_border/3,
                      units_location/3,
                      buildings_location/3,
-                     buy/6,
+                     buy_and_place/6,
                      displace_unit/6]).
 :- use_module([printer, map, hex, unit, building, economy]).
 
@@ -55,11 +55,11 @@ update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
     UpdatedProvince=province(Owner,NewHexes,Money).
 
 % Add an income to the province money
-province_apply_income(province(Owner,Hexes,Money), Income, province(Owner,Hexes,NewMoney)) :-
+apply_income(province(Owner,Hexes,Money), Income, province(Owner,Hexes,NewMoney)) :-
     NewMoney is Money + Income.
 
 % Search for hexes around the hexes adjacent to the given one
-boundary24(Map, [X,Y],Boundary) :-
+near24(Map, [X,Y], NearHexes) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
@@ -68,10 +68,10 @@ boundary24(Map, [X,Y],Boundary) :-
                 inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
-            ), Boundary).
+            ), NearHexes).
 
 % Search for adjacent hexes around the given one
-boundary8(Map, [X,Y],Boundary) :-
+near8(Map, [X,Y], NearHexes) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
@@ -80,10 +80,10 @@ boundary8(Map, [X,Y],Boundary) :-
                 inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
-            ), Boundary).
+            ), NearHexes).
 
 % Search for orthogonally adjacent hexes around the given one
-boundary4(Map, [X,Y],Boundary) :-
+near4(Map, [X,Y], NearHexes) :-
     inside_map([X,Y]),
     findall(Hex, (
                 Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
@@ -91,7 +91,7 @@ boundary4(Map, [X,Y],Boundary) :-
                 inside_map([X1,Y1]),
                 nth0(X1, Map, Row),
                 nth0(Y1, Row, Hex)
-            ), Boundary).
+            ), NearHexes).
 
 % Caller predicate for find_provinces_
 % find_provinces(+Map, -Provinces)
@@ -134,9 +134,9 @@ province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
     hex_owner(Hex, Owner), % Check
     hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
-    % note: use boundary8/4 if the map is made of hexagons
-    % else use boundary4/4 if the map is made of squares
-    boundary4(Map,[X, Y], NeighborHexes),
+    % note: use near8/4 if the map is made of hexagons
+    % else use near4/4 if the map is made of squares
+    near4(Map, [X, Y], NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
                 % Pick one neighbor hex to validate
@@ -161,15 +161,15 @@ hex_owned(Map, Coord, Owner, Hex) :-
     hex_owner(Hex,Owner),
     Owner \= none.
 
-% Caller predicate for province_boundary_
-% province_boundary(+Map, +Province, -Boundary)
-province_boundary(Map, province(_,Hexes,_), Boundary) :-province_boundary_(Map,Hexes,Hexes,[],Boundary).
+% Caller predicate for outer_border_
+% outer_border(+Map, +Province, -OuterBorder)
+outer_border(Map, province(_,Hexes,_), OuterBorder) :-outer_border_(Map,Hexes,Hexes,[],OuterBorder).
 % Find all hexagons that border the given province externally
-province_boundary_(_,[],_,Boundary,Boundary).
-province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary) :-
+outer_border_(_,[],_,OuterBorder,OuterBorder).
+outer_border_(Map,[Hex|RestHexes],ProvinceHexes,Found,OuterBorder) :-
     hex_coord(Hex,[X,Y]),
     % Scan the neighbor hexes
-    boundary8(Map, [X,Y],NeighborHexes),
+    near8(Map, [X,Y],NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
                 % Pick one neighbor hex to validate
@@ -182,19 +182,19 @@ province_boundary_(Map,[Hex|RestHexes],ProvinceHexes,Found,Boundary) :-
             ),
             ValidNeighborHexes),
     append(Found, ValidNeighborHexes, NewFound),
-    province_boundary_(Map,RestHexes,ProvinceHexes,NewFound,Boundary).
+    outer_border_(Map,RestHexes,ProvinceHexes,NewFound,OuterBorder).
 
 % Find all hexagons that border the given province internally
-frontier(Map, province(_, Hexes, _), Frontier) :-
+inner_border(Map, province(_, Hexes, _), InnerBorder) :-
     findall(Hex,(
         % For each hex in the province...
         member(Hex, Hexes),
-        % ...checks that in the midst of its boundary8...
+        % ...checks that in the midst of its near8...
         hex_coord(Hex, [X, Y]),
-        boundary8(Map, [X, Y], Boundary),
+        near8(Map, [X, Y], NearHexes),
         % ... at least one hex is outside the province
-        \+ maplist(member,Boundary,Hexes)
-    ), Frontier).
+        \+ maplist(member,NearHexes,Hexes)
+    ), InnerBorder).
 
 % Check/Get a unit possible location on the given province (non-deterministic)
 % Note: The validity is determined solely based on the province's geometric
@@ -202,10 +202,10 @@ frontier(Map, province(_, Hexes, _), Frontier) :-
 % units_location(+Map, +Province, ?Hex)
 units_location(Map, Province, Hex) :-
     % Calculate the province inner and outer boundaries
-    frontier(Map, Province, Frontier),
-    province_boundary(Map, Province, Boundary),
+    inner_border(Map, Province, InnerBorder),
+    outer_border(Map, Province, OuterBorder),
     % The destination should be in one of those two boundaries
-    (member(Hex, Frontier); member(Hex, Boundary)).
+    (member(Hex, InnerBorder); member(Hex, OuterBorder)).
 
 % Check/Get a building possible location on the given province (non-deterministic)
 % Note: The validity is determined solely based on the province's geometric
@@ -215,12 +215,12 @@ units_location(Map, Province, Hex) :-
 % units_location(+Map, +Province, ?Hex)
 buildings_location(Map, Province, Hex) :-
     % The destination should be in the province inner boundary
-    frontier(Map, Province, Frontier),
-    member(Hex, Frontier).
+    inner_border(Map, Province, InnerBorder),
+    member(Hex, InnerBorder).
 
 % Purchase a building or a unit and place it on the map at the given location
-% buy(+Map, +Province, +BuildingOrUnitName, +DestHex, -NewMap, -NewProvince)
-buy(Map, Province, BuildingOrUnitName, DestHex, NewMap, NewProvince) :- 
+% buy_and_place(+Map, +Province, +BuildingOrUnitName, +DestHex, -NewMap, -NewProvince)
+buy_and_place(Map, Province, BuildingOrUnitName, DestHex, NewMap, NewProvince) :- 
     % Check if the purchase is valid
     check_buy(Province, BuildingOrUnitName, LeftMoney),
     % Subtract the cost from the province's money

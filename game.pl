@@ -59,16 +59,16 @@ test:-
     ProvinceBlue = province(blue,[hex(19,[3,4],_,blue,none,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none)],0),
     writeln('Ok!'),
 
-    % Test: province_boundary
+    % Test: outer_border
     write('Testing province boundary calculation... '),
-    province_boundary(Map,ProvinceRed,ProvinceRedBoundary),
+    outer_border(Map,ProvinceRed,ProvinceRedBoundary),
     ProvinceRedBoundary=[hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(8,[1,3],_,none,none,none),hex(11,[2,1],_,none,none,none),hex(12,[2,2],_,blue,tower,none),hex(13,[2,3],_,none,none,none),hex(10,[2,0],_,none,none,none)],
     writeln('Ok!'),
 
-    % Test: frontier
-    write('Testing province frontier calculation... '),
-    frontier(Map,ProvinceRed,Frontier),
-    Frontier = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],
+    % Test: inner_border
+    write('Testing province inner_border calculation... '),
+    inner_border(Map,ProvinceRed,InnerBorder),
+    InnerBorder = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],
     writeln('Ok!'),
 
     % Test: get_income
@@ -100,11 +100,11 @@ test:-
     BuildingsList = [farm, tower, peasant, spearman],
     writeln('Ok!'),
 
-    % Test: buy
+    % Test: buy_and_place
     write('Testing purchase action... '),
     change_province_money(ProvinceRed, 16, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
-    buy(Map, ProvinceRed2, peasant, NewUnitHex, Map2, ProvinceRed3),
+    buy_and_place(Map, ProvinceRed2, peasant, NewUnitHex, Map2, ProvinceRed3),
     ProvinceRed3 = province(red,[hex(7,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],6),
     writeln('Ok!'),
     print_map(Map2),
@@ -114,7 +114,6 @@ test:-
     get_hex(Map2, [0,0], UnitDisplaceFrom),
     get_hex(Map2, [2,0], UnitDisplaceTo),
     displace_unit(Map2, ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, Map3, ProvinceRed4),
-    writeln(ProvinceRed4),
     ProvinceRed4 = province(red,[hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)],6),
     writeln('Ok!'),
     print_map(Map3),
