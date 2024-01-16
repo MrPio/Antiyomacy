@@ -12,6 +12,8 @@
     • Province money managment and bankruptcy.
     • Test province split due to enemy attack. Money should split based on provinces size.
     • Two units of the same level may join together to form a stronger unit.
+    • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
+      of the game, or supply centers can be introduced.
     -------------------------------------------------------------------------------------------------
     X When applying a move, should I update both the Map and the Province or just the former?
     X The newly placed unit should not move before the next turn; that is because it can be
