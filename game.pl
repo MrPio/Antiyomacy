@@ -97,6 +97,7 @@ test:-
     write('Testing purchase actions listing... '),
     change_province_money(ProvinceBlue, 24, ProvinceBlue2),
     findall(Building, (check_buy(ProvinceBlue2, Building, _)), BuildingsList),
+    writeln(BuildingsList),
     BuildingsList = [farm, tower, peasant, spearman],
     writeln('Ok!'),
 
@@ -124,6 +125,13 @@ test:-
     get_hex(Map2, [2,1], UnitDisplaceTo1),
     \+ displace_unit(Map3, ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _),
     writeln('Ok!'),
+
+    % Test: count_farms_in_province
+    write('Testing farm counting.. '),
+    count_farms_in_province(ProvinceBlue, FarmCount),
+    write('FarmCount:'), 
+    write(FarmCount),
+    writeln(' Ok!'),
     
 
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.

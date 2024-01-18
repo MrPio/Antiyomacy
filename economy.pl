@@ -22,8 +22,11 @@ get_income(province(_, Hexes, _), Income) :-
 % Moves ======================================================
 % Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
 % This is useful to list all the possible purchase moves for a given province
-check_buy(province(_, _, Money), BuildingName, LeftMoney) :-
-    building(BuildingName, _, Cost, _),
+check_buy(Province, BuildingName, LeftMoney) :-
+    building_cost(BuildingName, Province, Cost),
+    province_money(Province, Money),
+    writeln(Money),
+    writeln(Cost),
     Money>=Cost,
     LeftMoney is Money - Cost.
 check_buy(province(_, _, Money), UnitName, LeftMoney) :-
