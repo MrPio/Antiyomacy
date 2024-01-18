@@ -14,21 +14,22 @@ tower(X) :- member(X,[tower, strong_tower]).
 
 building_cost(BuildingName, Province, Cost) :-
     building(BuildingName, _, BaseCost, _),
-    (BuildingName==farm, 
-    count_farms_in_province(Province, FarmCount),
-    Cost is BaseCost + 2 * FarmCount,
-      format('Costo per farm: ~w (FarmCount: ~w, BaseCost: ~w)\n', [Cost, FarmCount, BaseCost])
-    ;
-    BuildingName \= farm,
-    Cost is BaseCost).
+    (
+        BuildingName==farm, 
+        count_farms_in_province(Province, FarmCount),
+        Cost is BaseCost + 2 * FarmCount
+        ;
+        BuildingName \= farm,
+        Cost is BaseCost
+        ).
 
 % count_farms_in_province(+Province, -FarmCount)
 count_farms_in_province(province(_, Hexes, _), FarmCount) :-
     % Use findall to create a list of 1s for each farm in the province
-    (findall(Hex, (
+    findall(Hex, (
         member(Hex, Hexes),
         hex_building(Hex, farm)
-    ), Farms) -> sumlist(Farms, FarmCount) ; FarmCount = 0).
+    ), HexesWithFarm) -> length(HexesWithFarm, FarmCount) ; FarmCount = 0.
 
 % Checks if there is an enemy tower nearby that prevents a unit move 
 % tower_nearby(+Map, +Coord, +ToHex)

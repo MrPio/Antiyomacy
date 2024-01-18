@@ -127,11 +127,17 @@ test:-
     writeln('Ok!'),
 
     % Test: count_farms_in_province
-    write('Testing farm counting.. '),
-    count_farms_in_province(ProvinceBlue, FarmCount),
-    write('FarmCount:'), 
-    write(FarmCount),
-    writeln(' Ok!'),
+    write('Testing farm counting... '),
+    % Purchasing 2 farms for Blue province
+    change_province_money(ProvinceBlue2,26,ProvinceBlue3),
+    get_hex(Map3, [4,3], BlueFarmHex),
+    get_hex(Map3, [3,4], BlueFarmHex2),
+    buy_and_place(Map3, ProvinceBlue3, farm, BlueFarmHex, Map4, ProvinceBlue4),
+    buy_and_place(Map4, ProvinceBlue4, farm, BlueFarmHex2, Map5, ProvinceBlue5),
+    print_map(Map5),
+    count_farms_in_province(ProvinceBlue5, FarmCount),
+    FarmCount=2,
+    writeln('Ok!'),
     
 
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.

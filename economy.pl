@@ -25,8 +25,6 @@ get_income(province(_, Hexes, _), Income) :-
 check_buy(Province, BuildingName, LeftMoney) :-
     building_cost(BuildingName, Province, Cost),
     province_money(Province, Money),
-    writeln(Money),
-    writeln(Cost),
     Money>=Cost,
     LeftMoney is Money - Cost.
 check_buy(province(_, _, Money), UnitName, LeftMoney) :-
