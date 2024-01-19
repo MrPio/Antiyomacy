@@ -5,6 +5,7 @@
                      change_province_hexes/3,
                      province_money/2,
                      change_province_money/3,
+                     province_count/3,
                      near24/3,
                      near8/3,
                      near4/3,
@@ -38,6 +39,16 @@ change_province_hexes(province(Owner, _, Money), Hexes, province(Owner, Hexes, M
 province_money(province(_, _, Money), Money).
 % Change a province money amount
 change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, Money)).
+
+% Checks or calculates the number of buildings or units owned by the province
+% province_count(+Province, +ResourceName, ?Count)
+province_count(Province, ResourceName, Count) :-
+    province_hexes(Province, Hexes),
+    % Retrieve all the hexes with the specified resource
+    findall(Hex, (
+        member(Hex, Hexes),
+        (hex_building(Hex, ResourceName); hex_unit(Hex, ResourceName))
+    ), HexesWithRes) -> length(HexesWithRes, Count) ; Count = 0.
 
 % Reload all the hexes in the old province hex list, remove conquered hexes
 % from the enemy and add the hexes conquered by the player
@@ -223,28 +234,28 @@ buildings_location(Map, Province, _, Hex) :-
     member(Hex, InnerBorder).
 
 % Purchase a building or a unit and place it on the map at the given location
-% buy_and_place(+Map, +Province, +BuildingOrUnitName, +DestHex, -NewMap, -NewProvince)
-buy_and_place(Map, Province, BuildingOrUnitName, DestHex, NewMap, NewProvince) :- 
+% buy_and_place(+Map, +Province, +ResourceName, +DestHex, -NewMap, -NewProvince)
+buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :- 
     % Check if the purchase is valid
-    check_buy(Province, BuildingOrUnitName, LeftMoney),
+    check_buy(Province, ResourceName, LeftMoney),
     % Subtract the cost from the province's money
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
     (
-        unit_placement(Map, Province, BuildingOrUnitName, DestHex), % Check
+        unit_placement(Map, Province, ResourceName, DestHex), % Check
         % Place the unit on the map
-        set_unit(Map, [X, Y], BuildingOrUnitName, MapWithUnit),
+        set_unit(Map, [X, Y], ResourceName, MapWithUnit),
         % Ensure the player now owns the hex.
         province_owner(Province, Player),
         set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
         % Destroy any enemy building in the destination hex.
         set_building(MapWithUnitOwned, [X, Y], none, NewMap)
         ;
-        building(BuildingOrUnitName, _, _, _), % Check
-        building_placement(Map, Province, BuildingOrUnitName, DestHex), % Check
+        building(ResourceName, _, _, _), % Check
+        building_placement(Map, Province, ResourceName, DestHex), % Check
         % Place the building on the map
-        set_building(Map, [X, Y], BuildingOrUnitName, NewMap)
+        set_building(Map, [X, Y], ResourceName, NewMap)
     ),
     update_province(NewMap, ProvinceWithNewMoney, NewProvince).
 

@@ -1,6 +1,5 @@
 :- module(building, [building/4,
     building_cost/3,
-    count_farms_in_province/2,
     tower_nearby/3,
     farm_nearby/3,
     building_placement/4]).
@@ -17,18 +16,10 @@ tower(X) :- member(X,[tower, strong_tower]).
 % building_cost(+BuildingName, +Province, -Cost)
 building_cost(farm, Province, Cost) :-
     building(farm, _, BaseCost, _),
-    count_farms_in_province(Province, FarmCount),
+    province_count(Province, farm, FarmCount),
     Cost is BaseCost + 2 * FarmCount, !.
 building_cost(BuildingName, _, Cost) :- 
     building(BuildingName, _, Cost, _).
-
-% count_farms_in_province(+Province, -FarmCount)
-count_farms_in_province(province(_, Hexes, _), FarmCount) :-
-    % Use findall to create a list of 1s for each farm in the province
-    findall(Hex, (
-        member(Hex, Hexes),
-        hex_building(Hex, farm)
-    ), HexesWithFarm) -> length(HexesWithFarm, FarmCount) ; FarmCount = 0.
 
 % Checks if there is an enemy tower nearby that prevents a unit move 
 % tower_nearby(+Map, +Coord, +Player)
@@ -70,7 +61,7 @@ building_placement(Map, Province, farm, Hex) :-
     hex_building(Hex, none), % Check
     (
         % This should be the first farm placed in the province
-        count_farms_in_province(Province, 0) % Check
+        province_count(Province, farm, 0) % Check
         ;
         % Otherwise, it should be placed near another farm
         hex_coord(Hex, HexCoord), % Get

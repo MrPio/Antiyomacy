@@ -125,7 +125,7 @@ test:-
     \+ displace_unit(Map3, ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _),
     writeln('Ok!'),
 
-    % Test: count_farms_in_province
+    % Test: province_count
     write('Buying two farms and testing farm counting... '),
     % Purchasing 2 farms for Blue province
     change_province_money(ProvinceBlue2,26,ProvinceBlue3),
@@ -134,7 +134,7 @@ test:-
     buy_and_place(Map3, ProvinceBlue3, farm, BlueFarmHex, Map4, ProvinceBlue4),
     buy_and_place(Map4, ProvinceBlue4, farm, BlueFarmHex2, Map5, ProvinceBlue5),
     print_map(Map5),
-    count_farms_in_province(ProvinceBlue5, FarmCount),
+    province_count(ProvinceBlue5, farm, FarmCount),
     FarmCount=2,
     writeln('Ok!'),
     
