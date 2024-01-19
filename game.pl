@@ -3,8 +3,6 @@
 /* TODO:
     • The farm cost should increase with the number of already bought farms,
       so a predicate to count the number of farms in a given province is needed. (Federica)
-    • Farm should be placed inside the province and near other farms. The first farm can be
-      placed anywhere inside the province. (Federico)
     • At the beginning of the game, the two provinces are randomly generated and located far apart.
     • Multiple purchase actions if enough money.
     • Test units attack.
@@ -139,5 +137,27 @@ test:-
     FarmCount=2,
     writeln('Ok!'),
     
+    % Test: farm_nearby
+    write('Testing nearby farms detection... '),
+    farm_nearby(Map5,[4,3],blue,ProvinceBlue5),
+    writeln('Ok!'),
+    
+    % Test: farm placement in Blue province
+    write('Testing farm placement in Blue province... '),
+    change_province_money(ProvinceBlue5,16,ProvinceBlue6),
+    get_hex(Map5, [3,3], BlueFarmHex3),
+    buy_and_place(Map5, ProvinceBlue6, farm, BlueFarmHex3, Map6, ProvinceBlue7),
+    count_farms_in_province(ProvinceBlue7, FarmCountAfterPlacement),
+    FarmCountAfterPlacement =:= FarmCount + 1,
+    writeln('Ok!'),
+    print_map(Map6),
+
+    % Test: FIRST farm placement in Red province
+    write('Testing farm placement in Red province... '),
+    change_province_money(ProvinceRed4,12,ProvinceRed5),
+    get_hex(Map6, [0,0], RedFarmHex),
+    buy_and_place(Map6, ProvinceRed5, farm, RedFarmHex, Map7, ProvinceRed6),
+    writeln('Ok!'),
+    print_map(Map7),
 
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
