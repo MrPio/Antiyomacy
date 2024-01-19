@@ -13,16 +13,14 @@ building(tower,        2,     15,     -1).
 building(strong_tower, 3,     35,     -6).
 tower(X) :- member(X,[tower, strong_tower]).
 
-building_cost(BuildingName, Province, Cost) :-
-    building(BuildingName, _, BaseCost, _),
-    (
-        BuildingName==farm, 
-        count_farms_in_province(Province, FarmCount),
-        Cost is BaseCost + 2 * FarmCount
-        ;
-        BuildingName \= farm,
-        Cost is BaseCost
-        ).
+% Calculates the cost of the building based on its type
+% building_cost(+BuildingName, +Province, -Cost)
+building_cost(farm, Province, Cost) :-
+    building(farm, _, BaseCost, _),
+    count_farms_in_province(Province, FarmCount),
+    Cost is BaseCost + 2 * FarmCount, !.
+building_cost(BuildingName, _, Cost) :- 
+    building(BuildingName, _, Cost, _).
 
 % count_farms_in_province(+Province, -FarmCount)
 count_farms_in_province(province(_, Hexes, _), FarmCount) :-

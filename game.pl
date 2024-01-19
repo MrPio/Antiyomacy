@@ -96,8 +96,8 @@ test:-
     % Test: check_buy
     write('Testing purchase actions listing... '),
     change_province_money(ProvinceBlue, 24, ProvinceBlue2),
-    findall(Building, (check_buy(ProvinceBlue2, Building, _)), BuildingsList),
-    BuildingsList = [farm, tower, peasant, spearman],
+    findall(Resource, (check_buy(ProvinceBlue2, Resource, _)), ResourcesList),
+    ResourcesList = [farm, tower, peasant, spearman],
     writeln('Ok!'),
 
     % Test: buy_and_place
