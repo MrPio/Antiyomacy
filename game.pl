@@ -27,6 +27,7 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
+
 % Test the code
 %    0 1 2 3 4
 % 0 |r| |r| | |
@@ -137,7 +138,7 @@ test:-
     province_count(ProvinceBlue5, farm, FarmCount),
     FarmCount=2,
     writeln('Ok!'),
-    
+
     % Test: farm_nearby
     write('Testing nearby farms detection... '),
     farm_nearby(Map5, [4,3], ProvinceBlue5),

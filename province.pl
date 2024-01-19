@@ -48,7 +48,8 @@ province_count(Province, ResourceName, Count) :-
     findall(Hex, (
         member(Hex, Hexes),
         (hex_building(Hex, ResourceName); hex_unit(Hex, ResourceName))
-    ), HexesWithRes) -> length(HexesWithRes, Count) ; Count = 0.
+    ), HexesWithRes),
+    length(HexesWithRes, Count).
 
 % Reload all the hexes in the old province hex list, remove conquered hexes
 % from the enemy and add the hexes conquered by the player

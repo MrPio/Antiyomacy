@@ -11,7 +11,8 @@ An implementation of a strategy game heavily inspired by Antiyoy and with some e
 
 <a name="code_structure"></a>
 ## 📐 Code structure
-The code is structured as follows, listing the main predicates for each file:
+The code is structured as follows, listing the main predicates for each file.
+Note: The term "resource" refers to both units and buildings.
 
 ### Game core files
 
@@ -30,7 +31,8 @@ The code is structured as follows, listing the main predicates for each file:
 
 - `province.pl`
     - **province/3** : The struct of a player's province
-    - **boundary/3** : Search for adjacent hexes around the given one
+    - **province_count/3** : Checks or calculates the number of buildings or units owned by the province
+    - **near/3** : Search for adjacent hexes around the given one
     - **find_provinces/2** : Find all the provinces in the map
     - **outer_border/3** : Find all hexagons that border the given province externally
     - **inner_border/3** : Find all hexagons that border the given province internally
@@ -46,13 +48,12 @@ The code is structured as follows, listing the main predicates for each file:
 - `building.pl`
     - **building/4** : The list of the buildings that can be built
     - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
-    - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm could be placed
+    - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm can be placed
     - **building_placement/4** : Checks/Get a building valid location on the given province. This is useful to list all the possible placement moves for a given building (non-deterministic)
 
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
     - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
-    - **check_buy_comb**
 ---
 ### Other files
 

@@ -36,8 +36,7 @@ tower_nearby(Map, [X, Y], Player) :-
     \+ hex_owner(Hex, Player),
     hex_building(Hex, strong_tower).
 
-% Checks if there is a farm nearby 
-% farm_nearby(+Map, +Coord, +Province)
+% Checks if there is a farm nearby, useful to check where a farm can be placed% farm_nearby(+Map, +Coord, +Province)
 farm_nearby(Map, [X, Y], Province) :-
     % Select one hex from the adjacent ones
     near8(Map, [X, Y], NearbyHexes),
