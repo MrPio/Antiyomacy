@@ -16,6 +16,8 @@
     X When applying a move, should I update both the Map and the Province or just the former?
     X The newly placed unit should not move before the next turn; that is because it can be
       placed directly outside the province boundary already at purchase time.
+    X Farm should be placed inside the province and near other farms. The first farm can be
+      placed anywhere inside the province
  */
 
 /* Things to write in the paper:
