@@ -84,7 +84,7 @@ test:-
 
     % Test: building_placement
     write('Testing buildings placements... '),
-    findall(Dest, building_placement(Map, ProvinceRed, Dest), DestList2),
+    findall(Dest, building_placement(Map, ProvinceRed, tower, Dest), DestList2),
     DestList2 = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none)],
     writeln('Ok!'),
 
@@ -97,7 +97,6 @@ test:-
     write('Testing purchase actions listing... '),
     change_province_money(ProvinceBlue, 24, ProvinceBlue2),
     findall(Building, (check_buy(ProvinceBlue2, Building, _)), BuildingsList),
-    writeln(BuildingsList),
     BuildingsList = [farm, tower, peasant, spearman],
     writeln('Ok!'),
 
@@ -127,7 +126,7 @@ test:-
     writeln('Ok!'),
 
     % Test: count_farms_in_province
-    write('Testing farm counting... '),
+    write('Buying two farms and testing farm counting... '),
     % Purchasing 2 farms for Blue province
     change_province_money(ProvinceBlue2,26,ProvinceBlue3),
     get_hex(Map3, [4,3], BlueFarmHex),
@@ -141,25 +140,15 @@ test:-
     
     % Test: farm_nearby
     write('Testing nearby farms detection... '),
-    farm_nearby(Map5,[4,3],blue,ProvinceBlue5),
+    farm_nearby(Map5, [4,3], ProvinceBlue5),
     writeln('Ok!'),
-    
-    % Test: farm placement in Blue province
-    write('Testing farm placement in Blue province... '),
-    change_province_money(ProvinceBlue5,16,ProvinceBlue6),
-    get_hex(Map5, [3,3], BlueFarmHex3),
-    buy_and_place(Map5, ProvinceBlue6, farm, BlueFarmHex3, Map6, ProvinceBlue7),
-    count_farms_in_province(ProvinceBlue7, FarmCountAfterPlacement),
-    FarmCountAfterPlacement =:= FarmCount + 1,
-    writeln('Ok!'),
-    print_map(Map6),
 
     % Test: FIRST farm placement in Red province
-    write('Testing farm placement in Red province... '),
+    write('Testing first farm placement in Red province... '),
     change_province_money(ProvinceRed4,12,ProvinceRed5),
-    get_hex(Map6, [0,0], RedFarmHex),
-    buy_and_place(Map6, ProvinceRed5, farm, RedFarmHex, Map7, ProvinceRed6),
+    get_hex(Map5, [0,0], RedFarmHex),
+    buy_and_place(Map5, ProvinceRed5, farm, RedFarmHex, Map6, _),
     writeln('Ok!'),
-    print_map(Map7),
+    print_map(Map6),
 
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.

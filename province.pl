@@ -13,7 +13,7 @@
                      outer_border/3,
                      inner_border/3,
                      units_location/3,
-                     buildings_location/3,
+                     buildings_location/4,
                      buy_and_place/6,
                      displace_unit/6]).
 :- use_module([printer, map, hex, unit, building, economy]).
@@ -212,9 +212,13 @@ units_location(Map, Province, Hex) :-
 %       conformation, further checks should be made by the caller.
 % Note: It is assumed that a building can only be constructed on the inner
 %       boundary of the province, not within it.
-% units_location(+Map, +Province, ?Hex)
-buildings_location(Map, Province, Hex) :-
-    % The destination should be in the province inner boundary
+% units_location(+Map, +Province, +BuildingName, ?Hex)
+buildings_location(_, Province, farm, Hex) :-
+    % If the building is a farm, it should be located inside the province
+    province_hexes(Province, Hexes),
+    member(Hex, Hexes).
+buildings_location(Map, Province, _, Hex) :-
+    % Else, it should be located in the province inner boundary
     inner_border(Map, Province, InnerBorder),
     member(Hex, InnerBorder).
 
@@ -238,7 +242,7 @@ buy_and_place(Map, Province, BuildingOrUnitName, DestHex, NewMap, NewProvince) :
         set_building(MapWithUnitOwned, [X, Y], none, NewMap)
         ;
         building(BuildingOrUnitName, _, _, _), % Check
-        building_placement(Map, Province, DestHex), % Check
+        building_placement(Map, Province, BuildingOrUnitName, DestHex), % Check
         % Place the building on the map
         set_building(Map, [X, Y], BuildingOrUnitName, NewMap)
     ),
