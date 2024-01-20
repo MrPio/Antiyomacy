@@ -25,13 +25,16 @@ Note: The term "resource" refers to both units and buildings.
     - **generate_random_map/1** : Generates a random map using the Random Walkers algorithm
     - **inside_map/1** : Checks if a coordinate lies within the map boundaries
     - **get_hex/3** : Retrieves the hex at the given coordinate
-    - **set_owner/2** : Change an hex owner
-    - **set_building/2** : Spawns a building on a given coordinate
-    - **set_unit/** : Spawns a unit on a given coordinate
+    - **set_owner/4** : Change an hex owner
+    - **set_building/4** : Spawns a building on a given coordinate
+    - **set_unit/4** : Spawns a unit on a given coordinate
+    - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
 
 - `province.pl`
     - **province/3** : The struct of a player's province
     - **province_count/3** : Checks or calculates the number of buildings or units owned by the province
+    - **update_province/3** : Reload all the hexes in the old province hex list, remove conquered hexes from the enemy and add the hexes conquered by the player
+    - **apply_income/4** : Add the income to the province money and go bankrupt if necessary
     - **near/3** : Search for adjacent hexes around the given one
     - **find_provinces/2** : Find all the provinces in the map
     - **outer_border/3** : Find all hexagons that border the given province externally

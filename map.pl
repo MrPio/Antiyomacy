@@ -219,6 +219,7 @@ sea_in_map(Map) :-
     hex_tile(Hex,sea).
 
 % Destroy all units located on the specified hexes on the map
+% This is useful for handling bankruptcy cases
 % destroy_all_units(+Map, +Hexes, -NewMap)
 destroy_units(Map, [], Map).
 destroy_units(Map, [Hex|Tail], NewMap) :-
