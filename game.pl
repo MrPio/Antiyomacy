@@ -2,13 +2,14 @@
 
 /* TODO:
     • Baron and Knight should ignore the enemy towers. (Federico)
-    • At the beginning of the game, the two provinces are randomly generated and located far apart.
-    • Province money managment and bankruptcy. (Valerio)
+    • At the beginning of the game, at least two provinces are randomly generated 
+      and located far apart.
     • Test province split due to enemy attack. Money should split based on provinces size.
     • Two units of the same level may join together to form a stronger unit.
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     -------------------------------------------------------------------------------------------------
+    X Province money managment and bankruptcy. (Valerio)
     X Test units attack. (Valerio)
     X Multiple purchase actions if enough money. (Valerio)
     X Farm should be placed inside the province and near other farms. The first farm can be
