@@ -10,8 +10,8 @@
                 set_tile/2, set_tile/4,
                 set_owner/2, set_owner/4,
                 set_building/2, set_building/4,
-                set_unit/2, set_unit/4
-                ]).
+                set_unit/2, set_unit/4,
+                destroy_units/3]).
 :- use_module(library(random)).
 :- use_module(library(clpfd)).
 :- use_module([printer, hex]).
@@ -217,3 +217,11 @@ sea_in_map(Map) :-
     member(Row,Map),
     member(Hex,Row),
     hex_tile(Hex,sea).
+
+% Destroy all units located on the specified hexes on the map
+% destroy_all_units(+Map, +Hexes, -NewMap)
+destroy_units(Map, [], Map).
+destroy_units(Map, [Hex|Tail], NewMap) :-
+    hex_coord(Hex, Coord),
+    set_unit(Map, Coord, none, PartialNewMap),
+    destroy_units(PartialNewMap, Tail, NewMap).

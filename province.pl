@@ -6,6 +6,8 @@
                      province_money/2,
                      change_province_money/3,
                      province_count/3,
+                     update_province/3,
+                     apply_income/4,
                      near24/3,
                      near8/3,
                      near4/3,
@@ -66,9 +68,25 @@ update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
     find_province(Map, [X,Y], province(_,NewHexes,_)),
     UpdatedProvince=province(Owner,NewHexes,Money),!.
 
-% Add an income to the province money
-apply_income(province(Owner,Hexes,Money), Income, province(Owner,Hexes,NewMoney)) :-
-    NewMoney is Money + Income.
+% Add the income to the province money and go bankrupt if necessary
+% Note: this should be called at the end of each province turn
+% apply_income(+Map, +Province, -NewMap, -NewProvince)
+apply_income(Map, Province, NewMap, NewProvince) :-
+    province_hexes(Province, Hexes), % Get
+    province_money(Province, Money), % Get
+    % Calculate the new money of the province
+    get_income(Province, Income),
+    NewMoney is Money + Income,
+    % If the new money are negative...
+    (   NewMoney < 0 
+        % ...go bankrupt by killing all units and setting the money
+        % to 0, regardless of the new income
+    ->  destroy_units(Map, Hexes, NewMap),
+        change_province_money(Province, 0, ProvinceWithMoney),
+        update_province(NewMap, ProvinceWithMoney, NewProvince)
+    ;   change_province_money(Province, NewMoney, NewProvince),
+        NewMap = Map
+    ).
 
 % Search for hexes around the hexes adjacent to the given one
 near24(Map, [X,Y], NearHexes) :-
@@ -283,3 +301,4 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
         set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap),
 
         update_province(NewMap, Province, NewProvince).
+

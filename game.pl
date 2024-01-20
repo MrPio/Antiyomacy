@@ -3,13 +3,13 @@
 /* TODO:
     • Baron and Knight should ignore the enemy towers. (Federico)
     • At the beginning of the game, the two provinces are randomly generated and located far apart.
-    • Test units attack. (Valerio)
     • Province money managment and bankruptcy. (Valerio)
     • Test province split due to enemy attack. Money should split based on provinces size.
     • Two units of the same level may join together to form a stronger unit.
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     -------------------------------------------------------------------------------------------------
+    X Test units attack. (Valerio)
     X Multiple purchase actions if enough money. (Valerio)
     X Farm should be placed inside the province and near other farms. The first farm can be
     placed anywhere inside the province (Federico)
@@ -22,6 +22,8 @@
  */
 
 /* Things to write in the paper:
+    • When going bankrupt, buildings are not destroyed. This means that it is possible
+      to have a negative income even after killing all units
     • Library "clpfd" was used to achieve two-way unifications.
     • Tests were used to prevent any issues with code updates affecting existing functionalities.
     • The terrain on the map was randomly generated using the random walker's algorithm.
@@ -36,6 +38,7 @@ test:-
     test_purchases,
     test_farm,
     test_attack,
+    test_end_turn,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -49,7 +52,6 @@ test_map(Map, [ProvinceRed, ProvinceBlue]):-
     generate_random_map(_),
 
     % Manually populating the map
-    write('Populating the map... '),
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
     Buildings=[[2,2]-tower],
@@ -62,7 +64,7 @@ test_map(Map, [ProvinceRed, ProvinceBlue]):-
     find_provinces(Map, [ProvinceRed, ProvinceBlue]).
 
 test_province:-
-    nl,writeln('test_province ======================================================'),nl,
+    nl,writeln('test_province ======================================================'),
     test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: find_provinces
@@ -91,7 +93,7 @@ test_province:-
     writeln('Ok!').
 
 test_placements:-
-    nl,writeln('test_placements ======================================================'),nl,
+    nl,writeln('test_placements ======================================================'),
     test_map(Map, [ProvinceRed, _]),
 
     % Test: unit_placement
@@ -112,7 +114,7 @@ test_placements:-
     writeln('Ok!').
 
 test_purchases:-
-    nl,writeln('test_purchases ======================================================'),nl,
+    nl,writeln('test_purchases ======================================================'),
     test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: check_buys
@@ -150,7 +152,7 @@ test_purchases:-
     writeln('Ok!').
 
 test_farm:-
-    nl,writeln('test_farm ======================================================'),nl,
+    nl,writeln('test_farm ======================================================'),
     test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: province_count
@@ -174,7 +176,7 @@ test_farm:-
     print_map(Map4),
     writeln('Ok!').
 test_attack:-
-    nl,writeln('test_attack ======================================================'),nl,
+    nl,writeln('test_attack ======================================================'),
     test_map(Map, [_, ProvinceBlue]),
 
     % Test blue unit attack
@@ -195,4 +197,25 @@ test_attack:-
     same_elements(ProvinceBlue5Hexes, [hex(0,[0,0],_,blue,none,spearman),hex(7,[1,2],_,blue,none,none),hex(6,[1,1],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(19,[3,4],_,blue,none,none)]),
     writeln('Ok!').
 
+test_end_turn:-
+    nl,writeln('test_end_turn ======================================================'),
+    test_map(Map, [ProvinceRed, _]),
 
+    % Test apply_income without bankrupt
+    write('Testing red province income calculation... '),
+    apply_income(Map, ProvinceRed, Map2, ProvinceRed2),
+    province_money(ProvinceRed2, 3), % Check
+    writeln('Ok!'),
+
+    % Test apply_income with bankrupt
+    write('Testing red province bankrupt... '),
+    set_unit(Map2, [1,0], baron, Map3),
+    update_province(Map3, ProvinceRed2, ProvinceRed3),
+    get_income(ProvinceRed3, IncomeRed),
+    IncomeRed = -15,
+    apply_income(Map3, ProvinceRed3, _, ProvinceRed4),
+    province_count(ProvinceRed4, peasant, 0), % Check
+    province_count(ProvinceRed4, spearman, 0), % Check
+    province_money(ProvinceRed4, 0), % Check
+    get_income(ProvinceRed4, 5), % Check
+    writeln('Ok!').

@@ -1,9 +1,11 @@
 :- module(economy, [get_income/2, check_buy/3, check_buys/3]).
 :- use_module([hex, province, unit, building]).
 
-% Calculate a province income. This will be added to the province money at the end of the turn.
-get_income(province(_, Hexes, _), Income) :-
+% Check/Get a province income. This will be added to the province money at the end of the turn.
+% get_income(+Province, ?Income)
+get_income(Province, Income) :-
     % Calculate the income contribution given by the number of hexes in the province
+    province_hexes(Province, Hexes), % Get
     length(Hexes, ProvinceSize),
     % Calculate the income contribution given by the province buildings
     (findall(I, (
