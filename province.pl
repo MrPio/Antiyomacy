@@ -64,7 +64,7 @@ update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
     hex_owner(NewHex, Owner), % Check
     % Look for new province hexes
     find_province(Map, [X,Y], province(_,NewHexes,_)),
-    UpdatedProvince=province(Owner,NewHexes,Money).
+    UpdatedProvince=province(Owner,NewHexes,Money),!.
 
 % Add an income to the province money
 apply_income(province(Owner,Hexes,Money), Income, province(Owner,Hexes,NewMoney)) :-
@@ -146,9 +146,10 @@ province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
     hex_owner(Hex, Owner), % Check
     hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
-    % note: use near8/4 if the map is made of hexagons
-    % else use near4/4 if the map is made of squares
-    near4(Map, [X, Y], NeighborHexes),
+    % note: We use near8/4 instead of near4/4 because units can move 
+    %       in the outer border and we don't want to create a new
+    %       province after a unit has moved.
+    near8(Map, [X, Y], NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
                 % Pick one neighbor hex to validate
@@ -175,7 +176,7 @@ hex_owned(Map, Coord, Owner, Hex) :-
 
 % Caller predicate for outer_border_
 % outer_border(+Map, +Province, -OuterBorder)
-outer_border(Map, province(_,Hexes,_), OuterBorder) :-outer_border_(Map,Hexes,Hexes,[],OuterBorder).
+outer_border(Map, province(_,Hexes,_), OuterBorder) :- outer_border_(Map,Hexes,Hexes,[],OuterBorder).
 % Find all hexagons that border the given province externally
 outer_border_(_,[],_,OuterBorder,OuterBorder).
 outer_border_(Map,[Hex|RestHexes],ProvinceHexes,Found,OuterBorder) :-

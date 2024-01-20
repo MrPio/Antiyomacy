@@ -35,6 +35,7 @@ test:-
     test_placements,
     test_purchases,
     test_farm,
+    test_attack,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -44,7 +45,7 @@ test:-
 % 2 | | |b| | |
 % 3 | | |b|b|b|
 % 4 | | | |b| |
-test_map(Map):-
+test_map(Map, [ProvinceRed, ProvinceBlue]):-
     generate_random_map(_),
 
     % Manually populating the map
@@ -57,28 +58,31 @@ test_map(Map):-
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
     foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
-    map(Map), print_map(Map).
+    map(Map),
+    find_provinces(Map, [ProvinceRed, ProvinceBlue]).
 
 test_province:-
-    test_map(Map),
+    nl,writeln('test_province ======================================================'),nl,
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: find_provinces
     write('Testing provinces calculation... '),
-    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
-    ProvinceRed = province(red,[hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],0),
-    ProvinceBlue = province(blue,[hex(19,[3,4],_,blue,none,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none)],0),
+    province_hexes(ProvinceRed, ProvinceRedHexes), % Get
+    province_hexes(ProvinceBlue, ProvinceBlueHexes), % Get
+    same_elements(ProvinceRedHexes, [hex(7   ,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)]),
+    same_elements(ProvinceBlueHexes, [hex(19,[3,4],_,blue,none,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none)]),
     writeln('Ok!'),
 
     % Test: outer_border
     write('Testing province boundary calculation... '),
     outer_border(Map,ProvinceRed,ProvinceRedBoundary),
-    ProvinceRedBoundary=[hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(8,[1,3],_,none,none,none),hex(11,[2,1],_,none,none,none),hex(12,[2,2],_,blue,tower,none),hex(13,[2,3],_,none,none,none),hex(10,[2,0],_,none,none,none)],
+    same_elements(ProvinceRedBoundary, [hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(8,[1,3],_,none,none,none),hex(11,[2,1],_,none,none,none),hex(12,[2,2],_,blue,tower,none),hex(13,[2,3],_,none,none,none),hex(10,[2,0],_,none,none,none)]),
     writeln('Ok!'),
 
     % Test: inner_border
     write('Testing province inner_border calculation... '),
     inner_border(Map,ProvinceRed,InnerBorder),
-    InnerBorder = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],
+    same_elements(InnerBorder, [hex(7,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)]),
     writeln('Ok!'),
 
     % Test: get_income
@@ -87,19 +91,19 @@ test_province:-
     writeln('Ok!').
 
 test_placements:-
-    test_map(Map),
-    find_provinces(Map, [ProvinceRed, _]),
+    nl,writeln('test_placements ======================================================'),nl,
+    test_map(Map, [ProvinceRed, _]),
 
     % Test: unit_placement
     write('Testing units placements... '),
     findall(Dest,unit_placement(Map, ProvinceRed, peasant, Dest),DestList),
-    DestList = [hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)],
+    same_elements(DestList, [hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)]),
     writeln('Ok!'),
 
     % Test: building_placement
     write('Testing buildings placements... '),
     findall(Dest, building_placement(Map, ProvinceRed, tower, Dest), DestList2),
-    DestList2 = [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none)],
+    same_elements(DestList2, [hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(5,[1,0],_,red,none,none)]),
     writeln('Ok!'),
 
     % Test: tower_nearby
@@ -108,14 +112,14 @@ test_placements:-
     writeln('Ok!').
 
 test_purchases:-
-    test_map(Map),
-    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
+    nl,writeln('test_purchases ======================================================'),nl,
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: check_buys
     write('Testing purchase actions listing... '),
     change_province_money(ProvinceBlue, 24, ProvinceBlue2),
     findall(Resource, (check_buys(ProvinceBlue2, Resource, _)), ResourcesList),
-    ResourcesList = [[farm,farm],[farm,peasant],[farm],[tower],[peasant,farm],[peasant,peasant],[peasant],[spearman],[]],
+    same_elements(ResourcesList, [[farm,farm],[farm,peasant],[farm],[tower],[peasant,farm],[peasant,peasant],[peasant],[spearman],[]]),
     writeln('Ok!'),
 
     % Test: buy_and_place
@@ -123,7 +127,8 @@ test_purchases:-
     change_province_money(ProvinceRed, 16, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
     buy_and_place(Map, ProvinceRed2, peasant, NewUnitHex, Map2, ProvinceRed3),
-    ProvinceRed3 = province(red,[hex(7,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)],6),
+    province_hexes(ProvinceRed3,ProvinceRed3Hexes),
+    same_elements(ProvinceRed3Hexes, [hex(7,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)]),
     writeln('Ok!'),
     print_map(Map2),
 
@@ -132,7 +137,8 @@ test_purchases:-
     get_hex(Map2, [0,0], UnitDisplaceFrom),
     get_hex(Map2, [2,0], UnitDisplaceTo),
     displace_unit(Map2, ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, Map3, ProvinceRed4),
-    ProvinceRed4 = province(red,[hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)],6),
+    province_hexes(ProvinceRed4,ProvinceRed4Hexes),
+    same_elements(ProvinceRed4Hexes, [hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)]),
     writeln('Ok!'),
     print_map(Map3),
 
@@ -144,8 +150,8 @@ test_purchases:-
     writeln('Ok!').
 
 test_farm:-
-    test_map(Map),
-    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
+    nl,writeln('test_farm ======================================================'),nl,
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: province_count
     write('Buying two farms and testing farm counting... '),
@@ -167,3 +173,26 @@ test_farm:-
     buy_and_place(Map3, ProvinceRed2, farm, RedFarmHex, Map4, _),
     print_map(Map4),
     writeln('Ok!').
+test_attack:-
+    nl,writeln('test_attack ======================================================'),nl,
+    test_map(Map, [_, ProvinceBlue]),
+
+    % Test blue unit attack
+    write('Testing blue spearman attack red peasant... '),
+    change_province_money(ProvinceBlue, 20, ProvinceBlue2),
+    get_hex(Map, [1,2], BlueSpearmanHex),
+    buy_and_place(Map, ProvinceBlue2, spearman, BlueSpearmanHex, Map2, ProvinceBlue3),
+
+    get_hex(Map2, [1,2], BlueSpearmanHexFrom),
+    get_hex(Map2, [1,1], BlueSpearmanHexTo),
+    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, ProvinceBlue4),
+
+    get_hex(Map3, [1,1], BlueSpearmanHexFrom2),
+    get_hex(Map3, [0,0], RedPeasantHex),
+    displace_unit(Map3, ProvinceBlue4, BlueSpearmanHexFrom2, RedPeasantHex, Map4, ProvinceBlue5),
+    print_map(Map4),
+    province_hexes(ProvinceBlue5, ProvinceBlue5Hexes),
+    same_elements(ProvinceBlue5Hexes, [hex(0,[0,0],_,blue,none,spearman),hex(7,[1,2],_,blue,none,none),hex(6,[1,1],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(19,[3,4],_,blue,none,none)]),
+    writeln('Ok!').
+
+

@@ -1,4 +1,4 @@
-:- module(print_map, [print_map/1]).
+:- module(print_map, [print_map/1, same_elements/2]).
 :- use_module([hex]).
 
 % Print a map row with lateral coordinates
@@ -26,3 +26,10 @@ print_row([Hex|T]) :-
 % Retrieve the first char of a given string
 first_char(String, FirstChar) :-
     string_chars(String, [FirstChar|_]).
+
+% Check whether two lists contain the same elements, regardless of their order
+% same_elements(+L1, +L2)
+same_elements(L1, L2) :-
+    subset(L1, L2), 
+    subset(L2, L1),
+    same_length(L1, L2).

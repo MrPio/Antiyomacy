@@ -10,9 +10,13 @@ unit(baron,     3,          3,      30,   -18).
 unit(knight,    4,          3,      40,   -36).
 
 % Determine whether one unit or one building can be destroyed by another unit
-stronger(unit(_, Strength1, _, _, _), unit(_, _, Protection2, _, _)) :-
+stronger(UnitName1, UnitName2) :-
+    unit(UnitName1, Strength1, _, _, _), % Get
+    unit(UnitName2, _, Protection2, _, _), % Get
     Strength1>Protection2.
-stronger(unit(_, Strength1, _, _, _), building(_, Protection2, _, _)) :-
+stronger(UnitName1, BuildingName1) :-
+    unit(UnitName1, Strength1, _, _, _), % Get
+    building(BuildingName1, Protection2, _, _), % Get
     Strength1>Protection2.
     
 % Moves ======================================================
