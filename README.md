@@ -54,7 +54,8 @@ Note: The term "resource" refers to both units and buildings.
 
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
-    - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
+    - **check_buys/3** : Checks if a list of resources can be bought and returns the remaining money of the province. This is useful to list all the possible purchase moves for a given province (non-deterministic)
+    - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the remaining money of the province. This is useful generate one possible purchase move for a given province (non-deterministic)
 ---
 ### Other files
 

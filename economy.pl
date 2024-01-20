@@ -1,4 +1,4 @@
-:- module(economy, [get_income/2, check_buy/3]).
+:- module(economy, [get_income/2, check_buy/3, check_buys/3]).
 :- use_module([hex, province, unit, building]).
 
 % Calculate a province income. This will be added to the province money at the end of the turn.
@@ -20,9 +20,17 @@ get_income(province(_, Hexes, _), Income) :-
     Income is ProvinceSize + TotalBuildingIncome + TotalUnitIncome.
 
 % Moves ======================================================
-% Checks whether a building or unit purchase can be achieved and returns the returns the province's remaining money
+% Checks if a list of resources can be bought and returns the remaining money of the province
 % This is useful to list all the possible purchase moves for a given province
-% check_buy(+Province, ?ResourceName, -LeftMoney) :-
+% check_buy(+Province, ?ResourcesList, -LeftMoney)
+check_buys(Province, [ResourceName|Tail], _):-
+    check_buy(Province, ResourceName, LeftMoney),
+    change_province_money(Province, LeftMoney, NewProvince),
+    check_buys(NewProvince, Tail, LeftMoney).
+check_buys(_, [], _).
+
+% Checks whether a building or unit purchase can be achieved and returns the remaining money of the province
+% check_buy(+Province, ?ResourceName, -LeftMoney)
 check_buy(Province, BuildingName, LeftMoney) :-
     building(BuildingName,_,_,_), % Check
     building_cost(BuildingName, Province, Cost),

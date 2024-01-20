@@ -1,23 +1,23 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
 /* TODO:
+    • Baron and Knight should ignore the enemy towers. (Federico)
     • At the beginning of the game, the two provinces are randomly generated and located far apart.
-    • Multiple purchase actions if enough money.
     • Test units attack.
-    • Baron and Knight should ignore the enemy towers.
     • Province money managment and bankruptcy.
     • Test province split due to enemy attack. Money should split based on provinces size.
     • Two units of the same level may join together to form a stronger unit.
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     -------------------------------------------------------------------------------------------------
-    X When applying a move, should I update both the Map and the Province or just the former?
-    X The newly placed unit should not move before the next turn; that is because it can be
-    placed directly outside the province boundary already at purchase time.
+    X Multiple purchase actions if enough money. (Valerio)
+    X The farm cost should increase with the number of already bought farms,
     X Farm should be placed inside the province and near other farms. The first farm can be
     placed anywhere inside the province
-    X The farm cost should increase with the number of already bought farms,
-      so a predicate to count the number of farms in a given province is needed. (Federica)
+    so a predicate to count the number of farms in a given province is needed. (Federica)
+    X The newly placed unit should not move before the next turn; that is because it can be
+    placed directly outside the province boundary already at purchase time.
+    X When applying a move, should I update both the Map and the Province or just the former?
  */
 
 /* Things to write in the paper:
@@ -94,11 +94,11 @@ test:-
     tower_nearby(Map,[2,1],red),
     writeln('Ok!'),
 
-    % Test: check_buy
+    % Test: check_buys
     write('Testing purchase actions listing... '),
     change_province_money(ProvinceBlue, 24, ProvinceBlue2),
-    findall(Resource, (check_buy(ProvinceBlue2, Resource, _)), ResourcesList),
-    ResourcesList = [farm, tower, peasant, spearman],
+    findall(Resource, (check_buys(ProvinceBlue2, Resource, _)), ResourcesList),
+    ResourcesList = [[farm,farm],[farm,peasant],[farm],[tower],[peasant,farm],[peasant,peasant],[peasant],[spearman],[]],
     writeln('Ok!'),
 
     % Test: buy_and_place
