@@ -30,16 +30,22 @@
 
 
 % Test the code
+test:-
+    test_province,
+    test_placements,
+    test_purchases,
+    test_farm,
+    nl, writeln('-- All the tests have succeeded! ---'), nl, !.
+
+% Generates the following map
 %    0 1 2 3 4
 % 0 |r| |r| | |
 % 1 |r|r|r| | |
 % 2 | | |b| | |
 % 3 | | |b|b|b|
 % 4 | | | |b| |
-test:-
-    write('Generating random terrain... '),
+test_map(Map):-
     generate_random_map(_),
-    writeln('Ok!'),
 
     % Manually populating the map
     write('Populating the map... '),
@@ -51,8 +57,10 @@ test:-
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
     foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
-    writeln('Ok!'),
-    map(Map), print_map(Map),
+    map(Map), print_map(Map).
+
+test_province:-
+    test_map(Map),
 
     % Test: find_provinces
     write('Testing provinces calculation... '),
@@ -76,7 +84,11 @@ test:-
     % Test: get_income
     write('Testing province income calculation... '),
     get_income(ProvinceBlue, 4),
-    writeln('Ok!'),
+    writeln('Ok!').
+
+test_placements:-
+    test_map(Map),
+    find_provinces(Map, [ProvinceRed, _]),
 
     % Test: unit_placement
     write('Testing units placements... '),
@@ -93,7 +105,11 @@ test:-
     % Test: tower_nearby
     write('Testing nearby towers detection... '),
     tower_nearby(Map,[2,1],red),
-    writeln('Ok!'),
+    writeln('Ok!').
+
+test_purchases:-
+    test_map(Map),
+    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: check_buys
     write('Testing purchase actions listing... '),
@@ -125,32 +141,29 @@ test:-
     get_hex(Map2, [0,1], UnitDisplaceFrom1),
     get_hex(Map2, [2,1], UnitDisplaceTo1),
     \+ displace_unit(Map3, ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _),
-    writeln('Ok!'),
+    writeln('Ok!').
+
+test_farm:-
+    test_map(Map),
+    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test: province_count
     write('Buying two farms and testing farm counting... '),
     % Purchasing 2 farms for Blue province
-    change_province_money(ProvinceBlue2,26,ProvinceBlue3),
-    get_hex(Map3, [4,3], BlueFarmHex),
-    get_hex(Map3, [3,4], BlueFarmHex2),
-    buy_and_place(Map3, ProvinceBlue3, farm, BlueFarmHex, Map4, ProvinceBlue4),
-    buy_and_place(Map4, ProvinceBlue4, farm, BlueFarmHex2, Map5, ProvinceBlue5),
-    print_map(Map5),
-    province_count(ProvinceBlue5, farm, FarmCount),
+    change_province_money(ProvinceBlue,26,ProvinceBlue2),
+    get_hex(Map, [4,3], BlueFarmHex),
+    get_hex(Map, [3,4], BlueFarmHex2),
+    buy_and_place(Map, ProvinceBlue2, farm, BlueFarmHex, Map2, ProvinceBlue3),
+    buy_and_place(Map2, ProvinceBlue3, farm, BlueFarmHex2, Map3, ProvinceBlue4),
+    print_map(Map3),
+    province_count(ProvinceBlue4, farm, FarmCount),
     FarmCount=2,
     writeln('Ok!'),
 
-    % Test: farm_nearby
-    write('Testing nearby farms detection... '),
-    farm_nearby(Map5, [4,3], ProvinceBlue5),
-    writeln('Ok!'),
-
-    % Test: FIRST farm placement in Red province
+    % Test: first farm placement in red province
     write('Testing first farm placement in Red province... '),
-    change_province_money(ProvinceRed4,12,ProvinceRed5),
-    get_hex(Map5, [0,0], RedFarmHex),
-    buy_and_place(Map5, ProvinceRed5, farm, RedFarmHex, Map6, _),
-    writeln('Ok!'),
-    print_map(Map6),
-
-    nl, writeln('-- All the tests have succeeded! ---'), nl, !.
+    change_province_money(ProvinceRed,12,ProvinceRed2),
+    get_hex(Map3, [1,0], RedFarmHex),
+    buy_and_place(Map3, ProvinceRed2, farm, RedFarmHex, Map4, _),
+    print_map(Map4),
+    writeln('Ok!').
