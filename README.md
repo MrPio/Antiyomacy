@@ -52,6 +52,7 @@ Note: The term "resource" refers to both units and buildings.
     - **building/4** : The list of the buildings that can be built
     - **building_cost/3** : Calculates the construction cost of a building based on its type
     - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
+    - **strong_tower_nearby/3** : Checks if there is an enemy strong tower nearby that prevents a unit move
     - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm can be placed
     - **building_placement/4** : Checks/Get a building valid location on the given province. This is useful to list all the possible placement moves for a given building (non-deterministic)
 
