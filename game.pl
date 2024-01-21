@@ -31,7 +31,6 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
-
 % Test the code
 test:-
     test_province,
@@ -50,7 +49,7 @@ test:-
 % 3 | | |b|b|b|
 % 4 | | | |b| |
 test_map(Map, [ProvinceRed, ProvinceBlue]):-
-    generate_random_map(_),
+generate_random_map(_, true),
 
     % Manually populating the map
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],

@@ -22,7 +22,7 @@ Note: The term "resource" refers to both units and buildings.
     - **hex/6**: The struct of an hex in the map
 
 - `map.pl`
-    - **generate_random_map/1** : Generates a random map using the Random Walkers algorithm
+    - **generate_random_map/2** : Generates a random map using the Random Walkers algorithm
     - **inside_map/1** : Checks if a coordinate lies within the map boundaries
     - **get_hex/3** : Retrieves the hex at the given coordinate
     - **set_owner/4** : Change an hex owner

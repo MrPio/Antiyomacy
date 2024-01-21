@@ -1,6 +1,6 @@
 :- module(map, [matrix/3,
                 index2coord/2,
-                generate_random_map/1,
+                generate_random_map/2,
                 empty_map/1,
                 map_size/1,
                 map/1,
@@ -21,7 +21,7 @@
 map_size(5).
 smooth(2).
 walkers(X) :-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth *99. % This makes a map without sea tiles
+walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth.
 
 % Convert index to coordinate and vice versa. Can also be used as checker
 % index2coord(?Index, ?Coord)
@@ -43,16 +43,24 @@ matrix(Size, Matrix, Value) :-
     maplist(maplist(=(Value)), Matrix).
 
 % Generates a random map
-generate_random_map(Map) :-
+% generate_random_map(+Map, +Empty)
+generate_random_map(Map, Empty) :-
     map_size(MapSize),
     walkers(Walkers),
     % Generate a map with only sea tiles
     empty_map(EmptyMap),
     update_map(EmptyMap),
-    % Spawn a bunch of walkers to place terrain tiles
-    MaxX is MapSize-1, MaxY = MaxX,
-    random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
-    update_map(Map), !.
+    (   \+ Empty 
+        % Spawn a bunch of walkers to place terrain tiles
+    ->  MaxX is MapSize-1, MaxY = MaxX,
+        random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
+        update_map(Map)
+    ;   MaxIndex is MapSize^2 -1,
+        foreach((
+            between(0, MaxIndex, Index),
+            index2coord(Index, Coord)
+        ),set_tile(Coord, desert))
+    ), !.
 
 % Generates an empty map of the specified size ========================
 empty_map(Map) :-
