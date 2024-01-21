@@ -19,10 +19,16 @@ The two players, Red and Blue, take turns. In each player's turn, they can choos
 |***Displace a unit***   |  for each unit in each province | 
 
 ---
-### Predicates
-- `province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`)
-- `province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
-- `province:displace_unit/6` ---> `unit:unit_placement/3`
+### Predicates used
+
+**Buy a unit** : 
+`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`)
+
+**Buy a building** : 
+`province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
+
+**Displace a unit** : 
+`province:displace_unit/6` ---> `unit:unit_placement/3`
 
 <a name="code_structure"></a>
 ## 📐 Code structure
