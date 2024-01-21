@@ -4,14 +4,14 @@
 % Print a map row with lateral coordinates
 print_map(Map) :- 
     nl,write("    "),foreach(nth0(Index,Map,_),format(" ~w  ",Index)),nl,nl,
-    foreach(nth0(Index, Map, Row),(format("~w   ",Index),print_row(Row))).
+    foreach(nth0(Index, Map, Row),(format("~w  |",Index),print_row(Row))).
 
 % Print a map row following the pattern Owner-Building-Unit for each hex
 print_row([]) :- nl,nl,!.
 print_row([Hex|T]) :- 
     (    
         hex_tile(Hex, sea),
-        write('     |')
+        write('   |'),!
         ;
         hex_owner(Hex, Owner),
         hex_building(Hex, Building),

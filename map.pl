@@ -55,11 +55,13 @@ generate_random_map(Map, Empty) :-
     ->  MaxX is MapSize-1, MaxY = MaxX,
         random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
         update_map(Map)
+        % Fill the map with terrain tiles
     ;   MaxIndex is MapSize^2 -1,
         foreach((
             between(0, MaxIndex, Index),
             index2coord(Index, Coord)
-        ),set_tile(Coord, desert))
+        ),set_tile(Coord, desert)),
+        map(Map)
     ), !.
 
 % Generates an empty map of the specified size ========================
