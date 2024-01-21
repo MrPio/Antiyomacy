@@ -29,7 +29,7 @@ Note: The term "resource" refers to both units and buildings.
     - **set_building/4** : Spawns a building on a given coordinate
     - **set_unit/4** : Spawns a unit on a given coordinate
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
-
+    - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game
 - `province.pl`
     - **province/3** : The struct of a player's province
     - **province_count/3** : Checks or calculates the number of buildings or units owned by the province
