@@ -7,6 +7,8 @@
     • Two units of the same level may join together to form a stronger unit. (Federica)
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
+    • Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
+      own Province.
     -------------------------------------------------------------------------------------------------
     X Baron and Knight should ignore the enemy towers. (Federico)
     X Province money managment and bankruptcy. (Valerio)
