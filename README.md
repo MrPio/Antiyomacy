@@ -8,6 +8,21 @@ An implementation of a strategy game heavily inspired by Antiyoy and with some e
 * [Code structure](#code_structure)
 * [Screenshots](#screenshots)
 
+<a name="game_moves"></a>
+## 🎲 Moves in the game
+The two players, Red and Blue, take turns. In each player's turn, they can choose from the following three types of move:
+
+| Move  | How many times it can be made |  
+|---|---:|
+|***Buy a unit*** | for each province, until its money runs out  |
+|***Buy a building***   |  for each province, until its money runs out |
+|***Displace a unit***   |  for each unit in each province | 
+
+---
+### Predicates
+- `province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`)
+- `province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
+- `province:displace_unit/6` ---> `unit:unit_placement/3`
 
 <a name="code_structure"></a>
 ## 📐 Code structure
@@ -39,8 +54,6 @@ Note: The term "resource" refers to both units and buildings.
     - **find_provinces/2** : Find all the provinces in the map
     - **outer_border/3** : Find all hexagons that border the given province externally
     - **inner_border/3** : Find all hexagons that border the given province internally
-    - **units_location/3** : Check/Get a unit possible location on the given province (non-deterministic)
-    - **buildings_location/4** : Check/Get a building possible location on the given province (non-deterministic)
     - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
     - **displace_unit** : Displace a unit on a given valid hex
 

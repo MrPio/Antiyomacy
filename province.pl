@@ -15,8 +15,6 @@
                      find_province/3,
                      outer_border/3,
                      inner_border/3,
-                     units_location/3,
-                     buildings_location/4,
                      buy_and_place/6,
                      displace_unit/6]).
 :- use_module([printer, map, hex, unit, building, economy]).
@@ -227,37 +225,11 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
         \+ maplist(member,NearHexes,Hexes)
     ), InnerBorder).
 
-% Check/Get a unit possible location on the given province (non-deterministic)
-% Note: The validity is determined solely based on the province's geometric
-%       conformation, further checks should be made by the caller.
-% units_location(+Map, +Province, ?Hex)
-units_location(Map, Province, Hex) :-
-    % Calculate the province inner and outer boundaries
-    inner_border(Map, Province, InnerBorder),
-    outer_border(Map, Province, OuterBorder),
-    % The destination should be in one of those two boundaries
-    (member(Hex, InnerBorder); member(Hex, OuterBorder)).
-
-% Check/Get a building possible location on the given province (non-deterministic)
-% Note: The validity is determined solely based on the province's geometric
-%       conformation, further checks should be made by the caller.
-% Note: It is assumed that a building can only be constructed on the inner
-%       boundary of the province, not within it.
-% units_location(+Map, +Province, +BuildingName, ?Hex)
-buildings_location(_, Province, farm, Hex) :-
-    % If the building is a farm, it should be located inside the province
-    province_hexes(Province, Hexes),
-    member(Hex, Hexes).
-buildings_location(Map, Province, _, Hex) :-
-    % Else, it should be located in the province inner boundary
-    inner_border(Map, Province, InnerBorder),
-    member(Hex, InnerBorder).
-
 % Purchase a building or a unit and place it on the map at the given location
 % buy_and_place(+Map, +Province, +ResourceName, +DestHex, -NewMap, -NewProvince)
 buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :- 
     % Check if the purchase is valid
-    check_buy(Province, ResourceName, LeftMoney),
+    check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
     % Subtract the cost from the province's money
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
     % Check if DestHex is a valid placement destination
