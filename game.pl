@@ -36,7 +36,8 @@
 % Play the game
 play:-
     generate_random_map(Map, false),
-    print_map(Map).
+    spawn_provinces(Map, MapWithProvinces),
+    print_map(MapWithProvinces).
 
 % Test the code
 test:-
