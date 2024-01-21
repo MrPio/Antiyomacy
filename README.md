@@ -46,7 +46,7 @@ Note: The term "resource" refers to both units and buildings.
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought
-    - **unit_placement/4** : Checks/Get a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit
+    - **unit_placement/4** : Checks/Get a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
 
 - `building.pl`
     - **building/4** : The list of the buildings that can be built

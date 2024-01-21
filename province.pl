@@ -263,6 +263,7 @@ buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :-
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
     (
+        unit(ResourceName, _, _, _, _), % Check
         unit_placement(Map, Province, ResourceName, DestHex), % Check
         % Place the unit on the map
         set_unit(Map, [X, Y], ResourceName, MapWithUnit),

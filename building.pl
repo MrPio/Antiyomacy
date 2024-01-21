@@ -4,7 +4,7 @@
     strong_tower_nearby/3,
     farm_nearby/3,
     building_placement/4]).
-:- use_module([hex, province]).
+:- use_module([map, hex, province]).
 
 % Building enum ==============================================
 % building(Name, Protection, BaseCost, Income) 
@@ -27,18 +27,21 @@ building_cost(BuildingName, _, Cost) :-
 tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy towers
     near8(Map, [X, Y], Hexes),
-    member(Hex, Hexes),
+    (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, tower).
 
+% Checks if there is a enemy strong_tower nearby that prevents a unit move 
+% tower_nearby(+Map, +Coord, +Player)
 strong_tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy strong towers
     near24(Map, [X, Y], Hexes),
-    member(Hex, Hexes),
+    (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, strong_tower).
 
-% Checks if there is a farm nearby, useful to check where a farm can be placed% farm_nearby(+Map, +Coord, +Province)
+% Checks if there is a farm nearby, useful to check where a farm can be placed
+% farm_nearby(+Map, +Coord, +Province)
 farm_nearby(Map, [X, Y], Province) :-
     % Select one hex from the adjacent ones
     near8(Map, [X, Y], NearbyHexes),

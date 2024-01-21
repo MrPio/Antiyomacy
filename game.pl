@@ -1,7 +1,7 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
 /* TODO:
-    • At the beginning of the game, at least two provinces are randomly generated 
+    • At the beginning of the game, at least two provinces are randomly generated
       and located far apart. (Valerio)
     • Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     • Two units of the same level may join together to form a stronger unit. (Federica)
@@ -39,6 +39,7 @@ test:-
     test_farm,
     test_attack,
     test_end_turn,
+    test_destroy_tower,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -223,15 +224,22 @@ test_end_turn:-
 test_destroy_tower :-
     nl,writeln('test_destroy_tower ======================================================'),
     test_map(Map, [ProvinceRed, _]),
-    write('Testing purchase baron and blue tower destruction action by red... '),
+    
+    writeln('Testing wrong purchase: red spearman near blue tower... '),
     change_province_money(ProvinceRed, 30, ProvinceRed1),
     get_hex(Map, [1,2], DestHex),
+    \+ buy_and_place(Map, ProvinceRed1, spearman, DestHex, _, _),
+    writeln('Spearman succesfully not placed!'),nl,
+
+    writeln('Testing purchase baron and blue tower destruction action by red... '),
     buy_and_place(Map, ProvinceRed1, baron, DestHex, Map1, ProvinceRed2),
-    nl, writeln('Baron succesfully placed! '),
     print_map(Map1),
+    writeln('Baron succesfully placed! '),
+    
     get_hex(Map1, [1,2], BaronHex),
     get_hex(Map1, [2,2], ToHex),
-    displace_unit(Map1, ProvinceRed2, BaronHex, ToHex, Map2, ProvinceRed3),
-    nl, writeln('Blue tower succesfully destryed! '),
+    displace_unit(Map1, ProvinceRed2, BaronHex, ToHex, Map2, _),
     print_map(Map2),
+    writeln('Blue tower succesfully destroyed! '),
     writeln('Ok!').
+

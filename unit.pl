@@ -24,42 +24,31 @@ stronger(UnitName1, BuildingName1) :-
 % This is useful to list all the possible displacement moves for a given unit
 % Note: the FromHex hex is not a valid destination as the unit resides within it
 % unit_placement(+Map, +Province, +UnitName, ?Hex)
-unit_placement(Map, Province, knight, Hex) :-
-    unit_move_check(knight, Map, Province, Hex),
-    !. % Knight ignores both towers
-
-unit_placement(Map, Province, baron, Hex) :-
-    unit_move_check(baron, Map, Province, Hex),
-    hex_coord(Hex, [X, Y]), % Get coordinates
-    % The destination should not be located near an enemy STRONG tower
-    \+ strong_tower_nearby(Map, [X, Y], baron),
-    % The destination should not be an enemy STRONG tower
-    \+ hex_building(Hex, strong_tower),
-    !.
-
 unit_placement(Map, Province, UnitName, Hex) :-
-    unit_move_check(UnitName, Map, Province, Hex),
-    hex_coord(Hex, [X, Y]), % Get coordinates
-    % The destination should not be located near an enemy tower
-    \+ strong_tower_nearby(Map, [X, Y], baron),
-    % The destination should not be an enemy STRONG tower
-    \+ hex_building(Hex, strong_tower),
-    % The destination should not be located near an enemy tower
-    \+ tower_nearby(Map, [X, Y], UnitName),
-    % The destination should not be an enemy tower
-    \+ hex_building(Hex, tower).
-
-% // TODO
-% unit_move_check(+UnitName, +Map, +Province, ?Hex)
-unit_move_check(UnitName, Map, Province, Hex) :-
     unit(UnitName, _, _, _, _), % Check
     % Find one possible destination
     units_location(Map, Province, Hex),
-    hex_unit(Hex, UnitAtDest),
-    hex_owner(Hex, OwnerAtDest),
-    province_owner(Province, Player),
+    hex_unit(Hex, UnitAtDest), % Get
+    hex_owner(Hex, OwnerAtDest), % Get
+    hex_building(Hex, BuildAtDest), % Get
+    province_owner(Province, Player), % Get
+    hex_coord(Hex, [X, Y]), % Get
     % The destination should not host any allied units or stronger enemy units
-    (UnitAtDest == none ; OwnerAtDest \= Player, stronger(UnitName, UnitAtDest)),
-    hex_building(Hex, BuildAtDest),
+    (   UnitAtDest == none 
+    ;   OwnerAtDest \= Player,
+        stronger(UnitName, UnitAtDest)
+    ),
     % The destination should not host a building
-    (BuildAtDest == none ; OwnerAtDest \= Player, stronger(UnitName, BuildAtDest)).
+    (   BuildAtDest == none
+    ;   OwnerAtDest \= Player,
+        stronger(UnitName, BuildAtDest)
+    ),
+    % Depending on the unit type, the destination should not be located 
+    % near an enemy tower or strong_tower
+    (   \+ member(UnitName, [baron, knight]),
+        \+ tower_nearby(Map, [X, Y], Player),
+        \+ strong_tower_nearby(Map, [X, Y], Player)
+    ;   UnitName == baron,
+        \+ strong_tower_nearby(Map, [X, Y], Player)
+    ;   UnitName == knight
+    ).
