@@ -1,14 +1,14 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
 /* TODO:
-    • Baron and Knight should ignore the enemy towers. (Federico)
     • At the beginning of the game, at least two provinces are randomly generated 
-      and located far apart.
-    • Test province split due to enemy attack. Money should split based on provinces size.
-    • Two units of the same level may join together to form a stronger unit.
+      and located far apart. (Valerio)
+    • Test province split due to enemy attack. Money should split based on provinces size. (Federico)
+    • Two units of the same level may join together to form a stronger unit. (Federica)
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     -------------------------------------------------------------------------------------------------
+    X Baron and Knight should ignore the enemy towers. (Federico)
     X Province money managment and bankruptcy. (Valerio)
     X Test units attack. (Valerio)
     X Multiple purchase actions if enough money. (Valerio)
@@ -218,4 +218,20 @@ test_end_turn:-
     province_count(ProvinceRed4, spearman, 0), % Check
     province_money(ProvinceRed4, 0), % Check
     get_income(ProvinceRed4, 5), % Check
+    writeln('Ok!').
+
+test_destroy_tower :-
+    nl,writeln('test_destroy_tower ======================================================'),
+    test_map(Map, [ProvinceRed, _]),
+    write('Testing purchase baron and blue tower destruction action by red... '),
+    change_province_money(ProvinceRed, 30, ProvinceRed1),
+    get_hex(Map, [1,2], DestHex),
+    buy_and_place(Map, ProvinceRed1, baron, DestHex, Map1, ProvinceRed2),
+    nl, writeln('Baron succesfully placed! '),
+    print_map(Map1),
+    get_hex(Map1, [1,2], BaronHex),
+    get_hex(Map1, [2,2], ToHex),
+    displace_unit(Map1, ProvinceRed2, BaronHex, ToHex, Map2, ProvinceRed3),
+    nl, writeln('Blue tower succesfully destryed! '),
+    print_map(Map2),
     writeln('Ok!').

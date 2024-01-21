@@ -1,6 +1,7 @@
 :- module(building, [building/4,
     building_cost/3,
     tower_nearby/3,
+    strong_tower_nearby/3,
     farm_nearby/3,
     building_placement/4]).
 :- use_module([hex, province]).
@@ -28,8 +29,9 @@ tower_nearby(Map, [X, Y], Player) :-
     near8(Map, [X, Y], Hexes),
     member(Hex, Hexes),
     \+ hex_owner(Hex, Player),
-    hex_building(Hex, tower)
-    ;
+    hex_building(Hex, tower).
+
+strong_tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy strong towers
     near24(Map, [X, Y], Hexes),
     member(Hex, Hexes),
