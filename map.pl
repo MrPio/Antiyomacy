@@ -11,7 +11,8 @@
                 set_owner/2, set_owner/4,
                 set_building/2, set_building/4,
                 set_unit/2, set_unit/4,
-                destroy_units/3]).
+                destroy_units/3,
+                spawn_provinces/2]).
 :- use_module(library(random)).
 :- use_module(library(clpfd)).
 :- use_module([printer, hex]).
@@ -50,18 +51,18 @@ generate_random_map(Map, Empty) :-
     % Generate a map with only sea tiles
     empty_map(EmptyMap),
     update_map(EmptyMap),
-    (   \+ Empty 
-        % Spawn a bunch of walkers to place terrain tiles
-    ->  MaxX is MapSize-1, MaxY = MaxX,
-        random_walkers(EmptyMap, MaxX, MaxY,Walkers, Map),
-        update_map(Map)
-        % Fill the map with terrain tiles
-    ;   MaxIndex is MapSize^2 -1,
+    (   Empty 
+    ->  % Fill the map with terrain tiles
+        MaxIndex is MapSize^2 -1,
         foreach((
             between(0, MaxIndex, Index),
             index2coord(Index, Coord)
         ),set_tile(Coord, desert)),
         map(Map)
+    ;   % Spawn a bunch of walkers to place terrain tiles
+        MaxX is MapSize-1, MaxY = MaxX,
+        random_walkers(EmptyMap, [MaxX, MaxY],Walkers, Map),
+        update_map(Map)
     ), !.
 
 % Generates an empty map of the specified size ========================
@@ -87,64 +88,64 @@ empty_hex([Hex|Rest], Size, RowCount,ColCount) :-
     empty_hex(Rest, Size, RowCount, NewColCount).
 
 % Simulate a bunch of walkers walks ====================================
-random_walkers(Map, _, _, Count, Map) :-Count=<0.
-random_walkers(Map, MaxX, MaxY, Count, ResultMap) :-
-    (
-        % If there is at least one terrain tile, choose one of them as the new walker spawn point
+random_walkers(Map, _, Count, Map) :-Count=<0.
+random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
+    (   % If there is at least one terrain tile, choose one of them as the new walker spawn point
         findall([X, Y], (nth0(X, Map, Row), nth0(Y, Row, Hex), hex_tile(Hex,terrain)), TerrainHexes),
         random_member([X,Y],TerrainHexes)
-        ;
-        % Else, choose the center of the map as the new walker spawn point
+    ;   % Else, choose the center of the map as the new walker spawn point
         map_size(MapSize),
-        X is round(MapSize/2), Y=X
+        X is round(MapSize/2), Y = X
     ),
     % Randomly calculate the new walker lifespan
     walker_steps(MaxWalkerSteps), MinWalkerSteps is MaxWalkerSteps /2,
     random_between(MinWalkerSteps,MaxWalkerSteps,Steps),
     % Spawn the new walker
-    walk(Map, X,Y,Steps,NewMap),
+    % Note: the yall library is used here to define a lambda expression
+    StepAction = [ActionMap, ActionCoord, ActionNewMap] >>  
+        (   % Place a random terrain tile on the walker location
+            findall(Terrain, terrain(Terrain), Terrains),
+            random_member(Terrain, Terrains),
+            % Change the sea hex to a desert hex at the walker location
+            set_tile(ActionMap, ActionCoord, Terrain, ActionNewMap)
+        ),
+    WalkableCoordCondition = [ActionMap, ActionCoord] >> check_tile(ActionMap, ActionCoord, sea),
+    walk(Map, [X,Y], StepAction, WalkableCoordCondition, Steps, NewMap),
     % Spawn the remaining walkers
     NewCount is Count - 1,
-    random_walkers(NewMap, MaxX, MaxY,NewCount, ResultMap).
+    random_walkers(NewMap, [MaxX, MaxY],NewCount, ResultMap).
 
 % Simulate a walker random walk
-walk(Map, _, _, Count, Map) :-Count=<0.
-walk(Map, X, Y, Count, NewMap) :-
-    findall(Terrain,terrain(Terrain), Terrains),
-    random_member(Terrain,Terrains),
-    % Change the sea hex to a desert hex at the walker location
-    set_tile([X, Y], Terrain),
-    map(UpdatedMap),
+% walk(+Map, +Coord, +StepAction, +WalkableCoordCondition, +Count, -NewMap)
+walk(Map, _, _, _, Count, Map) :- Count=<0.
+walk(Map, [X, Y], StepAction, WalkableCoordCondition, Count, NewMap) :-
+    % Invoke the action on the current coordinate
+    call(StepAction, Map, [X, Y], UpdatedMap),
     % Choose a random direction and move along it
-    random_move(X,Y,NewX,NewY),
-    (
-      % If the new position dwells within the map boundaries, continue the walk
-      inside_map([NewX, NewY]),!,
-      (
-          % If the next step falls on a sea tile, decrease the walker lifespan
-          check_tile(Map, [NewX,NewY],sea),
-          NewCount is Count-1
-          ;
-          % Else if there is at least one sea tile, do not decrease the walker lifespan if
-          sea_in_map(Map),
-          NewCount=Count
-          ;
-          % Else, kill the walker
-          NewCount = 0
-      ),
-      walk(UpdatedMap, NewX, NewY, NewCount, NewMap)
-      ;
-      % Else, choose another step direction
-      walk(Map,X,Y,Count,NewMap)
+    random_move([X,Y],[NewX,NewY]),
+    (   % If the new position dwells within the map boundaries, continue the walk
+        inside_map([NewX, NewY]),
+        (   call(WalkableCoordCondition, UpdatedMap, [NewX,NewY])
+        ->  % If the next step falls on a walkable tile, decrease the walker lifespan
+            NewCount is Count-1
+        ;   sea_in_map(Map)
+        ->  % Else if there is at least one sea tile, do not decrease the walker lifespan
+            NewCount=Count
+        ;   % Else, kill the walker
+            NewCount = 0
+        ),
+        walk(UpdatedMap, [NewX, NewY],StepAction, WalkableCoordCondition, NewCount, NewMap)
+    ;   % Else, choose another step direction
+        walk(Map,[X,Y],StepAction, WalkableCoordCondition, Count,NewMap)
     ).
 
 % Move in one of the four directions (up, down, left, right)
-move(X, Y, NewX, Y) :- NewX is X - 1; NewX is X + 1.
-move(X, Y, X, NewY) :- NewY is Y - 1; NewY is Y + 1.
+walker_move([X, Y], [NewX, Y]) :- NewX is X - 1; NewX is X + 1.
+walker_move([X, Y], [X, NewY]) :- NewY is Y - 1; NewY is Y + 1.
 % Randomly choose one of the four directions
-random_move(X,Y,NewX,NewY) :-
-    findall([NewX,NewY],move(X,Y,NewX,NewY),Moves),
-    random_member(Move,Moves),
+random_move([X, Y], [NewX, NewY]) :-
+    findall([NewX,NewY],walker_move([X,Y],[NewX,NewY]),Moves),
+    random_member(Move, Moves),
     [NewX,NewY]=Move.
 
 % Replace the Nth element of List with El ==============================
@@ -153,9 +154,9 @@ replace_nth(N, List, El, Result) :-
     nth0(N, Result, El, Before).
 
 % Returns the Hex at a given coordinate or index on the map
+% get_hex(+Map, ?Coord, ?Hex)
 get_hex(Map, [X, Y], Hex) :-
     !,
-    inside_map([X, Y]),
     nth0(X, Map, Row),
     nth0(Y, Row, Hex).
 get_hex(Map, Index, Hex) :-
@@ -236,3 +237,45 @@ destroy_units(Map, [Hex|Tail], NewMap) :-
     hex_coord(Hex, Coord),
     set_unit(Map, Coord, none, PartialNewMap),
     destroy_units(PartialNewMap, Tail, NewMap).
+
+% Randomly spawns a red and a blue province
+% spawn_provinces(+Map, -NewMap)
+spawn_provinces(Map, NewMap):-
+    % Select all the coords of hexes with terrain on the map
+    findall([X, Y],
+    (   get_hex(Map, [X, Y], Hex),
+        hex_tile(Hex, terrain)
+    ), CoordsWithTerrain),
+    % Select the first and the last hexes as a spawn point for the two provinces
+    nth0(0, CoordsWithTerrain, [RedX,RedY]),
+    last(CoordsWithTerrain, [BlueX,BlueY]),
+    % Define the Random Walker actions to be invoked at each step
+    % Note: the yall library is used here to define a lambda expression
+    StepAction = [Player, Action] >>
+    (   Action = [ActionMap, ActionCoord, ActionNewMap] >>  
+        (   % Check if the walker is on a terrain hex
+            get_hex(ActionMap, ActionCoord, Hex),
+            hex_tile(Hex, terrain), % Check
+            % Check if the hex is free or already owned by the player
+            % Note: the second case is necessary to avoid cycling in a dead end
+            (hex_owner(Hex, Player), ! ; hex_owner(Hex, none)), % Check
+            % Change the owner to red player
+            set_owner(ActionMap, ActionCoord, Player, ActionNewMap)
+        )
+    ),
+    % Define the condition for a walkable hex
+    WalkableCoordCondition = [ActionMap, ActionCoord] >> 
+        (   check_tile(ActionMap, ActionCoord, terrain),
+            get_hex(ActionMap, ActionCoord, Hex),
+            hex_owner(Hex, none)
+        ),
+    % Use the Random Walker algorithm to spawn the red province
+    call(StepAction, red, RedStepAction),
+    random_between(2, 5, RedSteps),
+    walk(Map, [RedX,RedY], RedStepAction, WalkableCoordCondition, RedSteps, NewMapWithRed),
+    % Use the Random Walker algorithm to spawn the blue province
+    call(StepAction, blue, BlueStepAction),
+    random_between(2, 5, BlueSteps),
+    walk(NewMapWithRed, [BlueX,BlueY], BlueStepAction, WalkableCoordCondition, BlueSteps, NewMap),
+    update_map(NewMap),!.
+    

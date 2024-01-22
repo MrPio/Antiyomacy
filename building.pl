@@ -56,10 +56,14 @@ farm_nearby(Map, [X, Y], Province) :-
 % Moves ======================================================
 % Checks/Get a building valid location on the given province
 % This is useful to list all the possible placements moves for a given building
-% building_placement(+Map, +Province, +BuildingName, ?ToHex)
+% Note: It is assumed that a building that is not a farm can only be constructed
+%       on the inner border of the province, not within it. Farms, on the other hand,
+%       should be placed near other farms
+% building_placement(+Map, +Province, +BuildingName, ?ToHex) [non-deterministic]
 building_placement(Map, Province, farm, Hex) :-
     % Find one possible destination / Check the destination validity on the province
-    buildings_location(Map, Province, farm, Hex),
+    province_hexes(Province, Hexes),
+    member(Hex, Hexes),
     % The destination should not host any units or buildings
     hex_unit(Hex, none), % Check
     hex_building(Hex, none), % Check
@@ -73,7 +77,8 @@ building_placement(Map, Province, farm, Hex) :-
     ).
 building_placement(Map, Province, BuildingName, Hex) :-
     % Find one possible destination / Check the destination validity on the province
-    buildings_location(Map, Province, BuildingName, Hex),
+    inner_border(Map, Province, InnerBorder),
+    member(Hex, InnerBorder),
     % The destination should not host any units or buildings
     hex_unit(Hex, none), % Check
     hex_building(Hex, none). % Check

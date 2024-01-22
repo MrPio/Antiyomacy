@@ -23,18 +23,23 @@ stronger(UnitName1, BuildingName1) :-
 % Moves ======================================================
 % Checks/Get a unit valid location on the given province
 % This is useful to list all the possible displacement moves for a given unit
+% Note: It is assumed that a unit can only be placed on the inner or outer 
+%       border of a province, not within it.
 % Note: the FromHex hex is not a valid destination as the unit resides within it
-% unit_placement(+Map, +Province, +UnitName, ?Hex)
+% unit_placement(+Map, +Province, +UnitName, ?Hex) [non-deterministic]
 unit_placement(Map, Province, UnitName, Hex) :-
     unit(UnitName, _, _, _, _), % Check
     % Find one possible destination
-    units_location(Map, Province, Hex),
+    % The destination should be in one of those two inner and outer borders
+    inner_border(Map, Province, InnerBorder),
+    outer_border(Map, Province, OuterBorder),
+    (member(Hex, InnerBorder); member(Hex, OuterBorder)).
+    % The destination should not host any allied units or stronger enemy units
     hex_unit(Hex, UnitAtDest), % Get
     hex_owner(Hex, OwnerAtDest), % Get
     hex_building(Hex, BuildAtDest), % Get
     province_owner(Province, Player), % Get
     hex_coord(Hex, [X, Y]), % Get
-    % The destination should not host any allied units or stronger enemy units
     (   UnitAtDest == none 
     ;   OwnerAtDest \= Player,
         stronger(UnitName, UnitAtDest)

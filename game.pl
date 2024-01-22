@@ -1,8 +1,6 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
 /* TODO:
-    • At the beginning of the game, at least two provinces are randomly generated
-      and located far apart. (Valerio)
     • Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     • Two units of the same level may join together to form a stronger unit. (Federica)
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
@@ -10,6 +8,8 @@
     • Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
       own Province.
     -------------------------------------------------------------------------------------------------
+    X At the beginning of the game, at least two provinces are randomly generated
+      and located far apart. (Valerio)
     X Baron and Knight should ignore the enemy towers. (Federico)
     X Province money managment and bankruptcy. (Valerio)
     X Test units attack. (Valerio)
@@ -25,6 +25,7 @@
  */
 
 /* Things to write in the paper:
+    • yall library was used to define a lambda expressions
     • When going bankrupt, buildings are not destroyed. This means that it is possible
       to have a negative income even after killing all units
     • Library "clpfd" was used to achieve two-way unifications.
@@ -36,7 +37,8 @@
 % Play the game
 play:-
     generate_random_map(Map, false),
-    print_map(Map).
+    spawn_provinces(Map, MapWithProvinces),
+    print_map(MapWithProvinces).
 
 % Test the code
 test:-
