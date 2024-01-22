@@ -18,17 +18,22 @@ The two players, Red and Blue, take turns. In each player's turn, they can choos
 |***Buy a building***   |  for each province, until its money runs out |
 |***Displace a unit***   |  for each unit in each province | 
 
+Now, it is important to note that there are three different ways in which a unit can be moved:
+- Conquer an enemy tile (if possible): the unit moves to the outer border of its province.
+- Defend the border of its province: the unit moves inside the inner border of its province.
+- Merge with another unit (if possible): the unit moves to the location of another unit and the two form a stronger unit.
+
 ---
 ### Predicates used
 
 **Buy a unit** : 
-`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`)
+`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`, `unit:unit_merge/4`)
 
 **Buy a building** : 
 `province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
 
 **Displace a unit** : 
-`province:displace_unit/6` ---> `unit:unit_placement/3`
+`province:displace_unit/6` ---> (`unit:unit_placement/3`, `unit:unit_merge/4`)
 
 <a name="code_structure"></a>
 ## 📐 Code structure
@@ -65,7 +70,7 @@ Note: The term "resource" refers to both units and buildings.
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought
-    - **unit_placement/4** : Checks/Get a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
+    - **unit_placement/4** : Checks/Gets a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
 
 - `building.pl`
     - **building/4** : The list of the buildings that can be built
@@ -73,7 +78,7 @@ Note: The term "resource" refers to both units and buildings.
     - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
     - **strong_tower_nearby/3** : Checks if there is an enemy strong tower nearby that prevents a unit move
     - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm can be placed
-    - **building_placement/4** : Checks/Get a building valid location on the given province. This is useful to list all the possible placement moves for a given building (non-deterministic)
+    - **building_placement/4** : Checks/Gets a building valid location on the given province. This is useful to list all the possible placement moves for a given building (non-deterministic)
 
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn

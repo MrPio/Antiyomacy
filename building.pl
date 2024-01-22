@@ -54,7 +54,7 @@ farm_nearby(Map, [X, Y], Province) :-
     
 
 % Moves ======================================================
-% Checks/Get a building valid location on the given province
+% Checks/Gets a building valid location on the given province
 % This is useful to list all the possible placements moves for a given building
 % Note: It is assumed that a building that is not a farm can only be constructed
 %       on the inner border of the province, not within it. Farms, on the other hand,

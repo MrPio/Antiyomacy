@@ -21,7 +21,7 @@ stronger(UnitName1, BuildingName1) :-
     Strength1>Protection2.
 
 % Moves ======================================================
-% Checks/Get a unit valid location on the given province
+% Checks/Gets a unit valid location on the given province
 % This is useful to list all the possible displacement moves for a given unit
 % Note: It is assumed that a unit can only be placed on the inner or outer
 %       border of a province, not within it.
@@ -59,7 +59,7 @@ unit_placement(Map, Province, UnitName, Hex) :-
     ;   UnitName == knight
     ).
 
-% Checks/Get a valid unit destination for merging on the given province
+% Checks/Gets a valid unit destination for merging on the given province
 % unit_placement_merge(+Map, +Province, +UnitName1, +UnitName2, ?Hex)
 unit_placement_merge(Map, Province, UnitName1, UnitName2, Hex) :-
      % Verifica che Hex1 contenga un'unità
