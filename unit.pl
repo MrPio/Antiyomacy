@@ -65,8 +65,9 @@ unit_placement_merge(Map, Province, UnitName1, UnitName2, Hex) :-
      % Verifica che Hex1 contenga un'unità
     unit(UnitName1, _, _, _, _), % Check
     unit(UnitName1, _, _, _, _), % Check
-    % Find one possible destination
-    units_location(Map, Province, Hex), %si blocca qua, fa un loop infinito % Check/Get a unit possible location
+    % Find one possible destination inside the province
+    inner_border(Map, Province, InnerBorder),
+    member(Hex, InnerBorder),
     hex_unit(Hex, UnitAtDest), % Get 
     hex_owner(Hex, OwnerAtDest), % Get
     province_owner(Province, Player), % Get
