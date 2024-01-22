@@ -18,7 +18,8 @@
                      units_location/3,
                      buildings_location/4,
                      buy_and_place/6,
-                     displace_unit/6]).
+                     displace_unit/6,
+                     merge_units/6]).
 :- use_module([printer, map, hex, unit, building, economy]).
 
 % Province struct ===================================================
@@ -302,4 +303,71 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
         set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap),
 
         update_province(NewMap, Province, NewProvince).
+
+    % merge_units(+Map, +Province, +FromHex, +DestHex, -MapMerged, -NewProvince)
+    merge_units(Map, Province, FromHex, DestHex, MapMerged, NewProvince) :-
+        % Check if DestHex is a valid placement destination
+        hex_coord(FromHex, [X, Y]), % Get
+        hex_coord(DestHex, [P, Q]), % Get
+        hex_owner(FromHex,FromHexOwner),
+        province_owner(Province, Player),
+        FromHexOwner==Player, % Check if hex is owned by the player
+        hex_unit(FromHex, UnitName1), 
+        UnitName1 \= none,
+        hex_unit(FromHex, UnitName2),
+        UnitName2 \= none,
+
+        unit_placement_merge(Map, Province, UnitName1, UnitName2, DestHex),
+        (   UnitName1==peasant,
+            UnitName2==peasant,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], spearman, MapMerged)
+        
+        ;
+        
+            UnitName1==peasant,
+            UnitName2==spearman,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], baron, MapMerged)
+        ;
+            UnitName1==spearman,
+            UnitName2==peasant,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], baron, MapMerged)
+            
+        
+        ;
+
+            UnitName1==peasant,
+            UnitName2==baron,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], knight, MapMerged)
+        ;
+            UnitName1==baron,
+            UnitName2==peasant,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], knight, MapMerged)
+        
+        
+        ;
+            UnitName1==spearman,
+            UnitName2==spearman,
+            set_unit(Map, [X, Y], none, Map2),
+            set_unit(Map2, [P, Q], none, Map3),
+            set_unit(Map3, [P, Q], knight, MapMerged)
+            
+        ),
+        update_province(MapMerged, Province, NewProvince).
+
+
+
+
+
+
+
 

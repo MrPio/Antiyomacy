@@ -1,5 +1,6 @@
 :- module(unit, [unit/5,
-    unit_placement/4]).
+    unit_placement/4,
+    unit_placement_merge/5]).
 :- use_module([hex, province, building]).
 
 % Unit enum =================================================
@@ -51,4 +52,22 @@ unit_placement(Map, Province, UnitName, Hex) :-
     ;   UnitName == baron,
         \+ strong_tower_nearby(Map, [X, Y], Player)
     ;   UnitName == knight
+    ).
+
+% Checks/Get a valid unit destination for merging on the given province
+% unit_placement_merge(+Map, +Province, +UnitName1, +UnitName2, ?Hex)
+unit_placement_merge(Map, Province, UnitName1, UnitName2, Hex) :-
+     % Verifica che Hex1 contenga un'unità
+    unit(UnitName1, _, _, _, _), % Check
+    unit(UnitName1, _, _, _, _), % Check
+    % Find one possible destination
+    units_location(Map, Province, Hex), %si blocca qua, fa un loop infinito % Check/Get a unit possible location
+    hex_unit(Hex, UnitAtDest), % Get 
+    hex_owner(Hex, OwnerAtDest), % Get
+    province_owner(Province, Player), % Get
+    %The destination should be owned by the player and should host a unit to merge
+    (   OwnerAtDest == Player,
+        UnitAtDest == UnitName1
+    ;   OwnerAtDest == Player,
+        UnitAtDest == UnitName2
     ).
