@@ -75,7 +75,7 @@ building_placement(Map, Province, farm, Hex) :-
         hex_coord(Hex, HexCoord), % Get
         farm_nearby(Map, HexCoord, Province)
     ).
-building_placement(Map, Province, BuildingName, Hex) :-
+building_placement(Map, Province, _, Hex) :-
     % Find one possible destination / Check the destination validity on the province
     inner_border(Map, Province, InnerBorder),
     member(Hex, InnerBorder),

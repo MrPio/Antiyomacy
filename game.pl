@@ -49,6 +49,7 @@ test:-
     test_attack,
     test_end_turn,
     test_destroy_tower,
+    test_merge,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -255,7 +256,6 @@ test_destroy_tower :-
 test_merge:-
     nl,writeln('test_merge ======================================================'),
     test_map(Map, [ProvinceRed, _]),
-    print_map(Map),
   
     % Test: check_unit
     write('Testing merge units... '),

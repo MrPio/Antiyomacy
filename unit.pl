@@ -19,11 +19,11 @@ stronger(UnitName1, BuildingName1) :-
     unit(UnitName1, Strength1, _, _, _), % Get
     building(BuildingName1, Protection2, _, _), % Get
     Strength1>Protection2.
-    
+
 % Moves ======================================================
 % Checks/Get a unit valid location on the given province
 % This is useful to list all the possible displacement moves for a given unit
-% Note: It is assumed that a unit can only be placed on the inner or outer 
+% Note: It is assumed that a unit can only be placed on the inner or outer
 %       border of a province, not within it.
 % Note: the FromHex hex is not a valid destination as the unit resides within it
 % unit_placement(+Map, +Province, +UnitName, ?Hex) [non-deterministic]
@@ -33,14 +33,14 @@ unit_placement(Map, Province, UnitName, Hex) :-
     % The destination should be in one of those two inner and outer borders
     inner_border(Map, Province, InnerBorder),
     outer_border(Map, Province, OuterBorder),
-    (member(Hex, InnerBorder); member(Hex, OuterBorder)).
+    (member(Hex, InnerBorder); member(Hex, OuterBorder)),
     % The destination should not host any allied units or stronger enemy units
     hex_unit(Hex, UnitAtDest), % Get
     hex_owner(Hex, OwnerAtDest), % Get
     hex_building(Hex, BuildAtDest), % Get
     province_owner(Province, Player), % Get
     hex_coord(Hex, [X, Y]), % Get
-    (   UnitAtDest == none 
+    (   UnitAtDest == none
     ;   OwnerAtDest \= Player,
         stronger(UnitName, UnitAtDest)
     ),
@@ -49,7 +49,7 @@ unit_placement(Map, Province, UnitName, Hex) :-
     ;   OwnerAtDest \= Player,
         stronger(UnitName, BuildAtDest)
     ),
-    % Depending on the unit type, the destination should not be located 
+    % Depending on the unit type, the destination should not be located
     % near an enemy tower or strong_tower
     (   \+ member(UnitName, [baron, knight]),
         \+ tower_nearby(Map, [X, Y], Player),
@@ -68,7 +68,7 @@ unit_placement_merge(Map, Province, UnitName1, UnitName2, Hex) :-
     % Find one possible destination inside the province
     inner_border(Map, Province, InnerBorder),
     member(Hex, InnerBorder),
-    hex_unit(Hex, UnitAtDest), % Get 
+    hex_unit(Hex, UnitAtDest), % Get
     hex_owner(Hex, OwnerAtDest), % Get
     province_owner(Province, Player), % Get
     %The destination should be owned by the player and should host a unit to merge
