@@ -19,9 +19,9 @@ The two players, Red and Blue, take turns. In each player's turn, they can choos
 |***Displace a unit***   |  for each unit in each province | 
 
 Now, it is important to note that there are three different ways in which a unit can be moved:
-- Conquer an enemy tile (if possible): the unit moves to the outer border of its province.
-- Defend the border of its province: the unit moves inside the inner border of its province.
-- Merge with another unit (if possible): the unit moves to the location of another unit and the two form a stronger unit.
+- **Conquer an enemy tile** (if possible): the unit moves to the outer border of its province.
+- **Defend the border of its province**: the unit moves inside the inner border of its province.
+- **Merge with another unit** (if possible): the unit moves to the location of another unit and the two form a stronger unit.
 
 ---
 ### Predicates used
