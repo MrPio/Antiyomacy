@@ -260,8 +260,8 @@ test_merge:-
     nl,writeln('test_merge ======================================================'),
     test_map(Map, [ProvinceRed, _]),
     print_map(Map),
-    % Test: check_unit
-    write('Testing merge units... '),
+    % Test: displace_unit with merge
+    write('Testing merge units with displacement... '),
     change_province_money(ProvinceRed, 40, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
     buy_and_place(Map, ProvinceRed2, baron, NewUnitHex, Map2, ProvinceRed3),
@@ -270,8 +270,20 @@ test_merge:-
     get_hex(Map2, [0,1], DestHex),
     displace_unit(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
     print_map(NewMap),
-    
     writeln('Ok!').
+
+test_buy_and_merge:-
+    nl,writeln('test_buy_and_merge ======================================================'),
+    test_map(Map, [ProvinceRed, _]),
+    print_map(Map),
+    % Test: buy_and_place with merge
+    write('Testing buy and merge units... '),
+    change_province_money(ProvinceRed, 100, ProvinceRed2),
+    get_hex(Map, [0,0], NewUnitHex),
+    buy_and_place(Map, ProvinceRed2, knight, NewUnitHex, NewMap2, _),
+    print_map(NewMap2),
+    writeln('Ok!').
+
 
 % Test Division of Money after Attack
 test_divide_money_after_attack:-

@@ -235,16 +235,27 @@ buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :-
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
+    province_owner(Province, Player),
     (
-        unit(ResourceName, _, _, _, _), % Check
-        unit_placement(Map, Province, ResourceName, DestHex), % Check
-        % Place the unit on the map
-        set_unit(Map, [X, Y], ResourceName, MapWithUnit),
-        % Ensure the player now owns the hex.
-        province_owner(Province, Player),
-        set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
-        % Destroy any enemy building in the destination hex.
-        set_building(MapWithUnitOwned, [X, Y], none, NewMap)
+        unit(ResourceName, Strength1, _, _, _), % Check
+        unit_placement(Map, Province, ResourceName, DestHex),% Check
+        hex_unit(DestHex, UnitAtDest),
+        % Check for existing unit at destination and possibility of merge
+        (   UnitAtDest \= none,
+            hex_owner(DestHex, OwnerAtDest),
+            OwnerAtDest == Player,
+            unit(UnitAtDest, Strength2, _, _, _),
+            unit_merge(Strength1, Strength2, MergedUnitName),
+            % Merge units
+            set_unit(Map, [X, Y], MergedUnitName, NewMap)
+        ;   
+            % Place new unit without merge
+            set_unit(Map, [X, Y], ResourceName, MapWithUnit),
+            % Ensure the player now owns the hex.
+            set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
+            % Destroy any enemy building in the destination hex.
+            set_building(MapWithUnitOwned, [X, Y], none, NewMap)
+        )
         ;
         building(ResourceName, _, _, _), % Check
         building_placement(Map, Province, ResourceName, DestHex), % Check
