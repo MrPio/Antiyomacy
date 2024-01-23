@@ -17,7 +17,8 @@
                      inner_border/3,
                      buy_and_place/6,
                      displace_unit/6,
-                     merge_units/6]).
+                     merge_units/6,
+                     divide_money_after_attack/5]).
 :- use_module([printer, map, hex, unit, building, economy]).
 
 % Province struct ===================================================
@@ -336,10 +337,26 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
         ),
         update_province(MapMerged, Province, NewProvince).
 
-
-
-
-
-
-
-
+% This predicate takes the original province and the two new provinces resulting from the attack
+% as input. It calculates the proportional share of money from the original province and updates
+% the money of the new provinces accordingly.
+% divide_money_after_attack(+OriginalProvince, +NewProvince1, +NewProvince2, -NewProvince1Updated, -NewProvince2Updated)
+divide_money_after_attack(OriginalProvince, NewProvince1, NewProvince2, NewProvince1Updated, NewProvince2Updated) :-
+    % Get the money from the original province
+    province_money(OriginalProvince, OriginalMoney),
+    
+    % Calculate the money proportion for first province
+    province_hexes(OriginalProvince, OriginalHexes),
+    length(OriginalHexes, OriginalSize),
+    province_hexes(NewProvince1, NewHexes1),
+    length(NewHexes1, NewSize1),
+    
+    % Calculate the money share for first province
+    MoneyRatio1 is NewSize1 / OriginalSize,
+    
+    Money1 is round(OriginalMoney * MoneyRatio1),
+    Money2 is (OriginalMoney - Money1),
+    
+    % Update the money of the new provinces
+    change_province_money(NewProvince1, Money1, NewProvince1Updated),
+    change_province_money(NewProvince2, Money2, NewProvince2Updated).

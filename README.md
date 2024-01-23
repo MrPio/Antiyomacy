@@ -67,6 +67,7 @@ Note: The term "resource" refers to both units and buildings.
     - **inner_border/3** : Find all hexagons that border the given province internally
     - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
     - **displace_unit** : Displace a unit on a given valid hex
+    - **divide_money_after_attack/5** : Calculates the proportional share of money from the original province and updates the money of the new provinces accordingly
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought

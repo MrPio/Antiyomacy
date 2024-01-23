@@ -1,13 +1,13 @@
 :- use_module([printer, map, province, unit, building, economy]).
 
 /* TODO:
-    • Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     • Two units of the same level may join together to form a stronger unit. (Federica)
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     • Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
       own Province.
     -------------------------------------------------------------------------------------------------
+    X Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     X At the beginning of the game, at least two provinces are randomly generated
       and located far apart. (Valerio)
     X Baron and Knight should ignore the enemy towers. (Federico)
@@ -267,5 +267,48 @@ test_merge:-
     get_hex(Map2, [0,1], DestHex),
     merge_units(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
     print_map(NewMap),
+
+    writeln('Ok!').
+
+% Test Division of Money after Attack
+test_divide_money_after_attack:-
+    nl,writeln('test_divide_money_after_attack ======================================================'),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
+
+    % Initial setup
+    writeln('Initial Map:'),
+    print_map(Map),
+
+    change_province_money(ProvinceBlue, 20, ProvinceBlue2),
+    get_hex(Map, [1,2], BlueSpearmanHex),
+    buy_and_place(Map, ProvinceBlue2, spearman, BlueSpearmanHex, Map2, ProvinceBlue3),
+    
+    find_province(Map2, [1,0], ProvinceRed2),
+
+    get_hex(Map2, [1,2], BlueSpearmanHexFrom),
+    get_hex(Map2, [1,1], BlueSpearmanHexTo),
+    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, ProvinceBlue4),
+    writeln('Map after the attack:'),
+    print_map(Map3),
+
+    % Create two new provinces after the attack
+    find_province(Map3, [1,0], NewProvinceRed1),
+    find_province(Map3, [0,2], NewProvinceRed2),
+
+    % Divide the money after the attack
+    change_province_money(ProvinceRed2, 29, ProvinceRed3),
+    writeln('Red province Total Money:'), writeln('29'),
+    divide_money_after_attack(ProvinceRed3, NewProvinceRed1, NewProvinceRed2, NewProvinceRed1Updated, NewProvinceRed2Updated),
+
+    % Check if the money is correctly divided
+    province_money(NewProvinceRed1Updated, Money1),
+    province_money(NewProvinceRed2Updated, Money2),
+    TotalMoney is Money1 + Money2,
+    
+    % Print the results
+    writeln('Checking the division of money after the attack...'),
+    writeln('New Total Money:'), writeln(TotalMoney),
+    writeln('Money in NewProvinceRed1:'), writeln(Money1),
+    writeln('Money in NewProvinceRed2:'), writeln(Money2),
 
     writeln('Ok!').
