@@ -17,7 +17,6 @@
                      inner_border/3,
                      buy_and_place/6,
                      displace_unit/6,
-                     merge_units/6,
                      divide_money_after_attack/5]).
 :- use_module([printer, map, hex, unit, building, economy]).
 
@@ -257,50 +256,36 @@ buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :-
 % Displace a unit on a given valid hex
 % displace_unit(+Map, +Province, +FromHex, +ToHex, -NewMap, -NewProvince)
 displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :- 
-        % Check if the FromHex contains a unit
-        hex_unit(FromHex, UnitName),
-        UnitName \= none,
-        % Check if the displacement is valid
-        unit_placement(Map, Province, UnitName, ToHex), % Check
-
-        % Place the unit on the map
-        hex_coord(ToHex, [ToX, ToY]), % Get
+    % Check if the FromHex contains a unit
+    hex_unit(FromHex, UnitName),
+    UnitName \= none,
+    % Check if the displacement is valid
+    unit_placement(Map, Province, UnitName, ToHex), % Check
+    hex_coord(ToHex, [ToX, ToY]), % Get
+    hex_coord(FromHex, [FromX, FromY]), % Get
+    hex_unit(ToHex, UnitAtDest),
+    hex_owner(ToHex, OwnerAtDest),
+    province_owner(Province, Player),
+    % Check if merge is possible
+    (   OwnerAtDest == Player,
+        UnitAtDest \= none,
+        unit(UnitName, Strength1, _, _, _),
+        unit(UnitAtDest, Strength2, _, _, _),
+        unit_merge(Strength1, Strength2, MergedUnitName),
+        % Place the unit merged on the map
+        set_unit(Map, [ToX, ToY], none, Map2),
+        set_unit(Map2, [ToX, ToY], MergedUnitName, MapWithUnit),
+        set_unit(MapWithUnit, [FromX, FromY], none, NewMap) % Remove FromHex unity
+    ;   % Standard displacement
         set_unit(Map, [ToX, ToY], UnitName, MapWithUnit),
-        % Ensure the player now owns the hex.
-        province_owner(Province, Player),
+        % Ensure the player now owns the hex
         set_owner(MapWithUnit, [ToX, ToY], Player, MapWithUnitOwned),
-        % Destroy any enemy building in the destination hex.
+        % Destroy any enemy building in the destination hex
         set_building(MapWithUnitOwned, [ToX, ToY], none, NewMapWithDuplicateUnit),
         % Remove the unit from its old hex location
-        hex_coord(FromHex, [FromX, FromY]), % Get
-        set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap),
-
-        update_province(NewMap, Province, NewProvince).
-
-% merge_units(+Map, +Province, +FromHex, +DestHex, -MapMerged, -NewProvince)
-merge_units(Map, Province, FromHex, DestHex, MapMerged, NewProvince) :-
-    % Check if DestHex is a valid placement destination
-    hex_coord(FromHex, [X, Y]), % Get
-    hex_coord(DestHex, [P, Q]), % Get
-    hex_owner(FromHex,FromHexOwner),
-    province_owner(Province, Player),
-    FromHexOwner==Player, % Check if hex is owned by the player
-    hex_unit(FromHex, UnitName1), 
-    UnitName1 \= none,
-    hex_unit(DestHex, UnitName2),
-    UnitName2 \= none,
-    % Find units strenght
-    unit(UnitName1, Strength1, _, _, _),
-    unit(UnitName2, Strength2, _, _, _),
-    % Find merged unit
-    unit_merge(Strength1, Strength2, MergedUnit),
-    % Update map
-    set_unit(Map, [X, Y], none, Map2),
-    set_unit(Map2, [P, Q], none, Map3),
-    set_unit(Map3, [P, Q], MergedUnit, MapMerged),
-
-    % Update province
-    update_province(MapMerged, Province, NewProvince).
+        set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap)
+    ),
+    update_province(NewMap, Province, NewProvince).
 
 % This predicate takes the original province and the two new provinces resulting from the attack
 % as input. It calculates the proportional share of money from the original province and updates

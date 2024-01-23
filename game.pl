@@ -110,7 +110,7 @@ test_placements:-
     % Test: unit_placement
     write('Testing units placements... '),
     findall(Dest,unit_placement(Map, ProvinceRed, peasant, Dest),DestList),
-    same_elements(DestList, [hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)]),
+    same_elements(DestList, [hex(0,[0,0],_,red,none,peasant),hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)]),
     writeln('Ok!'),
 
     % Test: building_placement
@@ -195,10 +195,12 @@ test_attack:-
     change_province_money(ProvinceBlue, 20, ProvinceBlue2),
     get_hex(Map, [1,2], BlueSpearmanHex),
     buy_and_place(Map, ProvinceBlue2, spearman, BlueSpearmanHex, Map2, ProvinceBlue3),
+    print_map(Map2),
 
     get_hex(Map2, [1,2], BlueSpearmanHexFrom),
     get_hex(Map2, [1,1], BlueSpearmanHexTo),
     displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, ProvinceBlue4),
+    print_map(Map3),
 
     get_hex(Map3, [1,1], BlueSpearmanHexFrom2),
     get_hex(Map3, [0,0], RedPeasantHex),
@@ -265,7 +267,7 @@ test_merge:-
     print_map(Map2),
     get_hex(Map2, [0,0], FromHex),
     get_hex(Map2, [0,1], DestHex),
-    merge_units(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
+    displace_unit(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
     print_map(NewMap),
     
     writeln('Ok!').
