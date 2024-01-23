@@ -2,10 +2,9 @@
 
 /* TODO:
     • Two units of the same level may join together to form a stronger unit. (Federica)
-    • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
-    of the game, or supply centers can be introduced.
     • Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
-      own Province.
+      own Province. (Federico)
+    • Province merge and split in one predicate (if possible) (Valerio)
     -------------------------------------------------------------------------------------------------
     X Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     X At the beginning of the game, at least two provinces are randomly generated
@@ -25,6 +24,8 @@
  */
 
 /* Things to write in the paper:
+    • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
+    of the game, or supply centers can be introduced.
     • yall library was used to define a lambda expressions
     • When going bankrupt, buildings are not destroyed. This means that it is possible
       to have a negative income even after killing all units
