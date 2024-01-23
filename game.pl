@@ -256,18 +256,18 @@ test_destroy_tower :-
 test_merge:-
     nl,writeln('test_merge ======================================================'),
     test_map(Map, [ProvinceRed, _]),
-  
+    print_map(Map),
     % Test: check_unit
     write('Testing merge units... '),
-    change_province_money(ProvinceRed, 16, ProvinceRed2),
+    change_province_money(ProvinceRed, 40, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
-    buy_and_place(Map, ProvinceRed2, peasant, NewUnitHex, Map2, ProvinceRed3),
+    buy_and_place(Map, ProvinceRed2, baron, NewUnitHex, Map2, ProvinceRed3),
     print_map(Map2),
     get_hex(Map2, [0,0], FromHex),
     get_hex(Map2, [0,1], DestHex),
     merge_units(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
     print_map(NewMap),
-
+    
     writeln('Ok!').
 
 % Test Division of Money after Attack

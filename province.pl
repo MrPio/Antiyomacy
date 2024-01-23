@@ -277,65 +277,30 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
 
         update_province(NewMap, Province, NewProvince).
 
-    % merge_units(+Map, +Province, +FromHex, +DestHex, -MapMerged, -NewProvince)
-    merge_units(Map, Province, FromHex, DestHex, MapMerged, NewProvince) :-
-        % Check if DestHex is a valid placement destination
-        hex_coord(FromHex, [X, Y]), % Get
-        hex_coord(DestHex, [P, Q]), % Get
-        hex_owner(FromHex,FromHexOwner),
-        province_owner(Province, Player),
-        FromHexOwner==Player, % Check if hex is owned by the player
-        hex_unit(FromHex, UnitName1), 
-        UnitName1 \= none,
-        hex_unit(FromHex, UnitName2),
-        UnitName2 \= none,
+% merge_units(+Map, +Province, +FromHex, +DestHex, -MapMerged, -NewProvince)
+merge_units(Map, Province, FromHex, DestHex, MapMerged, NewProvince) :-
+    % Check if DestHex is a valid placement destination
+    hex_coord(FromHex, [X, Y]), % Get
+    hex_coord(DestHex, [P, Q]), % Get
+    hex_owner(FromHex,FromHexOwner),
+    province_owner(Province, Player),
+    FromHexOwner==Player, % Check if hex is owned by the player
+    hex_unit(FromHex, UnitName1), 
+    UnitName1 \= none,
+    hex_unit(DestHex, UnitName2),
+    UnitName2 \= none,
+    % Find units strenght
+    unit(UnitName1, Strength1, _, _, _),
+    unit(UnitName2, Strength2, _, _, _),
+    % Find merged unit
+    unit_merge(Strength1, Strength2, MergedUnit),
+    % Update map
+    set_unit(Map, [X, Y], none, Map2),
+    set_unit(Map2, [P, Q], none, Map3),
+    set_unit(Map3, [P, Q], MergedUnit, MapMerged),
 
-        unit_placement_merge(Map, Province, UnitName1, UnitName2, DestHex),
-        (   UnitName1==peasant,
-            UnitName2==peasant,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], spearman, MapMerged)
-        
-        ;
-        
-            UnitName1==peasant,
-            UnitName2==spearman,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], baron, MapMerged)
-        ;
-            UnitName1==spearman,
-            UnitName2==peasant,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], baron, MapMerged)
-            
-        
-        ;
-
-            UnitName1==peasant,
-            UnitName2==baron,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], knight, MapMerged)
-        ;
-            UnitName1==baron,
-            UnitName2==peasant,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], knight, MapMerged)
-        
-        
-        ;
-            UnitName1==spearman,
-            UnitName2==spearman,
-            set_unit(Map, [X, Y], none, Map2),
-            set_unit(Map2, [P, Q], none, Map3),
-            set_unit(Map3, [P, Q], knight, MapMerged)
-            
-        ),
-        update_province(MapMerged, Province, NewProvince).
+    % Update province
+    update_province(MapMerged, Province, NewProvince).
 
 % This predicate takes the original province and the two new provinces resulting from the attack
 % as input. It calculates the proportional share of money from the original province and updates

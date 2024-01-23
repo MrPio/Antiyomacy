@@ -1,6 +1,6 @@
 :- module(unit, [unit/5,
     unit_placement/4,
-    unit_placement_merge/5]).
+    unit_merge/3]).
 :- use_module([hex, province, building]).
 
 % Unit enum =================================================
@@ -59,21 +59,34 @@ unit_placement(Map, Province, UnitName, Hex) :-
     ;   UnitName == knight
     ).
 
-% Checks/Gets a valid unit destination for merging on the given province
+% Checks/Get a valid unit destination for merging on the given province
 % unit_placement_merge(+Map, +Province, +UnitName1, +UnitName2, ?Hex)
 unit_placement_merge(Map, Province, UnitName1, UnitName2, Hex) :-
-     % Verifica che Hex1 contenga un'unità
-    unit(UnitName1, _, _, _, _), % Check
-    unit(UnitName1, _, _, _, _), % Check
-    % Find one possible destination inside the province
-    inner_border(Map, Province, InnerBorder),
-    member(Hex, InnerBorder),
-    hex_unit(Hex, UnitAtDest), % Get
-    hex_owner(Hex, OwnerAtDest), % Get
-    province_owner(Province, Player), % Get
-    %The destination should be owned by the player and should host a unit to merge
-    (   OwnerAtDest == Player,
-        UnitAtDest == UnitName1
-    ;   OwnerAtDest == Player,
-        UnitAtDest == UnitName2
-    ).
+    % Verifica che Hex1 contenga un'unità
+   unit(UnitName1, _, _, _, _), % Check
+   unit(UnitName1, _, _, _, _), % Check
+   % Find one possible destination inside the province
+   inner_border(Map, Province, InnerBorder),
+   member(Hex, InnerBorder), % Check
+   hex_unit(Hex, UnitAtDest), % Get 
+   member(Hex, InnerBorder),
+   hex_unit(Hex, UnitAtDest), % Get
+   hex_owner(Hex, OwnerAtDest), % Get
+   % The destination should host a unit for merging, there's no need to verify the existence of a building
+   (   UnitAtDest \= none
+   ).
+
+
+% unit_merge(+Strength1, +Strength2, -MergedUnit)
+% Determines the merged unit based on the sum of the strengths of two units
+unit_merge(Strength1, Strength2, MergedUnit) :-
+   TotalStrength is Strength1 + Strength2,
+   find_unit_by_strength(TotalStrength, MergedUnit).
+   
+% find_unit_by_strength(+TotalStrength, -Unit)
+% Finds the unit that exactly matches the given total strength
+find_unit_by_strength(TotalStrength, Unit) :-
+   unit(Unit, Strength, _, _, _),
+   Strength == TotalStrength.
+
+
