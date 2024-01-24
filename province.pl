@@ -265,7 +265,8 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
 
     % Ensure that the Manhattan distance is not greater than 4
     manhattan_distance(FromHex, ToHex, ManhattanDistance),
-    ManhattanDistance =< 4,
+    max_displacement_distance(MaxDisplacementDistance),
+    ManhattanDistance =< MaxDisplacementDistance,
 
     % Apply the displacement on the map:
     hex_coord(FromHex, [FromX, FromY]), % Get

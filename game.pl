@@ -41,7 +41,7 @@ play:-
     spawn_provinces(Map, MapWithProvinces),
     print_map(MapWithProvinces).
 
-% Test the code
+% Run all the tests
 test:-
     test_province,
     test_placements,
@@ -56,7 +56,7 @@ test:-
     test_manhattan_distance,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
-% Generates the following map
+% Generate the following test map
 %    0 1 2 3 4
 % 0 |r| |r| | |
 % 1 |r|r|r| | |
@@ -332,7 +332,6 @@ test_divide_money_after_attack:-
 
     writeln('Ok!').
 
-% Test Manhattan Distance <= 4 in Displace Unit
 test_manhattan_distance:-
     nl,writeln('test_manhattan_distance ======================================================'),
     test_map(Map, [_ProvinceRed, ProvinceBlue]),

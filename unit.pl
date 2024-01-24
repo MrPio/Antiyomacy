@@ -1,6 +1,7 @@
 :- module(unit, [unit/5,
     unit_placement/5,
-    unit_mergeable/3]).
+    unit_mergeable/3,
+    max_displacement_distance/1]).
 :- use_module([hex, province, building]).
 
 % Unit enum =================================================
@@ -10,6 +11,7 @@ unit(spearman,  2,          2,      20,   -6).
 unit(baron,     3,          3,      30,   -18).
 unit(knight,    4,          3,      40,   -36).
 
+max_displacement_distance(4).
 % Determine whether one unit or one building can be destroyed by another unit
 % Note: If any of the two unit names is none, it fails
 stronger(UnitName1, UnitName2) :-
