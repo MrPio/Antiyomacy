@@ -27,13 +27,13 @@ Now, it is important to note that there are three different ways in which a unit
 ### Predicates used
 
 **Buy a unit** : 
-`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/4`, `unit:unit_merge/4`)
+`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/5`, `unit:unit_mergeable/4`)
 
 **Buy a building** : 
 `province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
 
 **Displace a unit** : 
-`province:displace_unit/6` ---> (`unit:unit_placement/3`, `unit:unit_merge/4`)
+`province:displace_unit/6` ---> (`unit:unit_placement/5`, `unit:unit_mergeable/4`)
 
 <a name="code_structure"></a>
 ## 📐 Code structure
@@ -72,7 +72,7 @@ Note: The term "resource" refers to both units and buildings.
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought
-    - **unit_placement/4** : Checks/Gets a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
+    - **unit_placement/5** : Checks/Gets a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
 
 - `building.pl`
     - **building/4** : The list of the buildings that can be built

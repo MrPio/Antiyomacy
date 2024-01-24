@@ -1,4 +1,4 @@
-:- use_module([printer, map, province, unit, building, economy]).
+:- use_module([printer, map, hex, province, unit, building, economy]).
 
 /* TODO:
     • Two units of the same level may join together to form a stronger unit. (Federica)
@@ -53,6 +53,7 @@ test:-
     test_merge,
     test_buy_and_merge,
     test_divide_money_after_attack,
+    test_manhattan_distance,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -112,7 +113,7 @@ test_placements:-
 
     % Test: unit_placement
     write('Testing units placements... '),
-    findall(Dest,unit_placement(Map, ProvinceRed, peasant, Dest),DestList),
+    findall(Dest,unit_placement(Map, ProvinceRed, peasant, Dest, _), DestList),
     same_elements(DestList, [hex(0,[0,0],_,red,none,peasant),hex(2,[0,2],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,none,none,none),hex(3,[0,3],_,none,none,none),hex(10,[2,0],_,none,none,none)]),
     writeln('Ok!'),
 
@@ -282,15 +283,16 @@ test_buy_and_merge:-
     write('Testing buy and merge units... '),
     change_province_money(ProvinceRed, 100, ProvinceRed2),
     get_hex(Map, [0,0], NewUnitHex),
-    buy_and_place(Map, ProvinceRed2, knight, NewUnitHex, NewMap2, _),
+    \+ buy_and_place(Map, ProvinceRed2, knight, NewUnitHex, _, _),
+    buy_and_place(Map, ProvinceRed2, baron, NewUnitHex, NewMap2, _),
+    get_hex(NewMap2, [0,0], NewUnitHex2), % Get
+    hex_unit(NewUnitHex2, knight), % Check
     print_map(NewMap2),
     writeln('Ok!').
 
-
-% Test Division of Money after Attack
 test_divide_money_after_attack:-
     nl,writeln('test_divide_money_after_attack ======================================================'),
-    test_map(Map, [ProvinceRed, ProvinceBlue]),
+    test_map(Map, [_ProvinceRed, ProvinceBlue]),
 
     % Initial setup
     writeln('Initial Map:'),
@@ -304,11 +306,11 @@ test_divide_money_after_attack:-
 
     get_hex(Map2, [1,2], BlueSpearmanHexFrom),
     get_hex(Map2, [1,1], BlueSpearmanHexTo),
-    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, ProvinceBlue4),
+    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, _ProvinceBlue4),
     writeln('Map after the attack:'),
     print_map(Map3),
 
-    % Create two new provinces after the attack
+    % Find the two new red provinces after the attack
     find_province(Map3, [1,0], NewProvinceRed1),
     find_province(Map3, [0,2], NewProvinceRed2),
 
@@ -317,7 +319,7 @@ test_divide_money_after_attack:-
     writeln('Red province Total Money:'), writeln('29'),
     divide_money_after_attack(ProvinceRed3, NewProvinceRed1, NewProvinceRed2, NewProvinceRed1Updated, NewProvinceRed2Updated),
 
-    % Check if the money is correctly divided
+    % Check if the money has been correctly divided
     province_money(NewProvinceRed1Updated, Money1),
     province_money(NewProvinceRed2Updated, Money2),
     TotalMoney is Money1 + Money2,
@@ -332,8 +334,8 @@ test_divide_money_after_attack:-
 
 % Test Manhattan Distance <= 4 in Displace Unit
 test_manhattan_distance:-
-    % Initial setup
-    test_map(Map, [ProvinceRed, ProvinceBlue]),
+    nl,writeln('test_manhattan_distance ======================================================'),
+    test_map(Map, [_ProvinceRed, ProvinceBlue]),
 
     % Purchase Peasant
     writeln('Purchasing Paesant:'),
@@ -347,7 +349,7 @@ test_manhattan_distance:-
     get_hex(Map1, [3,1], BluePeasantHexTo), % legal
     manhattan_distance([3,4], [3,1], Distance1),
     Distance1 =< 4,
-    writeln('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
+    write('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
     displace_unit(Map1, ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, ProvinceBlue3),
     print_map(Map2),
 
@@ -356,7 +358,7 @@ test_manhattan_distance:-
     get_hex(Map2, [3,0], BluePeasantHexTo1),
     manhattan_distance([3,1], [3,0], Distance2),
     Distance2 =< 4,
-    writeln('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
+    write('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
     displace_unit(Map2, ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, ProvinceBlue4),
     print_map(Map3),
 
@@ -365,7 +367,7 @@ test_manhattan_distance:-
     get_hex(Map3, [2,4], BluePeasantHexTo2), % illegal
     manhattan_distance([3,0], [2,4], Distance3),
     Distance3 > 4,
-    writeln('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
+    write('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
     \+ displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _),
     print_map(Map3),
 
@@ -374,7 +376,7 @@ test_manhattan_distance:-
     get_hex(Map3, [3,4], BluePeasantHexTo3), % legal
     manhattan_distance([3,0], [3,4], Distance4),
     Distance4 =< 4,
-    writeln('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
+    write('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
     displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _),
     print_map(Map4),
 

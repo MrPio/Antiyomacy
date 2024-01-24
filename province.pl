@@ -227,45 +227,7 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
         \+ maplist(member,NearHexes,Hexes)
     ), InnerBorder).
 
-% Purchase a building or a unit and place it on the map at the given location
-% buy_and_place(+Map, +Province, +ResourceName, +DestHex, -NewMap, -NewProvince)
-buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :- 
-    % Check if the purchase is valid
-    check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
-    % Subtract the cost from the province's money
-    change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
-    % Check if DestHex is a valid placement destination
-    hex_coord(DestHex, [X, Y]), % Get
-    province_owner(Province, Player),
-    (
-        unit(ResourceName, Strength1, _, _, _), % Check
-        unit_placement(Map, Province, ResourceName, DestHex),% Check
-        hex_unit(DestHex, UnitAtDest),
-        % Check for existing unit at destination and possibility of merge
-        (   UnitAtDest \= none,
-            hex_owner(DestHex, OwnerAtDest),
-            OwnerAtDest == Player,
-            unit(UnitAtDest, Strength2, _, _, _),
-            unit_merge(Strength1, Strength2, MergedUnitName),
-            % Merge units
-            set_unit(Map, [X, Y], MergedUnitName, NewMap)
-        ;   
-            % Place new unit without merge
-            set_unit(Map, [X, Y], ResourceName, MapWithUnit),
-            % Ensure the player now owns the hex.
-            set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
-            % Destroy any enemy building in the destination hex.
-            set_building(MapWithUnitOwned, [X, Y], none, NewMap)
-        )
-        ;
-        building(ResourceName, _, _, _), % Check
-        building_placement(Map, Province, ResourceName, DestHex), % Check
-        % Place the building on the map
-        set_building(Map, [X, Y], ResourceName, NewMap)
-    ),
-    update_province(NewMap, ProvinceWithNewMoney, NewProvince).
-
-% Predicate to calculate the Manhattan distance between two hexes
+% Calculate the Manhattan distance between two hexes
 % manhattan_distance(+[X1, Y1], +[X2, Y2], -Distance)
 manhattan_distance([X1, Y1], [X2, Y2], Distance) :-
     % Calculate the absolute differences in X and Y coordinates
@@ -274,6 +236,34 @@ manhattan_distance([X1, Y1], [X2, Y2], Distance) :-
     % Sum up the absolute differences to get the Manhattan distance
     Distance is DX + DY.
 
+% Purchase a building or a unit and place it on the map at the given location
+% buy_and_place(+Map, +Province, +ResourceName, +DestHex, -NewMap, -NewProvince)
+buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :- 
+    % Check if the purchase is economically valid
+    check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
+    % Subtract the cost from the province's money
+    change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
+    % Check if DestHex is a valid placement destination
+    hex_coord(DestHex, [X, Y]), % Get
+    province_owner(Province, Player), % Get
+    (   % The resource to be placed is a unit:
+        unit(ResourceName, _, _, _, _), % Check
+        unit_placement(Map, Province, ResourceName, DestHex, NewUnitName), % Check & Get
+        % Place new unit without merge
+        set_unit(Map, [X, Y], NewUnitName, MapWithUnit),
+        % Ensure the player now owns the hex.
+        set_owner(MapWithUnit, [X, Y], Player, MapWithUnitOwned),
+        % Destroy any enemy building in the destination hex.
+        set_building(MapWithUnitOwned, [X, Y], none, NewMap)
+    ;   
+        % The resource to be placed is a building:
+        building(ResourceName, _, _, _), % Check
+        building_placement(Map, Province, ResourceName, DestHex), % Check
+        % Place the building on the map
+        set_building(Map, [X, Y], ResourceName, NewMap)
+    ),
+    update_province(NewMap, ProvinceWithNewMoney, NewProvince).
+
 % Displace a unit on a given valid hex
 % displace_unit(+Map, +Province, +FromHex, +ToHex, -NewMap, -NewProvince)
 displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :- 
@@ -281,7 +271,7 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
     hex_unit(FromHex, UnitName),
     UnitName \= none,
     % Check if the displacement is valid
-    unit_placement(Map, Province, UnitName, ToHex), % Check
+    unit_placement(Map, Province, UnitName, ToHex, NewUnitName), % Check & Get
     hex_coord(ToHex, [ToX, ToY]), % Get
     hex_coord(FromHex, [FromX, FromY]), % Get
 
@@ -292,29 +282,17 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
 
     % Ensure that the Manhattan distance is not greater than 4
     ManhattanDistance =< 4,
+    
+    % Apply the displacement on the map:
+    province_owner(Province, Player), % Get
+    set_unit(Map, [ToX, ToY], NewUnitName, MapWithUnit),
+    % Ensure the player now owns the hex
+    set_owner(MapWithUnit, [ToX, ToY], Player, MapWithUnitOwned),
+    % Destroy any enemy building in the destination hex
+    set_building(MapWithUnitOwned, [ToX, ToY], none, NewMapWithDuplicateUnit),
+    % Remove the unit from its old hex location
+    set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap),
 
-    hex_unit(ToHex, UnitAtDest),
-    hex_owner(ToHex, OwnerAtDest),
-    province_owner(Province, Player),
-    % Check if merge is possible
-    (   OwnerAtDest == Player,
-        UnitAtDest \= none,
-        unit(UnitName, Strength1, _, _, _),
-        unit(UnitAtDest, Strength2, _, _, _),
-        unit_merge(Strength1, Strength2, MergedUnitName),
-        % Place the unit merged on the map
-        set_unit(Map, [ToX, ToY], none, Map2),
-        set_unit(Map2, [ToX, ToY], MergedUnitName, MapWithUnit),
-        set_unit(MapWithUnit, [FromX, FromY], none, NewMap) % Remove FromHex unity
-    ;   % Standard displacement
-        set_unit(Map, [ToX, ToY], UnitName, MapWithUnit),
-        % Ensure the player now owns the hex
-        set_owner(MapWithUnit, [ToX, ToY], Player, MapWithUnitOwned),
-        % Destroy any enemy building in the destination hex
-        set_building(MapWithUnitOwned, [ToX, ToY], none, NewMapWithDuplicateUnit),
-        % Remove the unit from its old hex location
-        set_unit(NewMapWithDuplicateUnit, [FromX, FromY], none, NewMap)
-    ),
     update_province(NewMap, Province, NewProvince).
 
 % This predicate takes the original province and the two new provinces resulting from the attack
