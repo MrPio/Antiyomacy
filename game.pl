@@ -347,7 +347,7 @@ test_manhattan_distance:-
     % First check
     get_hex(Map1, [3,4], BluePeasantHexFrom),
     get_hex(Map1, [3,1], BluePeasantHexTo), % legal
-    manhattan_distance([3,4], [3,1], Distance1),
+    manhattan_distance(BluePeasantHexFrom, BluePeasantHexTo, Distance1),
     Distance1 =< 4,
     write('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
     displace_unit(Map1, ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, ProvinceBlue3),
@@ -356,7 +356,7 @@ test_manhattan_distance:-
     % Second check
     get_hex(Map2, [3,1], BluePeasantHexFrom1),
     get_hex(Map2, [3,0], BluePeasantHexTo1),
-    manhattan_distance([3,1], [3,0], Distance2),
+    manhattan_distance(BluePeasantHexFrom1, BluePeasantHexTo1, Distance2),
     Distance2 =< 4,
     write('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
     displace_unit(Map2, ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, ProvinceBlue4),
@@ -365,7 +365,7 @@ test_manhattan_distance:-
     % Third check
     get_hex(Map3, [3,0], BluePeasantHexFrom2),
     get_hex(Map3, [2,4], BluePeasantHexTo2), % illegal
-    manhattan_distance([3,0], [2,4], Distance3),
+    manhattan_distance(BluePeasantHexFrom2, BluePeasantHexTo2, Distance3),
     Distance3 > 4,
     write('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
     \+ displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _),
@@ -374,7 +374,7 @@ test_manhattan_distance:-
     % Fourth check
     get_hex(Map3, [3,0], BluePeasantHexFrom3),
     get_hex(Map3, [3,4], BluePeasantHexTo3), % legal
-    manhattan_distance([3,0], [3,4], Distance4),
+    manhattan_distance(BluePeasantHexFrom3, BluePeasantHexTo3, Distance4),
     Distance4 =< 4,
     write('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
     displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _),

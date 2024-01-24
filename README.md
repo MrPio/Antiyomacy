@@ -46,6 +46,7 @@ Note: The term "resource" refers to both units and buildings.
     - **tile/1** : The list of tiles type
     - **owner/1** : The list of players
     - **hex/6**: The struct of an hex in the map
+    - **manhattan_distance/3** : Calculate the Manhattan distance between two hexes
 
 - `map.pl`
     - **generate_random_map/2** : Generates a random map using the Random Walkers algorithm
@@ -56,6 +57,7 @@ Note: The term "resource" refers to both units and buildings.
     - **set_unit/4** : Spawns a unit on a given coordinate
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
     - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game
+    
 - `province.pl`
     - **province/3** : The struct of a player's province
     - **province_count/3** : Checks or calculates the number of buildings or units owned by the province
@@ -66,7 +68,6 @@ Note: The term "resource" refers to both units and buildings.
     - **outer_border/3** : Find all hexagons that border the given province externally
     - **inner_border/3** : Find all hexagons that border the given province internally
     - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
-    - **manhattan_distance/3** : Calculate the Manhattan distance between two hexes
     - **displace_unit/6** : Displace a unit on a given valid hex
     - **divide_money_after_attack/5** : Calculates the proportional share of money from the original province and updates the money of the new provinces accordingly
 

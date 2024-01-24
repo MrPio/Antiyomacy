@@ -16,7 +16,6 @@
                      outer_border/3,
                      inner_border/3,
                      buy_and_place/6,
-                     manhattan_distance/3,
                      displace_unit/6,
                      divide_money_after_attack/5]).
 :- use_module([printer, map, hex, unit, building, economy]).
@@ -227,15 +226,6 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
         \+ maplist(member,NearHexes,Hexes)
     ), InnerBorder).
 
-% Calculate the Manhattan distance between two hexes
-% manhattan_distance(+[X1, Y1], +[X2, Y2], -Distance)
-manhattan_distance([X1, Y1], [X2, Y2], Distance) :-
-    % Calculate the absolute differences in X and Y coordinates
-    DX is abs(X2 - X1),
-    DY is abs(Y2 - Y1),
-    % Sum up the absolute differences to get the Manhattan distance
-    Distance is DX + DY.
-
 % Purchase a building or a unit and place it on the map at the given location
 % buy_and_place(+Map, +Province, +ResourceName, +DestHex, -NewMap, -NewProvince)
 buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :- 
@@ -272,19 +262,16 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
     UnitName \= none,
     % Check if the displacement is valid
     unit_placement(Map, Province, UnitName, ToHex, NewUnitName), % Check & Get
-    hex_coord(ToHex, [ToX, ToY]), % Get
-    hex_coord(FromHex, [FromX, FromY]), % Get
-
-    % Calculate the Manhattan distance between FromHex and ToHex
-    hex_coord(FromHex, [FromX, FromY]),
-    hex_coord(ToHex, [ToX, ToY]),
-    manhattan_distance([FromX, FromY], [ToX, ToY], ManhattanDistance),
 
     % Ensure that the Manhattan distance is not greater than 4
+    manhattan_distance(FromHex, ToHex, ManhattanDistance),
     ManhattanDistance =< 4,
-    
+
     % Apply the displacement on the map:
+    hex_coord(FromHex, [FromX, FromY]), % Get
+    hex_coord(ToHex, [ToX, ToY]), % Get
     province_owner(Province, Player), % Get
+    % Change the unit in the destination hex
     set_unit(Map, [ToX, ToY], NewUnitName, MapWithUnit),
     % Ensure the player now owns the hex
     set_owner(MapWithUnit, [ToX, ToY], Player, MapWithUnitOwned),
