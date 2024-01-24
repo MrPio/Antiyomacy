@@ -16,6 +16,7 @@
                      outer_border/3,
                      inner_border/3,
                      buy_and_place/6,
+                     manhattan_distance/3,
                      displace_unit/6,
                      divide_money_after_attack/5]).
 :- use_module([printer, map, hex, unit, building, economy]).
@@ -264,6 +265,15 @@ buy_and_place(Map, Province, ResourceName, DestHex, NewMap, NewProvince) :-
     ),
     update_province(NewMap, ProvinceWithNewMoney, NewProvince).
 
+% Predicate to calculate the Manhattan distance between two hexes
+% manhattan_distance(+[X1, Y1], +[X2, Y2], -Distance)
+manhattan_distance([X1, Y1], [X2, Y2], Distance) :-
+    % Calculate the absolute differences in X and Y coordinates
+    DX is abs(X2 - X1),
+    DY is abs(Y2 - Y1),
+    % Sum up the absolute differences to get the Manhattan distance
+    Distance is DX + DY.
+
 % Displace a unit on a given valid hex
 % displace_unit(+Map, +Province, +FromHex, +ToHex, -NewMap, -NewProvince)
 displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :- 
@@ -274,6 +284,15 @@ displace_unit(Map, Province, FromHex, ToHex, NewMap, NewProvince) :-
     unit_placement(Map, Province, UnitName, ToHex), % Check
     hex_coord(ToHex, [ToX, ToY]), % Get
     hex_coord(FromHex, [FromX, FromY]), % Get
+
+    % Calculate the Manhattan distance between FromHex and ToHex
+    hex_coord(FromHex, [FromX, FromY]),
+    hex_coord(ToHex, [ToX, ToY]),
+    manhattan_distance([FromX, FromY], [ToX, ToY], ManhattanDistance),
+
+    % Ensure that the Manhattan distance is not greater than 4
+    ManhattanDistance =< 4,
+
     hex_unit(ToHex, UnitAtDest),
     hex_owner(ToHex, OwnerAtDest),
     province_owner(Province, Player),

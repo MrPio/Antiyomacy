@@ -2,10 +2,10 @@
 
 /* TODO:
     • Two units of the same level may join together to form a stronger unit. (Federica)
-    • Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
-      own Province. (Federico)
     • Province merge and split in one predicate (if possible) (Valerio)
     -------------------------------------------------------------------------------------------------
+    X Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
+      own Province. (Federico)
     X Test province split due to enemy attack. Money should split based on provinces size. (Federico)
     X At the beginning of the game, at least two provinces are randomly generated
       and located far apart. (Valerio)
@@ -51,6 +51,8 @@ test:-
     test_end_turn,
     test_destroy_tower,
     test_merge,
+    test_buy_and_merge,
+    test_divide_money_after_attack,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generates the following map
@@ -327,3 +329,54 @@ test_divide_money_after_attack:-
     writeln('Money in NewProvinceRed2:'), writeln(Money2),
 
     writeln('Ok!').
+
+% Test Manhattan Distance <= 4 in Displace Unit
+test_manhattan_distance:-
+    % Initial setup
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
+
+    % Purchase Peasant
+    writeln('Purchasing Paesant:'),
+    change_province_money(ProvinceBlue, 10, ProvinceBlue1),
+    get_hex(Map, [3,4], BluePeasantHex),
+    buy_and_place(Map, ProvinceBlue1, peasant, BluePeasantHex, Map1, ProvinceBlue2),
+    print_map(Map1),
+
+    % First check
+    get_hex(Map1, [3,4], BluePeasantHexFrom),
+    get_hex(Map1, [3,1], BluePeasantHexTo), % legal
+    manhattan_distance([3,4], [3,1], Distance1),
+    Distance1 =< 4,
+    writeln('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
+    displace_unit(Map1, ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, ProvinceBlue3),
+    print_map(Map2),
+
+    % Second check
+    get_hex(Map2, [3,1], BluePeasantHexFrom1),
+    get_hex(Map2, [3,0], BluePeasantHexTo1),
+    manhattan_distance([3,1], [3,0], Distance2),
+    Distance2 =< 4,
+    writeln('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
+    displace_unit(Map2, ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, ProvinceBlue4),
+    print_map(Map3),
+
+    % Third check
+    get_hex(Map3, [3,0], BluePeasantHexFrom2),
+    get_hex(Map3, [2,4], BluePeasantHexTo2), % illegal
+    manhattan_distance([3,0], [2,4], Distance3),
+    Distance3 > 4,
+    writeln('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
+    \+ displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _),
+    print_map(Map3),
+
+    % Fourth check
+    get_hex(Map3, [3,0], BluePeasantHexFrom3),
+    get_hex(Map3, [3,4], BluePeasantHexTo3), % legal
+    manhattan_distance([3,0], [3,4], Distance4),
+    Distance4 =< 4,
+    writeln('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
+    displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _),
+    print_map(Map4),
+
+    writeln('Ok!').
+

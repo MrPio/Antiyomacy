@@ -66,6 +66,7 @@ Note: The term "resource" refers to both units and buildings.
     - **outer_border/3** : Find all hexagons that border the given province externally
     - **inner_border/3** : Find all hexagons that border the given province internally
     - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
+    - **manhattan_distance/3** : Calculate the Manhattan distance between two hexes
     - **displace_unit/6** : Displace a unit on a given valid hex
     - **divide_money_after_attack/5** : Calculates the proportional share of money from the original province and updates the money of the new provinces accordingly
 
