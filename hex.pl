@@ -13,7 +13,9 @@
                 change_hex_building/3,
                 hex_unit/2,
                 change_hex_unit/3,
-                manhattan_distance/3]).
+                manhattan_distance/3,
+                hexes_adjacent4/2,
+                hexes_adjacent8/2]).
 :- use_module([unit, building]).
 
 % Tile enum
@@ -58,6 +60,22 @@ change_hex_building(hex(Index,Coord,Tile,Owner,_,Unit),NewBuilding,hex(Index,Coo
 hex_unit(hex(_,_, _, _,_,Unit), Unit).
 % Change an hex unit
 change_hex_unit(hex(Index,Coord,Tile,Owner,Building,_),NewUnit,hex(Index,Coord,Tile,Owner,Building,NewUnit)).
+
+% Checks if one hex is in the near8 of another hex
+% hexes_adjacent4(+Hex1, +Hex2)
+hexes_adjacent4(Hex1, Hex2):-
+    manhattan_distance(Hex1, Hex2, 1).
+
+% Checks if one hex is in the near4 of another hex
+% hexes_adjacent8(+Hex1, +Hex2)
+hexes_adjacent8(Hex1, Hex2):-
+    hex_coord(Hex1, [X1, Y1]), % Get
+    hex_coord(Hex2, [X2, Y2]), % Get
+    Width is X2 - X1,
+    Height is Y2 - Y1,
+    between(-1, 1, Width),
+    between(-1, 1, Height).
+    
 
 % Calculate the Manhattan distance between two hexes
 % manhattan_distance(+Hex1, +Hex2, -Distance)

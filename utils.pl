@@ -1,4 +1,7 @@
-:- module(print_map, [print_map/1, same_elements/2]).
+:- module(utils, [print_map/1, 
+    same_elements/2,
+    op_list/3,
+    filter/3]).
 :- use_module([hex]).
 
 % Print a map row with lateral coordinates
@@ -33,3 +36,21 @@ same_elements(L1, L2) :-
     subset(L1, L2), 
     subset(L2, L1),
     same_length(L1, L2).
+
+% Invoke an operation on all the element of a list
+% prod_list(+List,+Num,-ResultList)
+op_list([],_,[]).
+op_list([H|T], Op, [H1|T1]) :- 
+    (call(Op,H,H1); H1 = H),
+    op_list(T, Op, T1).
+
+% Filter a list with a condition related to the list being generated
+% filter(+List, +Condition, -Sol)
+filter(List, Condition, Sol):- filter_(List, Condition, [], Sol).
+filter_([],_,Sol,Sol).
+filter_([H|T], Condition, Temp, Sol) :-
+    call(Condition, H, Temp),
+    append(Temp, [H], NewTemp),
+    filter_(T, Condition, NewTemp, Sol)
+    ;
+    filter_(T, Condition, Temp, Sol).

@@ -27,13 +27,41 @@ Now, it is important to note that there are three different ways in which a unit
 ### Predicates used
 
 **Buy a unit** : 
-`province:buy_and_place/6` ---> (`economy:check_buy/3`, `unit:unit_placement/5`, `unit:unit_mergeable/4`)
+`province:buy_and_place/8` ---> (`economy:check_buy/3`, `province:place_unit/5` ---> `unit:unit_placement/5` ---> `unit:unit_mergeable/4`)
 
 **Buy a building** : 
-`province:buy_and_place/6` ---> (`economy:check_buy/3`, `building:building_placement/4`)
+`province:buy_and_place/8` ---> (`economy:check_buy/3`, `building:building_placement/4`)
 
 **Displace a unit** : 
-`province:displace_unit/6` ---> (`unit:unit_placement/5`, `unit:unit_mergeable/4`)
+`province:displace_unit/8` ---> `province:place_unit/5` ---> `unit:unit_placement/5` ---> `unit:unit_mergeable/4`
+
+<a name="merge_split"></a>
+## 🪓 Province merge/split algorithm
+As you can see in the following image, handling the possibility of merging or splitting provinces after an attack is quite tricky.
+<img src="img/screen2.png", width="250rem">
+
+This is due to the need for a map scan after each attack. Since the goal of this project revolves around the minimax algorithm, it is clear that runtime performance is of utmost importance. This means that it would be nice to avoid recalculating all provinces on every move (with the `province:find_provinces/2` predicate) due to the complexity of breadth-first search. Furthermore, even if you did this after every move, there is still the problem of identifying which provinces have split or merged with which other provinces.
+
+That being said, we propose a lazy algorithm that tries to take advantage of sufficient conditions for both merge and split cases to reduce the use of breadth-first search for province recalculation. Let's break down this algorithm:
+
+### Search for a merge
+1. A province merge can only occur after a unit has conquered an unoccupied hex or invaded an enemy hex;
+2. If this is the case, find all the player's provinces in the old provinces list that touch the area around the conquered hex,
+3. Calculate the money of the newly merged province as the sum of the money of these found provinces,
+4. Remove these provinces from the provinces list.
+5. Add the new player's province that was found with a breadth-first search around the conquered hex.
+
+### Search for a split
+1. An enemy province split can only occur after a unit has invaded an enemy hex;
+2. If this is the case, check if there are any non-adjacent enemy hexes in the surrounding of the invaded hex,
+3. If this is the case, select one of these hexes and check that it is not connected to all the other hexes surrounding the invaded hex, using a breadth-first search,
+4. If this is the case, a split has certainly occurred. Find all the provinces using a breadth-first on the enemy hexes surrounding the invaded hex,
+5. Select the split province from the old provinces list and use it to calculate the new split provinces money,
+6. Remove the former and add the latter to the provinces list.
+7. Otherwise, if the split hasn't happened, the invaded enemy province will still have to be recalculated due to the attack.
+
+The use of these two predicates in sequences makes it possible to detect the occurrence of both simultaneous splitting and merging.
+These two algorithms are implemented in the predicates `province:check_for_merge/5` and `province:check_for_split/5` respectively.
 
 <a name="code_structure"></a>
 ## 📐 Code structure
@@ -56,8 +84,8 @@ Note: The term "resource" refers to both units and buildings.
     - **set_building/4** : Spawns a building on a given coordinate
     - **set_unit/4** : Spawns a unit on a given coordinate
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
-    - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game
-    
+    - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game (⬆️higher-order⬆️)
+
 - `province.pl`
     - **province/3** : The struct of a player's province
     - **province_count/3** : Checks or calculates the number of buildings or units owned by the province
@@ -67,13 +95,15 @@ Note: The term "resource" refers to both units and buildings.
     - **find_provinces/2** : Find all the provinces in the map
     - **outer_border/3** : Find all hexagons that border the given province externally
     - **inner_border/3** : Find all hexagons that border the given province internally
-    - **buy_and_place/6** : Purchase a building or a unit and place it on the map at the given location
-    - **displace_unit/6** : Displace a unit on a given valid hex
-    - **divide_money_after_attack/5** : Calculates the proportional share of money from the original province and updates the money of the new provinces accordingly
+    - **buy_and_place/8** : Purchase a building or a unit and place it on the map at the given location
+    - **displace_unit/8** : Displace a unit on a given valid hex
+    - **place_unit/8** : Place a unit on a given hex after checking the validity of the move
+    - **check_for_merge/5** : Checks if a province has been merged
+    - **check_for_split/5** : Checks if a province has been split
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought
-    - **unit_placement/5** : Checks/Gets a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (non-deterministic)
+    - **unit_placement/5** : Checks/Gets a unit valid location on the given province. This is useful to list all the possible placement moves for a given unit (❓non-deterministic❓)
 
 - `building.pl`
     - **building/4** : The list of the buildings that can be built
@@ -81,18 +111,22 @@ Note: The term "resource" refers to both units and buildings.
     - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
     - **strong_tower_nearby/3** : Checks if there is an enemy strong tower nearby that prevents a unit move
     - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm can be placed
-    - **building_placement/4** : Checks/Gets a building valid location on the given province. This is useful to list all the possible placement moves for a given building (non-deterministic)
+    - **building_placement/4** : Checks/Gets a building valid location on the given province. This is useful to list all the possible placement moves for a given building (❓non-deterministic❓)
 
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
-    - **check_buys/3** : Checks if a list of resources can be bought and returns the remaining money of the province. This is useful to list all the possible purchase moves for a given province (non-deterministic)
-    - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the remaining money of the province. This is useful generate one possible purchase move for a given province (non-deterministic)
+    - **check_buys/3** : Checks if a list of resources can be bought and returns the remaining money of the province. This is useful to list all the possible purchase moves for a given province (❓non-deterministic❓)
+    - **check_buy/3** : Checks whether a building or unit purchase can be achieved and returns the remaining money of the province. This is useful generate one possible purchase move for a given province (❓non-deterministic❓)
+    - **share_money/5** : Calculates the proportional share of split/merged provinces based on the original provinces
 ---
 ### Other files
 
-- `printer.pl`
+- `utils.pl`
     - **print_map/1** : Print a map row with lateral coordinates
-
+    - **same_elements/2** : Check whether two lists contain the same elements, regardless of their order
+    - **op_list/3** : Invoke an operation on all the element of a list (⬆️higher-order⬆️)
+    - **filter/3** : Filter a list with a condition related to the list being generated (⬆️higher-order⬆️)
+    
 - `game.pl`
     - **test/0** : Test various game predicates
 

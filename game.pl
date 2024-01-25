@@ -1,9 +1,10 @@
-:- use_module([printer, map, hex, province, unit, building, economy]).
+:- use_module([utils, map, hex, province, unit, building, economy]).
 
 /* TODO:
-    • Two units of the same level may join together to form a stronger unit. (Federica)
-    • Province merge and split in one predicate (if possible) (Valerio)
+    • Province merge and split (very hard!) (Valerio)
+    • When a province becomes smaller than 2 hexes, it must be destroyed immediately and its owner should become 'none'.
     -------------------------------------------------------------------------------------------------
+    X Two units of the same level may join together to form a stronger unit. (Federica)
     X Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
       own Province. (Federico)
     X Test province split due to enemy attack. Money should split based on provinces size. (Federico)
@@ -50,9 +51,9 @@ test:-
     test_attack,
     test_end_turn,
     test_destroy_tower,
-    test_merge,
+    test_displace_with_merge,
     test_buy_and_merge,
-    test_divide_money_after_attack,
+    test_share_money,
     test_manhattan_distance,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
@@ -65,7 +66,6 @@ test:-
 % 4 | | | |b| |
 test_map(Map, [ProvinceRed, ProvinceBlue]):-
     generate_random_map(_, true),
-
     % Manually populating the map
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
@@ -77,7 +77,22 @@ test_map(Map, [ProvinceRed, ProvinceBlue]):-
     foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
     map(Map),
     find_provinces(Map, [ProvinceRed, ProvinceBlue]).
-
+% Generate the following test map
+%    0 1 2 3 4
+% 0 | |b| | | |
+% 1 | |b|b| | |
+% 2 | | |b|r|r|
+% 3 |r|r|b| | |
+% 4 |r| |b| | |
+test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]):-
+    generate_random_map(_, true),
+    % Manually populating the map
+    RedHexes=[[2,3],[2,4],[3,0],[3,1],[4,0]],
+    BlueHexes=[[0,1],[1,1],[1,2],[2,2],[3,2],[4,2]],
+    foreach(member(Coord,RedHexes),set_owner(Coord,red)),
+    foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
+    map(Map),
+    find_provinces(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]).
 test_province:-
     nl,writeln('test_province ======================================================'),
     test_map(Map, [ProvinceRed, ProvinceBlue]),
@@ -143,7 +158,7 @@ test_purchases:-
     write('Testing purchase action... '),
     change_province_money(ProvinceRed, 16, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
-    buy_and_place(Map, ProvinceRed2, peasant, NewUnitHex, Map2, ProvinceRed3),
+    buy_and_place(Map, [ProvinceRed2, ProvinceBlue2], ProvinceRed2, peasant, NewUnitHex, Map2,_, ProvinceRed3),
     province_hexes(ProvinceRed3,ProvinceRed3Hexes),
     same_elements(ProvinceRed3Hexes, [hex(7,[1,2],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(6,[1,1],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(5,[1,0],_,red,none,none),hex(0,[0,0],_,red,none,peasant)]),
     writeln('Ok!'),
@@ -153,7 +168,7 @@ test_purchases:-
     write('Testing unit displacement action... '),
     get_hex(Map2, [0,0], UnitDisplaceFrom),
     get_hex(Map2, [2,0], UnitDisplaceTo),
-    displace_unit(Map2, ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, Map3, ProvinceRed4),
+    displace_unit(Map2, [ProvinceRed2, ProvinceBlue2], ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, Map3, _, ProvinceRed4),
     province_hexes(ProvinceRed4,ProvinceRed4Hexes),
     same_elements(ProvinceRed4Hexes, [hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)]),
     writeln('Ok!'),
@@ -163,7 +178,7 @@ test_purchases:-
     write('Testing wrong unit displacement action near enemy tower... '),
     get_hex(Map2, [0,1], UnitDisplaceFrom1),
     get_hex(Map2, [2,1], UnitDisplaceTo1),
-    \+ displace_unit(Map3, ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _),
+    \+ displace_unit(Map3, [ProvinceRed4, ProvinceBlue2], ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _, _),
     writeln('Ok!').
 
 test_farm:-
@@ -176,8 +191,8 @@ test_farm:-
     change_province_money(ProvinceBlue,26,ProvinceBlue2),
     get_hex(Map, [4,3], BlueFarmHex),
     get_hex(Map, [3,4], BlueFarmHex2),
-    buy_and_place(Map, ProvinceBlue2, farm, BlueFarmHex, Map2, ProvinceBlue3),
-    buy_and_place(Map2, ProvinceBlue3, farm, BlueFarmHex2, Map3, ProvinceBlue4),
+    buy_and_place(Map, [ProvinceRed, ProvinceBlue2], ProvinceBlue2, farm, BlueFarmHex, Map2, _, ProvinceBlue3),
+    buy_and_place(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, farm, BlueFarmHex2, Map3, _, ProvinceBlue4),
     print_map(Map3),
     province_count(ProvinceBlue4, farm, FarmCount),
     FarmCount=2,
@@ -187,28 +202,28 @@ test_farm:-
     write('Testing first farm placement in Red province... '),
     change_province_money(ProvinceRed,12,ProvinceRed2),
     get_hex(Map3, [1,0], RedFarmHex),
-    buy_and_place(Map3, ProvinceRed2, farm, RedFarmHex, Map4, _),
+    buy_and_place(Map3, [ProvinceRed2, ProvinceBlue4], ProvinceRed2, farm, RedFarmHex, Map4, _, _),
     print_map(Map4),
     writeln('Ok!').
 test_attack:-
     nl,writeln('test_attack ======================================================'),
-    test_map(Map, [_, ProvinceBlue]),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Test blue unit attack
     write('Testing blue spearman attack red peasant... '),
     change_province_money(ProvinceBlue, 20, ProvinceBlue2),
     get_hex(Map, [1,2], BlueSpearmanHex),
-    buy_and_place(Map, ProvinceBlue2, spearman, BlueSpearmanHex, Map2, ProvinceBlue3),
+    buy_and_place(Map, [ProvinceRed, ProvinceBlue2], ProvinceBlue2, spearman, BlueSpearmanHex, Map2, _, ProvinceBlue3),
     print_map(Map2),
 
     get_hex(Map2, [1,2], BlueSpearmanHexFrom),
     get_hex(Map2, [1,1], BlueSpearmanHexTo),
-    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, ProvinceBlue4),
+    displace_unit(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, _, ProvinceBlue4),
     print_map(Map3),
 
     get_hex(Map3, [1,1], BlueSpearmanHexFrom2),
     get_hex(Map3, [0,0], RedPeasantHex),
-    displace_unit(Map3, ProvinceBlue4, BlueSpearmanHexFrom2, RedPeasantHex, Map4, ProvinceBlue5),
+    displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BlueSpearmanHexFrom2, RedPeasantHex, Map4, _, ProvinceBlue5),
     print_map(Map4),
     province_hexes(ProvinceBlue5, ProvinceBlue5Hexes),
     same_elements(ProvinceBlue5Hexes, [hex(0,[0,0],_,blue,none,spearman),hex(7,[1,2],_,blue,none,none),hex(6,[1,1],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(19,[3,4],_,blue,none,none)]),
@@ -239,108 +254,85 @@ test_end_turn:-
 
 test_destroy_tower :-
     nl,writeln('test_destroy_tower ======================================================'),
-    test_map(Map, [ProvinceRed, _]),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
     
     writeln('Testing wrong purchase: red spearman near blue tower... '),
     change_province_money(ProvinceRed, 30, ProvinceRed1),
     get_hex(Map, [1,2], DestHex),
-    \+ buy_and_place(Map, ProvinceRed1, spearman, DestHex, _, _),
+    \+ buy_and_place(Map, [ProvinceRed1, ProvinceBlue], ProvinceRed1, spearman, DestHex, _, _, _),
     writeln('Spearman succesfully not placed!'),nl,
 
     writeln('Testing purchase baron and blue tower destruction action by red... '),
-    buy_and_place(Map, ProvinceRed1, baron, DestHex, Map1, ProvinceRed2),
+    buy_and_place(Map, [ProvinceRed1, ProvinceBlue], ProvinceRed1, baron, DestHex, Map1, _, ProvinceRed2),
     print_map(Map1),
     writeln('Baron succesfully placed! '),
     
     get_hex(Map1, [1,2], BaronHex),
     get_hex(Map1, [2,2], ToHex),
-    displace_unit(Map1, ProvinceRed2, BaronHex, ToHex, Map2, _),
+    displace_unit(Map1, [ProvinceRed2, ProvinceBlue], ProvinceRed2, BaronHex, ToHex, Map2, _, _),
     print_map(Map2),
     writeln('Blue tower succesfully destroyed! '),
     writeln('Ok!').
 
-test_merge:-
-    nl,writeln('test_merge ======================================================'),
-    test_map(Map, [ProvinceRed, _]),
+test_displace_with_merge:-
+    nl,writeln('test_displace_with_merge ======================================================'),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
     print_map(Map),
     % Test: displace_unit with merge
     write('Testing merge units with displacement... '),
     change_province_money(ProvinceRed, 40, ProvinceRed2),
     get_hex(Map, [0,1], NewUnitHex),
-    buy_and_place(Map, ProvinceRed2, baron, NewUnitHex, Map2, ProvinceRed3),
+    buy_and_place(Map, [ProvinceRed2, ProvinceBlue], ProvinceRed2, baron, NewUnitHex, Map2, _, ProvinceRed3),
     print_map(Map2),
     get_hex(Map2, [0,0], FromHex),
     get_hex(Map2, [0,1], DestHex),
-    displace_unit(Map2, ProvinceRed3, FromHex, DestHex, NewMap, _),
+    displace_unit(Map2, [ProvinceRed3, ProvinceBlue], ProvinceRed3, FromHex, DestHex, NewMap, _, _),
     print_map(NewMap),
     writeln('Ok!').
 
 test_buy_and_merge:-
     nl,writeln('test_buy_and_merge ======================================================'),
-    test_map(Map, [ProvinceRed, _]),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
     print_map(Map),
     % Test: buy_and_place with merge
     write('Testing buy and merge units... '),
     change_province_money(ProvinceRed, 100, ProvinceRed2),
     get_hex(Map, [0,0], NewUnitHex),
-    \+ buy_and_place(Map, ProvinceRed2, knight, NewUnitHex, _, _),
-    buy_and_place(Map, ProvinceRed2, baron, NewUnitHex, NewMap2, _),
+    \+ buy_and_place(Map, [ProvinceRed2, ProvinceBlue], ProvinceRed2, knight, NewUnitHex, _, _, _),
+    buy_and_place(Map, [ProvinceRed2, ProvinceBlue], ProvinceRed2, baron, NewUnitHex, NewMap2, _,_),
     get_hex(NewMap2, [0,0], NewUnitHex2), % Get
     hex_unit(NewUnitHex2, knight), % Check
     print_map(NewMap2),
     writeln('Ok!').
 
-test_divide_money_after_attack:-
-    nl,writeln('test_divide_money_after_attack ======================================================'),
-    test_map(Map, [_ProvinceRed, ProvinceBlue]),
-
-    % Initial setup
-    writeln('Initial Map:'),
+test_share_money:-
+    nl,writeln('test_share_money ======================================================'),
+    test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
     print_map(Map),
 
-    change_province_money(ProvinceBlue, 20, ProvinceBlue2),
-    get_hex(Map, [1,2], BlueSpearmanHex),
-    buy_and_place(Map, ProvinceBlue2, spearman, BlueSpearmanHex, Map2, ProvinceBlue3),
-    
-    find_province(Map2, [1,0], ProvinceRed2),
-
-    get_hex(Map2, [1,2], BlueSpearmanHexFrom),
-    get_hex(Map2, [1,1], BlueSpearmanHexTo),
-    displace_unit(Map2, ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, _ProvinceBlue4),
-    writeln('Map after the attack:'),
-    print_map(Map3),
-
-    % Find the two new red provinces after the attack
-    find_province(Map3, [1,0], NewProvinceRed1),
-    find_province(Map3, [0,2], NewProvinceRed2),
-
-    % Divide the money after the attack
-    change_province_money(ProvinceRed2, 29, ProvinceRed3),
-    writeln('Red province Total Money:'), writeln('29'),
-    divide_money_after_attack(ProvinceRed3, NewProvinceRed1, NewProvinceRed2, NewProvinceRed1Updated, NewProvinceRed2Updated),
-
-    % Check if the money has been correctly divided
-    province_money(NewProvinceRed1Updated, Money1),
-    province_money(NewProvinceRed2Updated, Money2),
-    TotalMoney is Money1 + Money2,
-    
-    % Print the results
-    writeln('Checking the division of money after the attack...'),
-    writeln('New Total Money:'), writeln(TotalMoney),
-    writeln('Money in NewProvinceRed1:'), writeln(Money1),
-    writeln('Money in NewProvinceRed2:'), writeln(Money2),
-
+    writeln('testing attack with merge + split'),
+    change_province_money(ProvinceBlue, 13, ProvinceBlue1),
+    change_province_money(ProvinceRedEst, 17, ProvinceRedEst1),
+    change_province_money(ProvinceRedWest, 50, ProvinceRedWest1),
+    get_hex(Map, [2,2], RedAttackHex),
+    buy_and_place(Map, [ProvinceBlue1, ProvinceRedEst1, ProvinceRedWest1], ProvinceRedWest1, baron, RedAttackHex, Map2, NewProvinces, _),
+    same_elements(NewProvinces,[
+        province(red,[hex(14,[2,4],_,red,none,none),hex(13,[2,3],_,red,none,none),hex(12,[2,2],_,red,none,baron),hex(16,[3,1],_,red,none,none),hex(15,[3,0],_,red,none,none),hex(20,[4,0],_,red,none,none)],37),
+        province(blue,[hex(7,[1,2],_,blue,none,none),hex(1,[0,1],_,blue,none,none),hex(6,[1,1],_,blue,none,none)],7),
+        province(blue,[hex(22,[4,2],_,blue,none,none),hex(17,[3,2],_,blue,none,none)],5)
+    ]),
+    print_map(Map2),
     writeln('Ok!').
 
 test_manhattan_distance:-
     nl,writeln('test_manhattan_distance ======================================================'),
-    test_map(Map, [_ProvinceRed, ProvinceBlue]),
+    test_map(Map, [ProvinceRed, ProvinceBlue]),
 
     % Purchase Peasant
     writeln('Purchasing Paesant:'),
     change_province_money(ProvinceBlue, 10, ProvinceBlue1),
     get_hex(Map, [3,4], BluePeasantHex),
-    buy_and_place(Map, ProvinceBlue1, peasant, BluePeasantHex, Map1, ProvinceBlue2),
+    buy_and_place(Map, [ProvinceRed, ProvinceBlue1], ProvinceBlue1, peasant, BluePeasantHex, Map1, _, ProvinceBlue2),
     print_map(Map1),
 
     % First check
@@ -349,7 +341,7 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom, BluePeasantHexTo, Distance1),
     Distance1 =< 4,
     write('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
-    displace_unit(Map1, ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, ProvinceBlue3),
+    displace_unit(Map1, [ProvinceRed, ProvinceBlue2], ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, _, ProvinceBlue3),
     print_map(Map2),
 
     % Second check
@@ -358,7 +350,7 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom1, BluePeasantHexTo1, Distance2),
     Distance2 =< 4,
     write('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
-    displace_unit(Map2, ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, ProvinceBlue4),
+    displace_unit(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, _, ProvinceBlue4),
     print_map(Map3),
 
     % Third check
@@ -367,7 +359,7 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom2, BluePeasantHexTo2, Distance3),
     Distance3 > 4,
     write('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
-    \+ displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _),
+    \+ displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _, _),
     print_map(Map3),
 
     % Fourth check
@@ -376,7 +368,7 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom3, BluePeasantHexTo3, Distance4),
     Distance4 =< 4,
     write('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
-    displace_unit(Map3, ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _),
+    displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _, _),
     print_map(Map4),
 
     writeln('Ok!').

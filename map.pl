@@ -15,7 +15,7 @@
                 spawn_provinces/2]).
 :- use_module(library(random)).
 :- use_module(library(clpfd)).
-:- use_module([printer, hex]).
+:- use_module([utils, hex]).
 
 % Map parameters
 :- dynamic(map/1).

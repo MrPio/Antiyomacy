@@ -171,7 +171,7 @@ find_provinces_in_hexes_(Map,[Hex|Tail],Found,Provinces) :-
     ;   NewFound=Found
     ),
     % Continue the search
-    find_provinces_in_hexes_(Map,Tail,NewFound,Provinces).
+    find_provinces_in_map_(Map,Tail,NewFound,Provinces).
 
 % Find a single province by searching around the given coordinates
 % find_province(+Map, +Coord, -Province)
@@ -258,15 +258,13 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
 buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince) :-
     % Check if the purchase is economically valid
     check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
-    % Subtract the cost from the province's money (also in the provinces list)
+    % Subtract the cost from the province's money
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
-    op_list(Provinces, [In, Out] >> (In == Province, change_province_money(In, LeftMoney, Out)), ProvincesWithMoney),
-
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
     (   % The resource to be placed is a unit:
         unit(ResourceName, _, _, _, _), % Check
-        place_unit(Map, ProvincesWithMoney, ProvinceWithNewMoney, ResourceName, DestHex, NewMap, NewProvinces, NewProvince), !
+        place_unit(Map, Provinces, ProvinceWithNewMoney, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
     ;   % The resource to be placed is a building:
         building(ResourceName, _, _, _), % Check
         building_placement(Map, Province, ResourceName, DestHex), % Check
@@ -337,23 +335,20 @@ check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
     % Find all the player's old provinces that have at least one hex in the near8 of the conquered hex
     % Note: there is always at least one province that fulfils this condition
     near8(Map, HexCoord, NearHexes),
-    findall(Province,
+    setof(Province, NearHex^
         (   member(NearHex, NearHexes),
             member(Province, OldProvinces),
             province_owner(Province, Player), % Check
             province_hexes(Province, ProvinceHexes), % Get
             member(NearHex, ProvinceHexes)
         ), ProvincesToRemove),
-
-    % Remove the duplicates
-    filter(ProvincesToRemove, [X, Partial] >> (\+ member(X, Partial)), ProvincesToRemoveFiltered),
-
+    % TODO here: ok pero ti devi assicurare che il findall non produca duplicati di province in oldprovinces
     % Add money to new province from provinces to remove
-    share_money(ProvincesToRemoveFiltered, [NewProvince], NewProvinceWithMoney),
+    share_money(ProvincesToRemove, [NewProvince], NewProvinceWithMoney),
 
     % Update the new provinces list
-    exclude([X] >> (member(X, ProvincesToRemoveFiltered)), OldProvinces, ProvincesWithoutNewProvince),
-    append(ProvincesWithoutNewProvince, NewProvinceWithMoney, NewProvinces), !.
+    append(ProvincesWithoutNewProvince, ProvincesToRemove, OldProvinces),
+    append(ProvincesWithoutNewProvince, [NewProvinceWithMoney], NewProvinces).
 
 % Checks if a province has been split
 % Note: This should be called only in the case of an invasion attack
@@ -363,22 +358,21 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
     province_owner(NewProvince, Player), % Get
     hex_coord(Hex, HexCoord), % Get
 
-    % Select all the enemy hexes in the nearby8 of the invaded hex
+    % Check if the near8 of the conquered hex contains at least 2 non-adjacent hexes
     near8(Map, HexCoord, NearHexes),
-    include([X] >> (hex_owner(X, Owner), Owner\=none, Owner\=Player), NearHexes, NearEnemyHexes),
+    exclude([X] >> (hex_owner(X, Owner), Owner\=none, Owner\=Player), NearHexes, NearEnemyHexes),
     length(NearEnemyHexes, NearEnemyHexesSize), % Get
-    (   % Check if the near8 of the conquered hex contains at least 2 non-adjacent hexes
-        NearEnemyHexesSize >= 2,
-        nth0(0, NearEnemyHexes, Hex1), % Get
+    (   NearEnemyHexesSize >= 2,
+        member(Hex1, NearEnemyHexes), % Get
         member(Hex2, NearEnemyHexes), % Get
         Hex1 \= Hex2,
-        \+ hexes_adjacent8(Hex1, Hex2),
+        hexes_adjacent8(Hex1, Hex2),
 
-        % Select an hex inside the near8 and check that it is not connected to all other enemy hexes in the near8
+        % Select a hex inside the near8 and check that it is not connected to all other enemy hexes in the near8
         hex_coord(Hex1,Coord1), % Get
         find_province(Map, Coord1, TestProvince),
         province_hexes(TestProvince, TestProvinceHexes), % Check
-        \+ subset(NearEnemyHexes, TestProvinceHexes), !,
+        \+ maplist([X] >> (member(X, TestProvinceHexes)), NearEnemyHexes),!,
 
         % Now I can say for sure there has been a split on the enemy province
         find_provinces(Map, NearEnemyHexes, NewEnemyProvinces),
@@ -401,5 +395,5 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
     ),
 
     % Update the new provinces list
-    exclude([X] >> (X==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
-    append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, NewProvinces), !.
+    append(ProvincesWithoutSplitProvince, [OldSplitProvince], OldProvinces),
+    append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, NewProvinces).
