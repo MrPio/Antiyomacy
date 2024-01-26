@@ -1,9 +1,11 @@
 :- use_module([utils, map, hex, province, unit, building, economy]).
 
 /* TODO:
-    • Province merge and split (very hard!) (Valerio)
     • When a province becomes smaller than 2 hexes, it must be destroyed immediately and its owner should become 'none'.
+    • minimax.pl
+    • evaluation_function.pl
     -------------------------------------------------------------------------------------------------
+    X Province merge and split (very hard!) (Valerio)
     X Two units of the same level may join together to form a stronger unit. (Federica)
     X Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
       own Province. (Federico)

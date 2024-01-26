@@ -400,6 +400,9 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
         NewEnemyProvincesWithMoney = [NewEnemyProvince]
     ),
 
+    % TODO here: Remove enemy provinces smaller than 2 hexes and free their hexes. Add NewMap attribute
+    % exclude([X] >> (province_size(X, 1)), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove)
+
     % Update the new provinces list
     exclude([X] >> (X==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
     append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, NewProvinces), !.
