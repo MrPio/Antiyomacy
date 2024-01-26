@@ -38,17 +38,18 @@ Now, it is important to note that there are three different ways in which a unit
 <a name="merge_split"></a>
 ## 🪓 Province merge/split algorithm
 As you can see in the following image, handling the possibility of merging or splitting provinces after an attack is quite tricky.
-<img src="img/screen2.png", width="250rem">
 
-This is due to the need for a map scan after each attack. Since the goal of this project revolves around the minimax algorithm, it is clear that runtime performance is of utmost importance. This means that it would be nice to avoid recalculating all provinces on every move (with the `province:find_provinces/2` predicate) due to the complexity of breadth-first search. Furthermore, even if you did this after every move, there is still the problem of identifying which provinces have split or merged with which other provinces.
+<img src="img/screen2.png" width="250rem">
 
-That being said, we propose a lazy algorithm that tries to take advantage of sufficient conditions for both merge and split cases to reduce the use of breadth-first search for province recalculation. Let's break down this algorithm:
+This is due to the need for a map scan after each attack. Since the goal of this project revolves around the minimax algorithm, it is clear that runtime performance is of utmost importance. This means that it would be nice to avoid recalculating all provinces on every move (with the `province:find_provinces/2` predicate) due to the complexity of the breadth-first search. Furthermore, even if you did this after every move, there is still the problem of identifying which provinces have split or merged with which other provinces.
+
+That being said, we propose a lazy algorithm that takes advantage of sufficient conditions for both merge and split cases to reduce the use of breadth-first search for province recalculation. Let's break down this algorithm:
 
 ### Search for a merge
 1. A province merge can only occur after a unit has conquered an unoccupied hex or invaded an enemy hex;
-2. If this is the case, find all the player's provinces in the old provinces list that touch the area around the conquered hex,
+2. If this is the case, find all the player's provinces in the list of the old provinces that touch the area around the conquered hex,
 3. Calculate the money of the newly merged province as the sum of the money of these found provinces,
-4. Remove these provinces from the provinces list.
+4. Remove these provinces from the list of the provinces.
 5. Add the new player's province that was found with a breadth-first search around the conquered hex.
 
 ### Search for a split
@@ -56,8 +57,8 @@ That being said, we propose a lazy algorithm that tries to take advantage of suf
 2. If this is the case, check if there are any non-adjacent enemy hexes in the surrounding of the invaded hex,
 3. If this is the case, select one of these hexes and check that it is not connected to all the other hexes surrounding the invaded hex, using a breadth-first search,
 4. If this is the case, a split has certainly occurred. Find all the provinces using a breadth-first on the enemy hexes surrounding the invaded hex,
-5. Select the split province from the old provinces list and use it to calculate the new split provinces money,
-6. Remove the former and add the latter to the provinces list.
+5. Select the split province from the list of the old provinces and use it to calculate the new split provinces' money,
+6. Remove the former and add the latter to the list of the provinces.
 7. Otherwise, if the split hasn't happened, the invaded enemy province will still have to be recalculated due to the attack.
 
 The use of these two predicates in sequences makes it possible to detect the occurrence of both simultaneous splitting and merging.
@@ -111,7 +112,7 @@ Note: The term "resource" refers to both units and buildings.
     - **tower_nearby/3** : Checks if there is an enemy tower nearby that prevents a unit move
     - **strong_tower_nearby/3** : Checks if there is an enemy strong tower nearby that prevents a unit move
     - **farm_nearby/4** : Checks if there is a farm nearby, useful to check where a farm can be placed
-    - **building_placement/4** : Checks/Gets a building valid location on the given province. This is useful to list all the possible placement moves for a given building (❓non-deterministic❓)
+    - **building_placement/4** : Checks/Gets a building valid location in the given province. This is useful to list all the possible placement moves for a given building (❓non-deterministic❓)
 
 - `economy.pl`
     - **get_income/2** : Calculate a province income. This will be added to the province money at the end of the turn
@@ -124,7 +125,7 @@ Note: The term "resource" refers to both units and buildings.
 - `utils.pl`
     - **print_map/1** : Print a map row with lateral coordinates
     - **same_elements/2** : Check whether two lists contain the same elements, regardless of their order
-    - **op_list/3** : Invoke an operation on all the element of a list (⬆️higher-order⬆️)
+    - **op_list/3** : Invoke an operation on all the elements of a list (⬆️higher-order⬆️)
     - **filter/3** : Filter a list with a condition related to the list being generated (⬆️higher-order⬆️)
     
 - `game.pl`
