@@ -29,6 +29,9 @@ stronger(UnitName1, BuildingName1) :-
 % Note: It is assumed that a unit can only be placed on the inner or outer
 %       border of a province, not within it.
 % Note: the FromHex hex is not a valid destination as the unit resides within it
+%       But in case of merge, it can happen for a unit to merge with itself, so 
+%       the caller should check that the destination differs from the original position
+%       in the case of a displace action
 % Note: this predicate only checks the validity of the placement, it does not
 %       edit the map in any way.
 % unit_placement(+Map, +Province, +UnitName, ?Hex, -NewUnitName) [non-deterministic]

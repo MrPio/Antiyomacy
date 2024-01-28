@@ -70,9 +70,10 @@ The code is structured as follows, listing the main predicates for each file.
 Note: The term "resource" refers to both units and buildings.
 
 ### Minimax files
+- `minimax.pl`
+    - **eval/2** : Calculates the evaluation function on a given game state
 - `eval.pl`
-    - **eval/3** : Calculates the evaluation function on a given game state
-
+    - **eval/2** : Calculates the evaluation function on a given game state
 ---
 ### Game core files
 

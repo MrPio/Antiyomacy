@@ -2,6 +2,7 @@
                 sea/1,
                 terrain/1,
                 owner/1,
+                player/1,
                 hex/6,
                 hex_index/2,
                 hex_coord/2,
@@ -24,7 +25,9 @@ sea(ocean).
 terrain(X) :- member(X,[desert, wood, rock, sheep, clay, hay]).
 
 % Owners enum
-owner(X) :-member(X,[none, red, blue]).
+owner(none).
+owner(X) :- player(X).
+player(X) :- member(X,[red, blue]).
 
 % Hex struct ====================================================================
 hex(Index,[X,Y], Tile, Owner, Building, Unit) :- 

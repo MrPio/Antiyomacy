@@ -1,9 +1,11 @@
-:- use_module([utils, map, hex, province, unit, building, economy]).
+:- module(game, [move/2, play/0, test/0]).
+:- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 
 /* TODO:
     • When a province becomes smaller than 2 hexes, it must be destroyed immediately and its owner should become 'none'.
     • minimax.pl
     • evaluation_function.pl
+    • Start money of provinces
     -------------------------------------------------------------------------------------------------
     X Province merge and split (very hard!) (Valerio)
     X Two units of the same level may join together to form a stronger unit. (Federica)
@@ -38,11 +40,81 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
+% TODO
+has_won(_Map, _Provinces, _Player):-
+    fail.
+
+% Get one possible move (non-deterministic)
+% move(+Board, -NextBoard)
+move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, NewState)):-
+    % Select all the player's provinces
+    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
+    % Select the new player
+    player(NewPlayer), NewPlayer \= Player,
+    move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
+    % Determine if the game has ended
+    (   has_won(NewMap, NewProvinces, Player)
+    ->  NewState= win
+    ;   NewState = play
+    ).
+
+% province_move(+Map, +Provinces, +ProvincesOfPlayer, -NewMap, -NewProvinces)
+move_(Map, Provinces, [], Map, Provinces).
+move_(Map, Provinces, [ProvinceOfPlayer|T], NewMap, NewProvinces):-
+    province_move(Map, Provinces, ProvinceOfPlayer, NewMap1, NewProvinces1),
+    move_(NewMap1, NewProvinces1, T, NewMap, NewProvinces).
+
+% province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
+province_move(Map, Provinces, Province, NewMap, NewProvinces):-
+    province_hexes(Province, Hexes), % Get
+    % Select hexes with unit
+    include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
+    province_move_(Map, Provinces, Province, HexesWithUnit, NewMap, NewProvinces).
+
+% province_move_(+Map, +Provinces, +Province, +HexesWithUnit, -NewMap, -NewProvinces)
+province_move_(Map, Provinces, _, [], Map, Provinces).
+province_move_(Map, Provinces, Province, [HexWithUnit|T], NewMap, NewProvinces):-
+    unit_move(Map, Provinces, Province, HexWithUnit, NewMap1, NewProvinces1, NewProvince1),
+    province_move_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces).
+
+% unit_move(+Map, +Provinces, +Province, +HexWithUnit, -NewMap, -NewProvinces, -NewProvince)
+unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvince):-
+   % The unit remains still
+    NewMap = Map,
+    NewProvinces = Provinces,
+    NewProvince = Province
+;   % The unit moves to another hex
+    hex_unit(HexWithUnit, Unit), % Get
+    findall(D, unit_placement(Map, Province, Unit, D, _), Dests),
+    member(DestHex, Dests),
+    DestHex \= HexWithUnit,
+    displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewMap, NewProvinces, NewProvince).
+
+
 % Play the game
 play:-
-    generate_random_map(Map, false),
-    spawn_provinces(Map, MapWithProvinces),
-    print_map(MapWithProvinces).
+    % generate_random_map(Map, false),
+    % spawn_provinces(Map, MapWithProvinces),
+    % print_map(MapWithProvinces),
+    % find_provinces(MapWithProvinces, Provinces),
+    generate_random_map(_, true),
+    RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
+    BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
+    Buildings=[[2,2]-tower],
+    Units=[[0,0]-peasant, [1,0]-peasant],
+    foreach(member(Coord,RedHexes),set_owner(Coord,red)),
+    foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
+    foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
+    foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
+    map(MapWithProvinces),
+    print_map(MapWithProvinces),
+    find_provinces(MapWithProvinces, Provinces),
+    writeln('==============================================='),
+
+    move(board(MapWithProvinces, Provinces, red, play), NewBoard),
+    move(NewBoard, NewBoard1),
+    board_map(NewBoard1, NewMap),
+    print_map(NewMap).
 
 % Run all the tests
 test:-

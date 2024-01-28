@@ -271,11 +271,11 @@ spawn_provinces(Map, NewMap):-
         ),
     % Use the Random Walker algorithm to spawn the red province
     call(StepAction, red, RedStepAction),
-    random_between(2, 5, RedSteps),
+    random_between(2, 4, RedSteps),
     walk(Map, [RedX,RedY], RedStepAction, WalkableCoordCondition, RedSteps, NewMapWithRed),
     % Use the Random Walker algorithm to spawn the blue province
     call(StepAction, blue, BlueStepAction),
-    random_between(2, 5, BlueSteps),
+    random_between(2, 4, BlueSteps),
     walk(NewMapWithRed, [BlueX,BlueY], BlueStepAction, WalkableCoordCondition, BlueSteps, NewMap),
     update_map(NewMap),!.
     
