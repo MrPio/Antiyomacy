@@ -1,6 +1,9 @@
 :- module(eval, [eval/2]).
 :- use_module([hex, province, economy]).
 
+% Calculates the evaluation function on a given game state
+% TODO: recognize the win state and boost the score
+% eval(+Provinces, +Player, -Score)
 eval(Provinces, Player, Score) :-
     % Filter player and enemy provinces
     include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),

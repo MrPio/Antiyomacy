@@ -69,6 +69,11 @@ These two algorithms are implemented in the predicates `province:check_for_merge
 The code is structured as follows, listing the main predicates for each file.
 Note: The term "resource" refers to both units and buildings.
 
+### Minimax files
+- `eval.pl`
+    - **eval/3** : Calculates the evaluation function on a given game state
+
+---
 ### Game core files
 
 - `hex.pl`
