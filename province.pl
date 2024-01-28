@@ -352,7 +352,7 @@ check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
     share_money(ProvincesToRemoveFiltered, [NewProvince], NewProvinceWithMoney),
 
     % Update the new provinces list
-    exclude([X] >> (member(X, ProvincesToRemoveFiltered)), OldProvinces, ProvincesWithoutNewProvince),
+    exclude([In] >> (member(X, ProvincesToRemoveFiltered)), OldProvinces, ProvincesWithoutNewProvince),
     append(ProvincesWithoutNewProvince, NewProvinceWithMoney, NewProvinces), !.
 
 % Checks if a province has been split
@@ -365,7 +365,7 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
 
     % Select all the enemy hexes in the nearby8 of the invaded hex
     near8(Map, HexCoord, NearHexes),
-    include([X] >> (hex_owner(X, Owner), Owner\=none, Owner\=Player), NearHexes, NearEnemyHexes),
+    include([In] >> (hex_owner(X, Owner), Owner\=none, Owner\=Player), NearHexes, NearEnemyHexes),
     length(NearEnemyHexes, NearEnemyHexesSize), % Get
     (   % Check if the near8 of the conquered hex contains at least 2 non-adjacent hexes
         NearEnemyHexesSize >= 2,
@@ -401,8 +401,8 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
     ),
 
     % TODO here: Remove enemy provinces smaller than 2 hexes and free their hexes. Add NewMap attribute
-    % exclude([X] >> (province_size(X, 1)), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove)
+    % exclude([In] >> (province_size(X, 1)), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove)
 
     % Update the new provinces list
-    exclude([X] >> (X==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
+    exclude([In] >> (X==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
     append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, NewProvinces), !.
