@@ -3,10 +3,13 @@
 
 /* TODO:
     • When a province becomes smaller than 2 hexes, it must be destroyed immediately and its owner should become 'none'.
-    • minimax.pl
-    • evaluation_function.pl
-    • Start money of provinces
+    • Start game adding some money to the provinces
+    • Complete the move/2 predicate handling both purchase actions
+    • Write the has_won/3 predicate
+    • Write the game controller which calls the minimax module
     -------------------------------------------------------------------------------------------------
+    X Write the minimax algorithm with alpha beta pruning (Valerio)
+    X Write a first draft of the evaluation function (Valerio)
     X Province merge and split (very hard!) (Valerio)
     X Two units of the same level may join together to form a stronger unit. (Federica)
     X Any unit can move up to 4 hexes in a turn, provided that all but the last hex are their
