@@ -2,10 +2,11 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 
 /* TODO:
-    • When a province becomes smaller than 2 hexes, it must be destroyed immediately and its owner should become 'none'.
-    • Start game adding some money to the provinces
+    • When a province becomes smaller than 2 hexes, it must be destroyed immediately 
+      and its owner should become 'none'. (Federico)
+    • Start game adding some money to the provinces 
     • Complete the move/2 predicate handling both purchase actions
-    • Write the has_won/3 predicate
+    • Write the has_won/3 predicate (Federico)
     • Write the game controller which calls the minimax module
     -------------------------------------------------------------------------------------------------
     X Write the minimax algorithm with alpha beta pruning (Valerio)
@@ -57,7 +58,7 @@ move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, Ne
     move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
     % Determine if the game has ended
     (   has_won(NewMap, NewProvinces, Player)
-    ->  NewState= win
+    ->  NewState = win
     ;   NewState = play
     ).
 
