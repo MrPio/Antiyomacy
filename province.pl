@@ -402,16 +402,26 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces, UpdatedMap) :
         NewEnemyProvincesWithMoney = [NewEnemyProvince]
     ),
 
-    % TODO here: Remove enemy provinces smaller than 2 hexes and free their hexes. Add NewMap attribute
+    % Remove enemy provinces smaller than 2 hexes and free their hexes:
+    % Exclude provinces with a size greater than 1 from the list of enemy provinces with money
     exclude([X] >> (province_size(X, Size), Size > 1), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove),
+    
+    % Extract the hexes corresponding to the provinces to be removed
     get_hexes_from_provinces(NewEnemyProvincesToRemove, HexesToRemove),
-    set_hexes_to_empty(Map, HexesToRemove, TempMap),
-    UpdatedMap = TempMap,
+    
+    % Set the hexes specified in HexesToRemove to empty in the map
+    set_hexes_to_empty(Map, HexesToRemove, UpdatedMap),
 
-    % Update the new provinces list
+    % Update the new provinces list:
+    % Exclude the split province from the old provinces list
     exclude([In] >> (In==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
+    
+    % Combine the provinces without the split province and the new enemy provinces with money
     append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, FinalProvinces),
+    
+    % Exclude the provinces to be removed from the final provinces list
     exclude([In] >> member(In, NewEnemyProvincesToRemove), FinalProvinces, NewProvinces), !.
+
 
 % Given a list of provinces, get the combined list of hexes
 % get_hexes_from_provinces(+Provinces, -Hexes)
