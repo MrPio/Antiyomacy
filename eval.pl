@@ -6,11 +6,11 @@
 % eval(+Board, -Score)
 eval(Board, Score) :-
     board_provinces(Board, Provinces), % Get
-    board_player(Board, Player), % Get
+    MAX = blue,
 
     % Filter player and enemy provinces
-    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
-    exclude([In]>>(province_owner(In, Player)), Provinces, ProvincesOfEnemy),
+    include([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfPlayer),
+    exclude([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfEnemy),
 
     % Calculate the total money
     maplist(province_money, ProvincesOfPlayer, PlayerMoneys),
@@ -32,11 +32,11 @@ eval(Board, Score) :-
 
     % Calculate the evaluation score
     Score is (
-        PlayerTotalMoney    * 1 +
+        PlayerTotalMoney    * 0 +
         PlayerTotalSize     * 5 +
         PlayerTotalIncome   * 1 ) 
         - (
-        EnemyTotalMoney    * 1 +
+        EnemyTotalMoney    * 0 +
         EnemyTotalSize     * 5 +
         EnemyTotalIncome   * 1 ).
 

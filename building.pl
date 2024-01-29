@@ -50,7 +50,7 @@ farm_nearby(Map, [X, Y], Province) :-
     province_hexes(Province, ProvinceHexes),
     member(Hex, ProvinceHexes),
     % Check if the hex hosts a farm
-    hex_building(Hex, farm).
+    hex_building(Hex, farm), !.
     
 
 % Moves ======================================================
@@ -60,20 +60,19 @@ farm_nearby(Map, [X, Y], Province) :-
 %       on the inner border of the province, not within it. Farms, on the other hand,
 %       should be placed near other farms
 % building_placement(+Map, +Province, +BuildingName, ?ToHex) [non-deterministic]
-building_placement(Map, Province, farm, Hex) :-
+building_placement(Map, Province, farm, Hex) :-!,
     % Find one possible destination / Check the destination validity on the province
     province_hexes(Province, Hexes),
     member(Hex, Hexes),
     % The destination should not host any units or buildings
     hex_unit(Hex, none), % Check
     hex_building(Hex, none), % Check
-    (
-        % This should be the first farm placed in the province
-        province_count(Province, farm, 0) % Check
-        ;
-        % Otherwise, it should be placed near another farm
+    (   % This should be the first farm placed in the province
+        \+( province_count(Province, farm, 0)) % Check
+    ->  % Otherwise, it should be placed near another farm
         hex_coord(Hex, HexCoord), % Get
         farm_nearby(Map, HexCoord, Province)
+    ;   true
     ).
 building_placement(Map, Province, _, Hex) :-
     % Find one possible destination / Check the destination validity on the province

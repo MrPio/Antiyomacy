@@ -11,7 +11,7 @@ unit(spearman,  2,          2,      20,   -6).
 unit(baron,     3,          3,      30,   -18).
 unit(knight,    4,          3,      40,   -36).
 
-max_displacement_distance(4).
+max_displacement_distance(1).
 % Determine whether one unit or one building can be destroyed by another unit
 % Note: If any of the two unit names is none, it fails
 stronger(UnitName1, UnitName2) :-
