@@ -79,7 +79,7 @@ move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, Ne
     player(NewPlayer), NewPlayer \= Player,
     move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
     % Determine if the game has ended
-    (   has_won(NewMap, NewProvinces, Player)
+    (   has_won(NewMap, Player)
     ->  NewState = win
     ;   NewState = play
     ).
