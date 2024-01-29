@@ -93,6 +93,7 @@ Note: The term "resource" refers to both units and buildings.
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
     - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game (⬆️higher-order⬆️)
     - **set_hexes_to_empty/3** : Sets the specified hexes unit, building and owner in the hex list to none
+    - **get_non_sea_hexes/2** : Get all hexes on the map that do not have 'sea' in their tile
 
 - `province.pl`
     - **province/3** : The struct of a player's province
