@@ -12,7 +12,9 @@
                 set_building/2, set_building/4,
                 set_unit/2, set_unit/4,
                 destroy_units/3,
-                spawn_provinces/2]).
+                spawn_provinces/2,
+                set_hexes_to_empty/3,
+                get_non_sea_hexes/2]).
 :- use_module(library(random)).
 :- use_module(library(clpfd)).
 :- use_module([utils, hex]).
@@ -278,4 +280,26 @@ spawn_provinces(Map, NewMap):-
     random_between(2, 4, BlueSteps),
     walk(NewMapWithRed, [BlueX,BlueY], BlueStepAction, WalkableCoordCondition, BlueSteps, NewMap),
     update_map(NewMap),!.
+
+% Sets the specified hexes unit, building and owner in the hex list to none
+% set_hexes_to_empty(+Map, +HexList, -UpdatedMap)
+set_hexes_to_empty(Map, HexList, UpdatedMap) :-
+    set_hexes_to_empty_recursive(Map, HexList, UpdatedMap).
+    % Base case: empty list, nothing to do
+    set_hexes_to_empty_recursive(Map, [], Map).
+    % Recursive case: set the current hex to empty and continue with the others
+    set_hexes_to_empty_recursive(Map, [Hex | RestHexes], UpdatedMap) :-
+    set_hex_empty(Map, Hex, TempMap),
+    set_hexes_to_empty_recursive(TempMap, RestHexes, UpdatedMap).
+    % Set a single hex to empty
+    set_hex_empty(Map, Hex, UpdatedMap) :-
+    hex_coord(Hex, Coord), % Extract coordinates from the hex
+    set_owner(Map, Coord, none, MapWithNoneOwner),
+    set_building(MapWithNoneOwner, Coord, none, MapWithNoneBuilding),
+    set_unit(MapWithNoneBuilding, Coord, none, UpdatedMap).
+
+% Get all hexes on the map that do not have 'sea' in their tile
+get_non_sea_hexes(Map, NonSeaHexes) :-
+    findall(Hex, (get_hex(Map, _, Hex), \+ hex_tile(Hex, sea)), NonSeaHexes).
+
     

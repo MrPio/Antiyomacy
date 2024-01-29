@@ -7,9 +7,11 @@
       and its owner should become 'none'. (Federico)
     • Start game adding some money to the provinces
     • Complete the move/2 predicate handling both purchase actions
-    • Write the has_won/3 predicate (Federico)
     • Write the game controller which calls the minimax module
     -------------------------------------------------------------------------------------------------
+    X Write the has_won/2 predicate (Federico)
+    X When a province becomes smaller than 2 hexes, it must be destroyed immediately 
+      and its owner should become 'none'. (Federico)
     X Write the minimax algorithm with alpha beta pruning (Valerio)
     X Write a first draft of the evaluation function (Valerio)
     X Province merge and split (very hard!) (Valerio)
@@ -45,9 +47,28 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
-% TODO
-has_won(_Map, _Provinces, _Player):-
-    fail.
+% Checks if the player (Player) has won by ensuring that at least 80% of the hexes (excluding sea tiles).
+% has_won(+Map, +Player)
+has_won(Map, Player) :-
+    % Get all hexes on the map that do not have 'sea' in their tile
+    get_non_sea_hexes(Map, NonSeaHexes),
+
+    % Calculate the total hexes on the map (excluding sea)
+    length(NonSeaHexes, TotalHexes),
+
+    % Calculate the total hexes owned by the player (excluding sea)
+    findall(PlayerHex, (
+        member(PlayerHex, NonSeaHexes),
+        hex_owner(PlayerHex, Player)
+    ), PlayerHexes),
+
+    % Calculate the percentage of player's hexes compared to the total (excluding sea)
+    length(PlayerHexes, PlayerHexesCount),
+    
+    % Check if the percentage is at least 80%
+    Percentage is (PlayerHexesCount / TotalHexes) * 100,
+    Percentage >= 80.
+
 
 % Get one possible move (non-deterministic)
 % move(+Board, -NextBoard)
@@ -196,6 +217,7 @@ test:-
     test_buy_and_merge,
     test_share_money,
     test_manhattan_distance,
+    test_destroy_province,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generate the following test map
@@ -218,6 +240,7 @@ test_map(Map, [ProvinceRed, ProvinceBlue]):-
     foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
     map(Map),
     find_provinces(Map, [ProvinceRed, ProvinceBlue]).
+
 % Generate the following test map
 %    0 1 2 3 4
 % 0 | |b| | | |
@@ -234,6 +257,26 @@ test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]):-
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     map(Map),
     find_provinces(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]).
+
+% Generate the following test map
+%    0 1 2 3 4
+% 0 |r| |r|b|b|
+% 1 |r|r|r|b|b|
+% 2 |b|b|b|b|b|
+% 3 |b|b|b|b|b|
+% 4 |b|b|b|b|b|
+test_map3(Map, [ProvinceRed, ProvinceBlue]):-
+    generate_random_map(_, true),
+    % Manually populating the map
+    RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
+    BlueHexes=[[0,3],[0,4],[1,3],[1,4],[2,0],[2,1],[2,2],[2,3],[2,4],[3,0],[3,1],[3,2],[3,3],[3,4],[4,0],[4,1],[4,2],[4,3],[4,4]],
+    Units=[[0,0]-peasant],
+    foreach(member(Coord,RedHexes),set_owner(Coord,red)),
+    foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
+    foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
+    map(Map),
+    find_provinces(Map, [ProvinceRed, ProvinceBlue]).
+
 test_province:-
     nl,writeln('test_province ======================================================'),
     test_map(Map, [ProvinceRed, ProvinceBlue]),
@@ -514,3 +557,39 @@ test_manhattan_distance:-
 
     writeln('Ok!').
 
+test_destroy_province:-
+    nl,writeln('test_destroy_province ======================================================'),
+    test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
+    print_map(Map),
+        
+    % Purchase Peasant
+    writeln('Purchasing Paesant:'),
+    change_province_money(ProvinceRedWest, 10, ProvinceRedWest1),
+    get_hex(Map, [3,2], RedPeasantHex),
+    % Destroy blue hex after splitting
+    buy_and_place(Map, [ProvinceBlue, ProvinceRedWest1], ProvinceRedWest1, peasant, RedPeasantHex, Map1, _, _ProvinceRedWest2),
+    print_map(Map1),
+    writeln('Ok!').
+
+test_has_won:-
+    nl,writeln('test_has_won ======================================================'),
+    test_map3(Map, [ProvinceRed, ProvinceBlue]),
+    print_map(Map),
+    % Check blue has not won, now he has 19/25=76% hexes
+    writeln('Checking victory...'),
+    \+ has_won(Map, blue),
+    writeln('Blue has not won'),
+
+    % Purchase Peasant
+    writeln('Purchasing Paesant:'),
+    change_province_money(ProvinceBlue, 10, ProvinceBlue1),
+    get_hex(Map, [1,2], BluePeasantHex),
+    buy_and_place(Map, [ProvinceRed, ProvinceBlue1], ProvinceBlue1, peasant, BluePeasantHex, Map1, _, ProvinceBlue2),
+    print_map(Map1),
+
+    % Check blue has won, now he has 20/25=80% hexes
+    writeln('Checking victory...'),
+    has_won(Map1, blue),
+    writeln('Blue has now won'),
+
+    writeln('Ok!').
