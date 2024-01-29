@@ -92,6 +92,7 @@ Note: The term "resource" refers to both units and buildings.
     - **set_unit/4** : Spawns a unit on a given coordinate
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases
     - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game (⬆️higher-order⬆️)
+    - **set_hexes_to_empty/3** : Sets the specified hexes unit, building and owner in the hex list to none
 
 - `province.pl`
     - **province/3** : The struct of a player's province
@@ -107,6 +108,7 @@ Note: The term "resource" refers to both units and buildings.
     - **place_unit/8** : Place a unit on a given hex after checking the validity of the move
     - **check_for_merge/5** : Checks if a province has been merged
     - **check_for_split/5** : Checks if a province has been split
+    - **get_hexes_from_provinces/2**: Given a list of provinces, get the combined list of hexes
 
 - `unit.pl`
     - **unit/5** : The list of the units that can be bought

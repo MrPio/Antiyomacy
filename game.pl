@@ -2,13 +2,13 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 
 /* TODO:
-    • When a province becomes smaller than 2 hexes, it must be destroyed immediately 
-      and its owner should become 'none'. (Federico)
     • Start game adding some money to the provinces 
     • Complete the move/2 predicate handling both purchase actions
     • Write the has_won/3 predicate (Federico)
     • Write the game controller which calls the minimax module
     -------------------------------------------------------------------------------------------------
+    X When a province becomes smaller than 2 hexes, it must be destroyed immediately 
+      and its owner should become 'none'. (Federico)
     X Write the minimax algorithm with alpha beta pruning (Valerio)
     X Write a first draft of the evaluation function (Valerio)
     X Province merge and split (very hard!) (Valerio)
@@ -133,6 +133,7 @@ test:-
     test_buy_and_merge,
     test_share_money,
     test_manhattan_distance,
+    test_destroy_province,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generate the following test map
@@ -451,3 +452,16 @@ test_manhattan_distance:-
 
     writeln('Ok!').
 
+test_destroy_province:-
+    nl,writeln('test_destroy_province ======================================================'),
+    test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
+    print_map(Map),
+        
+    % Purchase Peasant
+    writeln('Purchasing Paesant:'),
+    change_province_money(ProvinceRedWest, 10, ProvinceRedWest1),
+    get_hex(Map, [3,2], RedPeasantHex),
+    % Destroy blue hex after splitting
+    buy_and_place(Map, [ProvinceBlue, ProvinceRedWest1], ProvinceRedWest1, peasant, RedPeasantHex, Map1, _, _ProvinceRedWest2),
+    print_map(Map1),
+    writeln('Ok!').

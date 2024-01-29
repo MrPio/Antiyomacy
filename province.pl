@@ -295,7 +295,7 @@ displace_unit(Map, Provinces, Province, FromHex, ToHex, NewMap, NewProvinces, Ne
 % Place a unit on a given hex after checking the validity of the move
 % Note: this centralises the logic for both placing and displacing unit moves
 % Note: this is for editing the map only
-% place_unit(+Map, +Province, +UnitName, +Hex, -NewMap)
+% place_unit(+Map, +Province, +UnitName, +Hex, -NewMap, -NewProvinces, -NewProvince)
 place_unit(Map, Provinces, Province, UnitName, Hex, NewMap, NewProvinces, NewProvince):-
     hex_coord(Hex, Coord), % Get
     province_owner(Province, Player), % Get
@@ -310,21 +310,23 @@ place_unit(Map, Provinces, Province, UnitName, Hex, NewMap, NewProvinces, NewPro
     % Ensure the player now owns the hex.
     set_owner(MapWithUnit, Coord, Player, MapWithUnitOwned),
     % Destroy any enemy building in the destination hex.
-    set_building(MapWithUnitOwned, Coord, none, NewMap),
+    set_building(MapWithUnitOwned, Coord, none, NewMap1),
 
     % Update the player province
-    update_province(NewMap, Province, NewProvince),
+    update_province(NewMap1, Province, NewProvince),
 
     % Check for player merge in case of conquest or invasion
     (   (OwnerBefore == none; OwnerBefore \= Player)
-    ->  check_for_merge(NewMap, Provinces, NewProvince, Hex, NewProvincesMerge)
+    ->  check_for_merge(NewMap1, Provinces, NewProvince, Hex, NewProvincesMerge)
     ;   NewProvincesMerge = Provinces
     ),
     % Check for enemy split in case of invasion
     (   (OwnerBefore \= none, OwnerBefore \= Player)
-    ->  check_for_split(NewMap, NewProvincesMerge, NewProvince, Hex, NewProvinces)
-    ;   NewProvinces = NewProvincesMerge
+    ->  check_for_split(NewMap1, NewProvincesMerge, NewProvince, Hex, NewProvinces, NewMap)
+    ;   NewProvinces = NewProvincesMerge,
+        NewMap = NewMap1
     ).
+
 
 % Checks if a province has been merged
 % Note: This should be called both in the case of an invasion and conquest
@@ -359,7 +361,7 @@ check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
 % Note: This should be called only in the case of an invasion attack
 % Note: This won't fail in case there hasn't been any split
 % check_for_split(+Map, +OldProvinces, +NewProvince, +Hex, -NewProvinces)
-check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
+check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces, UpdatedMap) :-
     province_owner(NewProvince, Player), % Get
     hex_coord(Hex, HexCoord), % Get
 
@@ -401,8 +403,21 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces) :-
     ),
 
     % TODO here: Remove enemy provinces smaller than 2 hexes and free their hexes. Add NewMap attribute
-    % exclude([X] >> (province_size(X, 1)), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove)
+    exclude([X] >> (province_size(X, Size), Size > 1), NewEnemyProvincesWithMoney, NewEnemyProvincesToRemove),
+    get_hexes_from_provinces(NewEnemyProvincesToRemove, HexesToRemove),
+    set_hexes_to_empty(Map, HexesToRemove, TempMap),
+    UpdatedMap = TempMap,
 
     % Update the new provinces list
     exclude([In] >> (In==OldSplitProvince), OldProvinces, ProvincesWithoutSplitProvince),
-    append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, NewProvinces), !.
+    append(ProvincesWithoutSplitProvince, NewEnemyProvincesWithMoney, FinalProvinces),
+    exclude([In] >> member(In, NewEnemyProvincesToRemove), FinalProvinces, NewProvinces), !.
+
+% Given a list of provinces, get the combined list of hexes
+% get_hexes_from_provinces(+Provinces, -Hexes)
+get_hexes_from_provinces(Provinces, Hexes) :-
+    findall(Hex, (
+        member(Province, Provinces),
+        province_hexes(Province, ProvinceHexes),
+        member(Hex, ProvinceHexes)
+    ), Hexes).
