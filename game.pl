@@ -4,8 +4,8 @@
 /* TODO:
     • Make sure that update_province is called only when needed (Valerio)
     • Benchmark the move/2 predicate (Valerio)
-    • Upgrade the evaluation function (Federico)
     -------------------------------------------------------------------------------------------------
+    X Upgrade the evaluation function (Federico)
     X Start game adding some money to the provinces (Valerio)
     X Complete the move/2 predicate handling both purchase actions (Valerio)
     X Write the game controller which calls the minimax module (Valerio)
@@ -47,7 +47,8 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
-% Checks if the player (Player) has won by ensuring that at least 80% of the hexes (excluding sea tiles).
+% Checks if the player (Player) has won by ensuring that at least 80% of the hexes (excluding sea tiles)
+% or there are no more provinces owned by the other player.
 % has_won(+Map, +Provinces, +Player)
 has_won(Map, Provinces, Player) :-
     % Get all hexes on the map that do not have 'sea' in their tile
@@ -64,9 +65,15 @@ has_won(Map, Provinces, Player) :-
     % Calculate the percentage of player's hexes compared to the total (excluding sea)
     Percentage is (PlayerTotalSize / TotalHexes) * 100,
 
-    % Check if the percentage is at least 80%
-    Percentage >= 80.
+    % Check if the percentage is at least 80% or there are no more provinces owned by the other player
+    (Percentage >= 80 ; % OR
+     % Check if there are no more provinces owned by the other player
+     \+ (member(Province, Provinces), province_owner(Province, OtherPlayer), OtherPlayer \= Player)),
+    !. % Cut to prevent backtracking
 
+% Get the other player
+other_player(red, blue).
+other_player(blue, red).
 
 % Get one possible move (non-deterministic)
 % move(+Board, -NextBoard)

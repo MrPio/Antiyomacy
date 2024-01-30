@@ -7,6 +7,7 @@
                      change_province_money/3,
                      province_size/2,
                      province_count/3,
+                     province_counts/3,
                      update_province/3,
                      apply_incomes/4,
                      apply_income/4,
@@ -43,23 +44,20 @@ province_money(province(_, _, Money), Money).
 % Change a province money amount
 change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, Money)).
 
+% Given a list of provinces, get the combined list of hexes
+% get_hexes_from_provinces(+Provinces, -Hexes)
+get_hexes_from_provinces(Provinces, Hexes) :-
+    findall(Hex, (
+        member(Province, Provinces),
+        province_hexes(Province, ProvinceHexes),
+        member(Hex, ProvinceHexes)
+    ), Hexes).
+
 % Check/Get province size
 province_size(Province, Size):-
     province_hexes(Province, Hexes),
     length(Hexes, Size).
 
-
-province_counts(Province, ResourcesName, Count) :-
-    province_hexes(Province, Hexes),
-    % Retrieve all the hexes with the specified resource
-    findall(Hex, (
-        member(Hex, Hexes),
-        (   hex_building(Hex, ResourceName)
-        ;   hex_unit(Hex, ResourceName)
-        ),
-        member(ResourceName, ResourcesName)
-    ), HexesWithRes),
-    length(HexesWithRes, Count).
 % Checks or calculates the number of buildings or units owned by the province
 % province_count(+Province, +ResourceName, ?Count)
 province_count(Province, ResourceName, Count) :-
@@ -70,6 +68,21 @@ province_count(Province, ResourceName, Count) :-
         (hex_building(Hex, ResourceName); hex_unit(Hex, ResourceName))
     ), HexesWithRes),
     length(HexesWithRes, Count).
+
+% Calculate the count of specific resources in a list of provinces
+% province_counts(+Provinces, +ResourceName, ?Count)
+province_counts(Provinces, ResourcesName, Count) :-
+    get_hexes_from_provinces(Provinces, Hexes),
+    % Retrieve all the hexes with the specified resource
+    findall(ResourceName, (
+        member(Hex, Hexes),
+        (   hex_building(Hex, ResourceName)
+        ;   hex_unit(Hex, ResourceName)
+        ),
+        member(ResourceName, ResourcesName)
+    ), Resources),
+    % Calculate the count
+    length(Resources, Count).
 
 % Reload all the hexes in the old province hex list, remove conquered hexes
 % from the enemy and add the hexes conquered by the player
@@ -511,13 +524,3 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces, UpdatedMap) :
     
     % Exclude the provinces to be removed from the final provinces list
     exclude([In] >> member(In, NewEnemyProvincesToRemove), FinalProvinces, NewProvinces), !.
-
-
-% Given a list of provinces, get the combined list of hexes
-% get_hexes_from_provinces(+Provinces, -Hexes)
-get_hexes_from_provinces(Provinces, Hexes) :-
-    findall(Hex, (
-        member(Province, Provinces),
-        province_hexes(Province, ProvinceHexes),
-        member(Hex, ProvinceHexes)
-    ), Hexes).
