@@ -4,8 +4,8 @@
 /* TODO:
     • Make sure that update_province is called only when needed (Valerio)
     • Benchmark the move/2 predicate (Valerio)
-    • Upgrade the evaluation function (Federico)
     -------------------------------------------------------------------------------------------------
+    X Upgrade the evaluation function (Federico)
     X Start game adding some money to the provinces (Valerio)
     X Complete the move/2 predicate handling both purchase actions (Valerio)
     X Write the game controller which calls the minimax module (Valerio)

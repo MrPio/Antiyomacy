@@ -30,16 +30,32 @@ eval(Board, Score) :-
     maplist(get_income, ProvincesOfEnemy, EnemyIncomes),
     sum_list(EnemyIncomes, EnemyTotalIncome),
 
+    % Calculate the number of 'farm' buildings in the player's provinces
+    province_counts(ProvincesOfPlayer, [farm], PlayerFarmCount),
+    province_counts(ProvincesOfEnemy, [farm], EnemyFarmCount),
 
+    % Calculate the number of 'tower' buildings in the player's provinces
+    province_counts(ProvincesOfPlayer, [tower], PlayerTowerCount),
+    province_counts(ProvincesOfEnemy, [tower], EnemyTowerCount),
+
+    % Calculate the number of units in the player's provinces
+    province_counts(ProvincesOfPlayer, [peasant,spearman,baron,knight], PlayerUnitsCount),
+    province_counts(ProvincesOfEnemy, [peasant,spearman,baron,knight], EnemyUnitsCount),
 
     % Calculate the evaluation score
     Score is (
-        PlayerTotalMoney    * 0.4 +
-        PlayerTotalSize     * 5 +
-        PlayerTotalIncome   * 1 ) 
+        PlayerTotalMoney    * 0.2 +
+        PlayerTotalSize     * 15 +
+        PlayerTotalIncome   * 8 +
+        PlayerFarmCount     * 1 +
+        PlayerTowerCount    * 0.5 +
+        PlayerUnitsCount    * 1) 
         - (
-        EnemyTotalMoney    * 0.4 +
-        EnemyTotalSize     * 5 +
-        EnemyTotalIncome   * 1 ).
+        EnemyTotalMoney    * 0.2 +
+        EnemyTotalSize     * 15 +
+        EnemyTotalIncome   * 8 +
+        EnemyFarmCount     * 1 +
+        EnemyTowerCount    * 0.5 +
+        EnemyUnitsCount    * 1).
 
 
