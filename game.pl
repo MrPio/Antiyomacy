@@ -3,13 +3,11 @@
 
 /* TODO:
     • Make sure that update_province is called only when needed
-    • When a province becomes smaller than 2 hexes, it must be destroyed immediately
-      and its owner should become 'none'. (Federico)
     • Start game adding some money to the provinces
     • Complete the move/2 predicate handling both purchase actions
     • Write the game controller which calls the minimax module
     -------------------------------------------------------------------------------------------------
-    X Write the has_won/2 predicate (Federico)
+    X Write the has_won/3 predicate (Federico)
     X When a province becomes smaller than 2 hexes, it must be destroyed immediately 
       and its owner should become 'none'. (Federico)
     X Write the minimax algorithm with alpha beta pruning (Valerio)
@@ -48,25 +46,27 @@
 */
 
 % Checks if the player (Player) has won by ensuring that at least 80% of the hexes (excluding sea tiles).
-% has_won(+Map, +Player)
-has_won(Map, Player) :-
+% has_won(+Map, +Provinces, +Player)
+has_won(Map, Provinces, Player) :-
     % Get all hexes on the map that do not have 'sea' in their tile
     get_non_sea_hexes(Map, NonSeaHexes),
 
     % Calculate the total hexes on the map (excluding sea)
     length(NonSeaHexes, TotalHexes),
 
-    % Calculate the total hexes owned by the player (excluding sea)
-    findall(PlayerHex, (
-        member(PlayerHex, NonSeaHexes),
-        hex_owner(PlayerHex, Player)
-    ), PlayerHexes),
+    % Include only provinces owned by the player
+    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
+
+    % Calculate the size of each province owned by the player
+    maplist(province_size, ProvincesOfPlayer, PlayerSizes),
+
+    % Sum up the sizes of all provinces owned by the player
+    sum_list(PlayerSizes, PlayerTotalSize),
 
     % Calculate the percentage of player's hexes compared to the total (excluding sea)
-    length(PlayerHexes, PlayerHexesCount),
-    
+    Percentage is (PlayerTotalSize / TotalHexes) * 100,
+
     % Check if the percentage is at least 80%
-    Percentage is (PlayerHexesCount / TotalHexes) * 100,
     Percentage >= 80.
 
 
@@ -79,7 +79,7 @@ move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, Ne
     player(NewPlayer), NewPlayer \= Player,
     move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
     % Determine if the game has ended
-    (   has_won(NewMap, Player)
+    (   has_won(NewMap, NewProvinces, Player)
     ->  NewState = win
     ;   NewState = play
     ).
@@ -577,7 +577,7 @@ test_has_won:-
     print_map(Map),
     % Check blue has not won, now he has 19/25=76% hexes
     writeln('Checking victory...'),
-    \+ has_won(Map, blue),
+    \+ has_won(Map, [ProvinceRed, ProvinceBlue], blue),
     writeln('Blue has not won'),
 
     % Purchase Peasant
@@ -589,7 +589,7 @@ test_has_won:-
 
     % Check blue has won, now he has 20/25=80% hexes
     writeln('Checking victory...'),
-    has_won(Map1, blue),
+    has_won(Map1, [ProvinceRed, ProvinceBlue2], blue),
     writeln('Blue has now won'),
 
     writeln('Ok!').
