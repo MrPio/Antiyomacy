@@ -2,11 +2,13 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 
 /* TODO:
-    • Make sure that update_province is called only when needed
-    • Start game adding some money to the provinces
-    • Complete the move/2 predicate handling both purchase actions
-    • Write the game controller which calls the minimax module
+    • Make sure that update_province is called only when needed (Valerio)
+    • Benchmark the move/2 predicate (Valerio)
+    • Upgrade the evaluation function (Federico)
     -------------------------------------------------------------------------------------------------
+    X Start game adding some money to the provinces (Valerio)
+    X Complete the move/2 predicate handling both purchase actions (Valerio)
+    X Write the game controller which calls the minimax module (Valerio)
     X Write the has_won/3 predicate (Federico)
     X When a province becomes smaller than 2 hexes, it must be destroyed immediately 
       and its owner should become 'none'. (Federico)
@@ -54,13 +56,9 @@ has_won(Map, Provinces, Player) :-
     % Calculate the total hexes on the map (excluding sea)
     length(NonSeaHexes, TotalHexes),
 
-    % Include only provinces owned by the player
+    % Calculate the total size of the player's provinces
     include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
-
-    % Calculate the size of each province owned by the player
     maplist(province_size, ProvincesOfPlayer, PlayerSizes),
-
-    % Sum up the sizes of all provinces owned by the player
     sum_list(PlayerSizes, PlayerTotalSize),
 
     % Calculate the percentage of player's hexes compared to the total (excluding sea)
@@ -161,7 +159,7 @@ play:-
     RedHexes=[[0,0],[1,0]],
     BlueHexes=[[3,4],[4,4]],
     Buildings=[],
-    Units=[[0,0]-peasant,[1 ,0]-peasant],
+    Units=[],
     foreach(member(Coord,RedHexes),set_owner(Coord,red)),
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
@@ -178,14 +176,18 @@ play:-
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
     
-    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], red, play)).
+    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], blue, play)).
 
 game_loop(Board):-
     board_player(Board, Player), % Get
     format('It is ~w turn:', Player),nl,
     get_char(_), skip_line,
+    get_time(StartTime),
     minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
-    
+    get_time(EndTime),
+    Time is EndTime-StartTime,
+    writeln(Time),
+
     % Apply income
     board_map(NewBoard, NewMap), % Get
     board_provinces(NewBoard, NewProvinces), % Get

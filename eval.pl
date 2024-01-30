@@ -30,13 +30,15 @@ eval(Board, Score) :-
     maplist(get_income, ProvincesOfEnemy, EnemyIncomes),
     sum_list(EnemyIncomes, EnemyTotalIncome),
 
+
+
     % Calculate the evaluation score
     Score is (
-        PlayerTotalMoney    * 0 +
+        PlayerTotalMoney    * 0.4 +
         PlayerTotalSize     * 5 +
         PlayerTotalIncome   * 1 ) 
         - (
-        EnemyTotalMoney    * 0 +
+        EnemyTotalMoney    * 0.4 +
         EnemyTotalSize     * 5 +
         EnemyTotalIncome   * 1 ).
 

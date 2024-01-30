@@ -31,10 +31,12 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
     length(NextBoards, NextBoardsLength),
-    format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
+    %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
     best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
-    eval(Board,Val).
+    eval(Board,Val)
+    %format(' ~w ', Val)
+    .
 
 % Finds the BestBoard from a list of possible successors, whose Val always
 % remains within the Alpha and Beta limits

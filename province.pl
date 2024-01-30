@@ -48,6 +48,18 @@ province_size(Province, Size):-
     province_hexes(Province, Hexes),
     length(Hexes, Size).
 
+
+province_counts(Province, ResourcesName, Count) :-
+    province_hexes(Province, Hexes),
+    % Retrieve all the hexes with the specified resource
+    findall(Hex, (
+        member(Hex, Hexes),
+        (   hex_building(Hex, ResourceName)
+        ;   hex_unit(Hex, ResourceName)
+        ),
+        member(ResourceName, ResourcesName)
+    ), HexesWithRes),
+    length(HexesWithRes, Count).
 % Checks or calculates the number of buildings or units owned by the province
 % province_count(+Province, +ResourceName, ?Count)
 province_count(Province, ResourceName, Count) :-
