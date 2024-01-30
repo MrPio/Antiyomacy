@@ -19,7 +19,7 @@
                      outer_border/3,
                      inner_border/3,
                      buy_and_place/8,
-                     displace_unit/8]).
+                     displace_unit/9]).
 :- use_module([utils, map, hex, unit, building, economy]).
 
 % Province struct ===================================================
@@ -84,8 +84,31 @@ update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
     hex_owner(NewHex, Owner), % Check
     % Look for new province hexes
     find_province(Map, [X,Y], province(_,NewHexes,_)),
+
     sort(NewHexes, NewHexesSorted),    
     UpdatedProvince=province(Owner, NewHexesSorted, Money),!.
+
+% Given a province, refresh only the provided coords, or add them if not already present
+% This is faster than update_province
+% refresh_province(+Map, +Province, +Coords, -NewProvince)
+refresh_province(Map, Province, Coords, NewProvince):-
+    province_hexes(Province, ProvinceHexes), % Get
+    maplist(hex_coord, ProvinceHexes, ProvinceCoords), % Get
+    refresh_province_(Map, ProvinceHexes, ProvinceCoords, Coords, NewProvinceHexes),
+    change_province_hexes(Province, NewProvinceHexes, NewProvince).
+refresh_province_(_, ProvinceHexes, _, [], NewProvinceHexes):- sort(ProvinceHexes, NewProvinceHexes).
+refresh_province_(Map, ProvinceHexes, ProvinceCoords, [Coord|TCoords], NewProvinceHexes):-
+    get_hex(Map, Coord, NewHex),
+    (   member(Coord, ProvinceCoords) % Check
+    ->  % The current hex is already part of the province
+        member(OldHex, ProvinceHexes), % Get
+        hex_coord(OldHex, Coord), % Check
+        subtract(ProvinceHexes, [OldHex],ProvinceHexesWithoutOldHex),
+        append(ProvinceHexesWithoutOldHex, [NewHex], NewProvinceHexes1)
+    ;   % The current hex is not part of the province
+        append(ProvinceHexes, [NewHex], NewProvinceHexes1)
+    ),
+    refresh_province_(Map, NewProvinceHexes1, ProvinceCoords, TCoords, NewProvinceHexes).
 
 apply_incomes(Map, Provinces, NewMap, NewProvinces):-
     apply_incomes_(Map, Provinces, [], NewMap, NewProvinces).
@@ -277,39 +300,51 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
 % Purchase a building or a unit and place it on the map at the given location
 % buy_and_place(+Map, +Provinces, +Province, +ResourceName, +DestHex, -NewMap, -NewProvinces, -NewProvince)
 buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince) :-
+    lap("   buy_and_place, economy"),
+    % Prevent a unit merge on purchase
+    hex_unit(DestHex, none),
     % Check if the purchase is economically valid
     check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
     % Subtract the cost from the province's money (also in the provinces list)
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
     op_list(Provinces, [In, Out] >> (In == Province, province:change_province_money(In, LeftMoney, Out)), ProvincesWithMoney),
-
+    
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
     (   % The resource to be placed is a unit:
         unit(ResourceName, _, _, _, _), % Check
-        place_unit(Map, ProvincesWithMoney, ProvinceWithNewMoney, ResourceName, DestHex, NewMap, NewProvinces, NewProvince), !
+        lap,
+        place_unit(Map, ProvincesWithMoney, ProvinceWithNewMoney, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
     ;   % The resource to be placed is a building:
         building(ResourceName, _, _, _), % Check
+        lap, lap("      buy building, update_province"),
         % (It is assumed the caller has already made this check)
         %building_placement(Map, Province, ResourceName, DestHex), % Check
+
         % Place the building on the map
         set_building(Map, [X, Y], ResourceName, NewMap),
-        update_province(NewMap, ProvinceWithNewMoney, NewProvince),
+        %update_province(NewMap, ProvinceWithNewMoney, NewProvince),
+        % 4x Faster than update_province
+        get_hex(Map, [X, Y], OldHex),
+        get_hex(NewMap, [X, Y], NewHex),
+        province_hexes(ProvinceWithNewMoney, OldHexes),
+        append(NotChangedHexes, [OldHex], OldHexes),
+        append(NotChangedHexes, [NewHex], NewHexes),
+        sort(NewHexes, NewHexesSorted),
+        change_province_hexes(ProvinceWithNewMoney, NewHexesSorted, NewProvince),
 
-        exclude([In] >> (In == Province), Provinces, ProvincesWithoutUpdatedProvince),        
-        length(Provinces,L1), length(ProvincesWithoutUpdatedProvince,L2),
-        (   L1==L2
-        ->  writeln(Province), writeln(Provinces),nl
-        ;   true
-        ),
+        lap, lap("      buy building, exclude"),
+        % exclude([In] >> (In == Province), Provinces, ProvincesWithoutUpdatedProvince),
+        append(ProvincesWithoutUpdatedProvince, [Province], Provinces),
+        lap, lap("      buy building, append"),
         append(ProvincesWithoutUpdatedProvince, [NewProvince], NewProvinces)
-    ),!.
+    ),lap,!.
 
 % Displace a unit on a given valid hex
-% displace_unit(+Map, +Provinces, +Province, +FromHex, +ToHex, -NewMap, -NewProvinces, -NewProvince)
-displace_unit(Map, Provinces, Province, FromHex, ToHex, NewMap, NewProvinces, NewProvince) :-
+% displace_unit(+Map, +Provinces, +Province, +FromHex, +ToHex, +NewUnitName, -NewMap, -NewProvinces, -NewProvince)
+displace_unit(Map, Provinces, Province, FromHex, ToHex, NewUnitName, NewMap, NewProvinces, NewProvince) :-
     % Check if the FromHex contains a unit
-    hex_unit(FromHex, UnitName),
+    \+ hex_unit(FromHex, none),
 
     % Ensure that the Manhattan distance is not greater than 4
     manhattan_distance(FromHex, ToHex, ManhattanDistance),
@@ -320,50 +355,60 @@ displace_unit(Map, Provinces, Province, FromHex, ToHex, NewMap, NewProvinces, Ne
     hex_coord(FromHex, [FromX, FromY]), % Get
     % Remove the unit from its old hex location
     set_unit(Map, [FromX, FromY], none, NewMapWithoutFromUnit),
-    place_unit(NewMapWithoutFromUnit, Provinces, Province, UnitName, ToHex, NewMap, NewProvinces, NewProvince).
+    refresh_province(NewMapWithoutFromUnit, Province, [[FromX, FromY]], ProvinceWithoutFromUnit),
+    subtract(Provinces, [Province], ProvincesWithoutRefreshedProvince),
+    append(ProvincesWithoutRefreshedProvince, [ProvinceWithoutFromUnit], Provinces1),
+    
+    place_unit(NewMapWithoutFromUnit, Provinces1, ProvinceWithoutFromUnit, NewUnitName, ToHex, NewMap, NewProvinces, NewProvince).
 
 % Place a unit on a given hex after checking the validity of the move
 % Note: this centralises the logic for both placing and displacing unit moves
 % Note: this is for editing the map only
 % place_unit(+Map, +Province, +UnitName, +Hex, -NewMap, -NewProvinces, -NewProvince)
-% place_unit(+Map, +Province, +UnitName, +Hex, -NewMap, -NewProvinces, -NewProvince)
-place_unit(Map, Provinces, Province, UnitName, Hex, NewMap, NewProvinces, NewProvince):-
+place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, NewProvince):-
+    lap("       place_unit, unit_placement"),
     hex_coord(Hex, Coord), % Get
-    province_owner(Province, Player), % Get
     province_owner(Province, Player), % Get
     hex_owner(Hex, OwnerBefore), % Get
 
     % Check if the placement is valid
-    unit_placement(Map, Province, UnitName, Hex, NewUnitName), % Check & Get
-
+    % (It is assumed the caller has already made this check and the provided UnitName takes any unit merge into consideration)
+    % unit_placement(Map, Province, UnitName, Hex, NewUnitName), % Check & Get
+    
+    lap, lap("      dirty"),
     % Place the unit
     set_unit(Map, Coord, NewUnitName, MapWithUnit),
     % Ensure the player now owns the hex.
     set_owner(MapWithUnit, Coord, Player, MapWithUnitOwned),
     % Destroy any enemy building in the destination hex.
     set_building(MapWithUnitOwned, Coord, none, NewMap1),
-
+    
+    lap, lap("      update_prov"),
     % Update the player province
-    update_province(NewMap1, Province, NewProvince),
-
+    % update_province(NewMap1, Province, NewProvince),
+    refresh_province(NewMap1, Province, [Coord], NewProvince),
+    
+    lap, lap("      check_merge"),
     % Check for player merge in case of conquest or invasion
     (   (OwnerBefore == none; OwnerBefore \= Player)
     ->  check_for_merge(NewMap1, Provinces, NewProvince, Hex, NewProvincesMerge)
     ;   exclude([In]>>(In==Province), Provinces, ProvincesWithoutNewProvince),
         append(ProvincesWithoutNewProvince, [NewProvince], NewProvincesMerge)
     ),
+    lap, lap("      check_split"),
     % Check for enemy split in case of invasion
     (   (OwnerBefore \= none, OwnerBefore \= Player)
     ->  check_for_split(NewMap1, NewProvincesMerge, NewProvince, Hex, NewProvinces, NewMap)
     ;   NewProvinces = NewProvincesMerge,
         NewMap = NewMap1
     ),
+    lap.
 
     % Check for mismatch error ===========================================
-    (   \+ member(NewProvince, NewProvinces)
-    ->  writeln('Mismatch error!'), writeln(NewProvince), writeln(NewProvinces)
-    ;   true
-    ).
+    % (   \+ member(NewProvince, NewProvinces)
+    % ->  writeln('Mismatch error!'), writeln(NewProvince), writeln(NewProvinces)
+    % ;   true
+    % ).
 
 
 % Checks if a province has been merged
@@ -376,7 +421,9 @@ check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
 
     % Find all the player's old provinces that have at least one hex in the near8 of the conquered hex
     % Note: there is always at least one province that fulfils this condition
+    % Time: ~ 15 micro
     near8(Map, HexCoord, NearHexes),
+    % Time: ~ 8 micro
     findall(Province,
         (   member(NearHex, NearHexes),
             member(Province, OldProvinces),
@@ -388,14 +435,17 @@ check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
         ), ProvincesToRemove),
 
     % Remove the duplicates
+    % Time: ~ 6 micro
     filter(ProvincesToRemove, [X, Partial] >> (\+ member(X, Partial)), ProvincesToRemoveFiltered),
 
     % Add money to new province from provinces to remove
+    % Time: ~ 6 micro
     share_money(ProvincesToRemoveFiltered, [NewProvince], NewProvinceWithMoney),
 
     % Update the new provinces list
-    exclude([In] >> (member(In, ProvincesToRemoveFiltered)), OldProvinces, ProvincesWithoutNewProvince),
-    append(ProvincesWithoutNewProvince, NewProvinceWithMoney, NewProvinces), !.
+    % Time: ~ 2 micro
+    subtract(OldProvinces, ProvincesToRemoveFiltered, ProvincesWithoutNewProvince),
+    append(ProvincesWithoutNewProvince, NewProvinceWithMoney, NewProvinces), lap,!.
 
 % Checks if a province has been split
 % Note: This should be called only in the case of an invasion attack

@@ -129,11 +129,11 @@ unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvin
     NewProvince = Province
 ;   % The unit moves to another hex
     hex_unit(HexWithUnit, Unit), % Get
-    findall(Dest, unit_placement(Map, Province, Unit, Dest, _), Dests),
-    member(DestHex, Dests),
+    findall([Dest, NewUnit], unit_placement(Map, Province, Unit, Dest, NewUnit), Dests),
+    member([DestHex, NewUnitName], Dests),
     DestHex \= HexWithUnit,
-    displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewMap, NewProvinces, NewProvince).
-
+    displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, NewProvince).
+    
 % Purchase the given resource and place it in one possible location (non-deterministic)
 % resource_buy(+Map, +Provinces, +Province, +ResourceName, -NewMap, -NewProvinces, -NewProvince)
 resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewProvince):-
@@ -158,8 +158,8 @@ play:-
     generate_random_map(_, true),
     RedHexes=[[0,0],[1,0]],
     BlueHexes=[[3,4],[4,4]],
+    Units=[[0,0]-peasant],
     Buildings=[],
-    Units=[],
     foreach(member(Coord,RedHexes),set_owner(Coord,red)),
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
@@ -176,7 +176,7 @@ play:-
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
     
-    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], blue, play)).
+    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], red, play)).
 
 game_loop(Board):-
     board_player(Board, Player), % Get
@@ -184,10 +184,9 @@ game_loop(Board):-
     get_char(_), skip_line,
     get_time(StartTime),
     minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
-    get_time(EndTime),
-    Time is EndTime-StartTime,
-    writeln(Time),
 
+
+    lap("Apply income"),
     % Apply income
     board_map(NewBoard, NewMap), % Get
     board_provinces(NewBoard, NewProvinces), % Get
@@ -197,6 +196,11 @@ game_loop(Board):-
     append(NewProvincesOfEnemy, NewProvincesOfPlayerWithIncome, NewProvincesWithIncome),
     change_board_map(NewBoard, NewMapWithIncome, NewBoardWithMap),
     change_board_provinces(NewBoardWithMap, NewProvincesWithIncome, NewBoardWithIncome),
+    lap,
+
+    get_time(EndTime),
+    ElapsedTime is truncate((EndTime-StartTime)*1000000),
+    format('Total time = ~w micro', ElapsedTime), nl,
 
     print_map(NewMapWithIncome),
     print_provinces(NewProvincesWithIncome),
@@ -561,7 +565,7 @@ test_manhattan_distance:-
 
 test_destroy_province:-
     nl,writeln('test_destroy_province ======================================================'),
-    test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
+    test_map2(Map, [ProvinceBlue, _ProvinceRedEst, ProvinceRedWest]),
     print_map(Map),
         
     % Purchase Peasant

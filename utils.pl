@@ -1,8 +1,28 @@
-:- module(utils, [print_provinces/1, print_map/1, 
+:- module(utils, [lap/0,lap/1, print_provinces/1, print_map/1, 
     same_elements/2,
     op_list/3,
     filter/3]).
 :- use_module([hex, province, economy]).
+
+:- dynamic(time/1).
+time(0).
+update_time(Time):-
+    retractall(time(_)),
+    assert(time(Time)).
+
+% Take a stopwatch lap and print the elapsed time if demanded
+% lap(+Print)
+lap:-lap(0).
+lap(Print):-
+    time(StartTime),
+    get_time(EndTime),
+    update_time(EndTime),
+    (   string(Print)
+    ->  write(Print)
+    ;   ElapsedTime is truncate((EndTime-StartTime)*1000000),
+        format(': t = ~w micro', ElapsedTime), nl
+    ), !.
+    
 
 print_provinces(Provinces):-
     include([In]>>(province_owner(In, red)), Provinces, ProvincesRed),
@@ -14,9 +34,10 @@ print_provinces(Provinces):-
 print_provinces_([]).
 print_provinces_([Province|T]):-
     province_money(Province, Money), % Get
+    province_size(Province, Size), % Get
     get_income(Province, Income), % Get
     write('['),
-    format('Money = ~w | Income = ~w', [Money, Income]),
+    format('Money = ~w | Income = ~w | Size = ~w', [Money, Income, Size]),
     write(']'),nl,
     print_provinces_(T).
 

@@ -156,6 +156,7 @@ replace_nth(N, List, El, Result) :-
     nth0(N, Result, El, Before).
 
 % Returns the Hex at a given coordinate or index on the map
+% Time: ~ 3 micro
 % get_hex(+Map, ?Coord, ?Hex)
 get_hex(Map, [X, Y], Hex) :-
     !,
