@@ -1,4 +1,4 @@
-:- module(minimax, [count/1, cuts/1,
+:- module(minimax, [count/1, cuts/1, update_start_time/1,
     minimax/4,
     board_map/2,
     change_board_provinces/3,
@@ -27,6 +27,12 @@ update_cuts(Cuts):-
     retractall(cuts(_)),
     assert(cuts(Cuts)).
 
+:- dynamic(start_time/1).
+start_time(0).
+update_start_time(Time):-
+    retractall(time(_)),
+    assert(start_time(Time)).
+
 % Check/Get hex Map
 board_map(board(Map, _, _, _),Map).
 change_board_map(board(_, Provinces, Player, State),NewMap,board(NewMap, Provinces, Player, State)).
@@ -41,13 +47,13 @@ board_state(board(_, _, _, State),State).
 % Finds the best move using minimax with alpha-beta pruning
 % minimax(+Board, +AlphaBeta, +Depth, -BestBoardVal)
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
-    Depth > 0,
+    start_time(T1), get_time(T2), T is T2-T1,
+    Depth > 0, T < 1,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
     % length(NextBoards, NextBoardsLength),
     % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
     %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
-    best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val]),
-    (   Depth = 3 -> format('move score = ~w',Val), nl; true)
+    best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
     eval(Board,Val)
     %format(' ~w ', Val)
