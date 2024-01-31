@@ -45,7 +45,7 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
     length(NextBoards, NextBoardsLength),
     % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
-    format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
+    %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
     best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
     eval(Board,Val)
