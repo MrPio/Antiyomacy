@@ -43,10 +43,11 @@ board_state(board(_, _, _, State),State).
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
-    length(NextBoards, NextBoardsLength),
+    % length(NextBoards, NextBoardsLength),
     % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
     %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
-    best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
+    best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val]),
+    (   Depth = 3 -> format('move score = ~w',Val), nl; true)
 ;   % The depth has expired or there are no available moves
     eval(Board,Val)
     %format(' ~w ', Val)

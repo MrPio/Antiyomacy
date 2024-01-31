@@ -18,8 +18,20 @@ eval(Board, Score) :-
     % Calculate the total money
     maplist(province_money, ProvincesOfMAX, MAXMoneys),
     sum_list(MAXMoneys, MAXTotalMoney),
+    (   MAXTotalMoney<0
+    ->  MAXMoneyScore is -99999
+    ;   MAXTotalMoney > 40
+    ->  MAXMoneyScore is -1
+    ;   MAXMoneyScore is 1
+    ),
     maplist(province_money, ProvincesOfMIN, MINMoneys),
     sum_list(MINMoneys, MINTotalMoney),
+    (   MINTotalMoney<0
+        ->  MINMoneyScore is -99999
+        ;   MINTotalMoney > 40
+        ->  MINMoneyScore is -1
+        ;   MINMoneyScore is 1
+    ),
 
     % Calculate the total owned hexes count
     maplist(province_size, ProvincesOfMAX, MAXSizes),
@@ -33,59 +45,50 @@ eval(Board, Score) :-
     maplist(get_income, ProvincesOfMIN, MINIncomes),
     sum_list(MINIncomes, MINTotalIncome),
 
-    % Calculate the number of 'farm' buildings in the player's provinces
+    % Calculate the resources
     province_counts(ProvincesOfMAX, [farm], MAXFarmCount),
     province_counts(ProvincesOfMIN, [farm], MINFarmCount),
 
-    % Calculate the number of 'tower' buildings in the player's provinces
     province_counts(ProvincesOfMAX, [tower], MAXTowerCount),
     province_counts(ProvincesOfMIN, [tower], MINTowerCount),
 
-    % Calculate the number of units in the player's provinces
     province_counts(ProvincesOfMAX, [peasant], MAXPaesantCount),
     province_counts(ProvincesOfMIN, [peasant], MINPaesantCount),
 
-    % Calculate the number of units in the player's provinces
     province_counts(ProvincesOfMAX, [spearman], MAXSpearmanCount),
     province_counts(ProvincesOfMIN, [spearman], MINSpearmanCount),
 
-    % Calculate the number of units in the player's provinces
     province_counts(ProvincesOfMAX, [baron], MAXBaronCount),
     province_counts(ProvincesOfMIN, [baron], MINBaronCount),
 
-    % Calculate the number of units in the player's provinces
     province_counts(ProvincesOfMAX, [knight], MAXKnightCount),
     province_counts(ProvincesOfMIN, [knight], MINKnightCount),
-
     
     % Check if MAX wins and assign a score of 99999
-    (State == win, Player == MAX ->
-        Score = 99999, !
-    ; 
-    % Check if MIN wins and assign a score of -99999
-      State == win, Player == MIN ->
-        Score = -99999, !
-    ; 
-    
-    % If the game is not in a win state, calculate the evaluation score
-      Score is (
-          MAXTotalMoney    * 0 +
-          MAXTotalSize     * 30 +
-          MAXTotalIncome   * 10 +
-          MAXFarmCount     * 2 +
-          MAXTowerCount    * 3 +
-          MAXPaesantCount  * 1 +
-          MAXSpearmanCount * 2 +
-          MAXBaronCount    * 6 +
-          MAXKnightCount   * 10) 
-          - (
-          MINTotalMoney    * 0 +
-          MINTotalSize     * 30 +
-          MINTotalIncome   * 10 +
-          MINFarmCount     * 2 +
-          MINTowerCount    * 3 +
-          MINPaesantCount  * 1 +
-          MINSpearmanCount * 2 +
-          MINBaronCount    * 6 +
-          MINKnightCount   * 10)
-          ).
+    (   State == win, Player == MAX 
+    ->  Score = 99999, !
+    ;   % Check if MIN wins and assign a score of -99999
+        State == win, Player == MIN 
+    ->  Score = -99999, !
+    ;   % If the game is not in a win state, calculate the evaluation score
+        Score is (
+            MAXMoneyScore    * 20 +
+            MAXTotalSize     * 30 +
+            MAXTotalIncome   * 10 +
+            MAXFarmCount     * 2 +
+            MAXTowerCount    * 3 +
+            MAXPaesantCount  * 1 +
+            MAXSpearmanCount * 2 +
+            MAXBaronCount    * 6 +
+            MAXKnightCount   * 10) 
+            - (
+            MINMoneyScore    * 20 +
+            MINTotalSize     * 30 +
+            MINTotalIncome   * 10 +
+            MINFarmCount     * 2 +
+            MINTowerCount    * 3 +
+            MINPaesantCount  * 1 +
+            MINSpearmanCount * 2 +
+            MINBaronCount    * 6 +
+            MINKnightCount   * 10)
+    ).

@@ -47,11 +47,8 @@ change_province_money(province(Owner, Hexes, _), Money, province(Owner, Hexes, M
 % Given a list of provinces, get the combined list of hexes
 % get_hexes_from_provinces(+Provinces, -Hexes)
 get_hexes_from_provinces(Provinces, Hexes) :-
-    findall(Hex, (
-        member(Province, Provinces),
-        province_hexes(Province, ProvinceHexes),
-        member(Hex, ProvinceHexes)
-    ), Hexes).
+    maplist(province_hexes, Provinces, ProvincesHexes),
+    flatten(ProvincesHexes, Hexes).
 
 % Check/Get province size
 province_size(Province, Size):-

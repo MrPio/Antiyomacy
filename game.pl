@@ -17,9 +17,9 @@
             ToCoord
             2-2
     • Vertical cut with time instead of horizontal cut with depth (Valerio)
-    • Ensure the tests are working (Valerio)
     • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
     -------------------------------------------------------------------------------------------------
+    X Ensure the tests are working (Valerio)
     X The eval function should reward in case of victory (Federico)
     x Benchmark the move/2 predicate (Valerio)
     x Make sure that update_province is called only when needed (Valerio)
@@ -102,7 +102,7 @@ game_loop(Board):-
     % TODO here: handle player input
     % get_char(_), skip_line,
     get_time(StartTime),
-    minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
+    minimax(Board, [-999999, 999999], 3, [NewBoard, _]),
 
 
     lap("Apply income"),
