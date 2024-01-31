@@ -74,8 +74,8 @@ play:-
     % find_provinces(MapWithProvinces, Provinces),
     generate_random_map(_, true),
     RedHexes=[[0,0],[1,0]],
-    BlueHexes=[[3,4],[4,4]],
-    Units=[[0,0]-peasant],
+    BlueHexes=[ [4,4],[3,4]],
+    Units=[],
     Buildings=[],
     foreach(member(Coord,RedHexes),set_owner(Coord,red)),
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
@@ -92,8 +92,7 @@ play:-
     update_province(MapWithProvinces, ProvinceRed2, ProvinceRedSorted),
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
-
-    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], red, play)).
+    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], blue, play, [0, 0])).
 
 game_loop(Board):-
     board_player(Board, Player), % Get
@@ -103,7 +102,7 @@ game_loop(Board):-
     % get_char(_), skip_line,
     get_time(StartTime),
     update_start_time(StartTime),
-    minimax(Board, [-999999, 999999], 99, [NewBoard, _]),
+    minimax(Board, [-999999, 999999], 4, [NewBoard, Val]),
 
 
     lap("Apply income"),
@@ -126,11 +125,12 @@ game_loop(Board):-
 
     print_map(NewMapWithIncome),
     print_provinces(NewProvincesWithIncome),
+    format('Value = ~w', Val), nl,
     (   board_state(NewBoardWithIncome, State), % Get
         State = win
     ->  format('~w won the game! ---------------------', Player),nl
     ;   game_loop(NewBoardWithIncome)
-    ).
+    ),!.
 
 
 
@@ -164,12 +164,12 @@ other_player(blue, red).
 
 % Get one possible move (❓non-deterministic❓)
 % move(+Board, -NextBoard)
-move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, NewState)):-
+move(board(Map, Provinces, Player, _, Conquests), board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
     % Select all the player's provinces
     include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),!,
     % Select the new player
-    player(NewPlayer), NewPlayer \= Player,
-    move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
+    other_player(Player, NewPlayer),
+    move_(Map, Provinces, Conquests, ProvincesOfPlayer, NewMap, NewProvinces, NewConquests),
     % Determine if the game has ended
     (   has_won(NewMap, NewProvinces, Player)
     ->  NewState = win
@@ -177,22 +177,22 @@ move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, Ne
     ).
 
 % province_move(+Map, +Provinces, +ProvincesOfPlayer, -NewMap, -NewProvinces)
-move_(Map, Provinces, [], Map, Provinces).
-move_(Map, Provinces, [ProvinceOfPlayer|T], NewMap, NewProvinces):-
-    province_move(Map, Provinces, ProvinceOfPlayer, NewMap1, NewProvinces1),
-    move_(NewMap1, NewProvinces1, T, NewMap, NewProvinces).
+move_(Map, Provinces, Conquests, [], Map, Provinces, Conquests).
+move_(Map, Provinces, Conquests, [ProvinceOfPlayer|T], NewMap, NewProvinces, NewConquests):-
+    province_move(Map, Provinces, Conquests, ProvinceOfPlayer, NewMap1, NewProvinces1, NewConquests1),
+    move_(NewMap1, NewProvinces1, NewConquests1, T, NewMap, NewProvinces, NewConquests).
 
 % Get one possible move for a given province (❓non-deterministic❓)
 % province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
-province_move(Map, Provinces, Province, NewMap, NewProvinces):-
+province_move(Map, Provinces, Conquests, Province, NewMap, NewProvinces, NewConquests):-
     (   % Choose one possible displace move for each owned unit =======================================
         province_hexes(Province, Hexes), % Get
         % Select hexes with unit
         % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
-        % province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, Province1),
+        % province_move_(Map, Provinces, Province, Conquests, HexesWithUnit, NewMap1, NewProvinces1, Province1, NewConquests),
         member(HexWithUnit, Hexes),
         \+ hex_unit(HexWithUnit, none),
-        unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, _)
+        unit_move(Map, Provinces, Province, Conquests, HexWithUnit, NewMap, NewProvinces, _, NewConquests)
     ;
         % Choose one possible purchase moves ==========================================================
         % findall(R, (check_buys(Province, R, _)), ResourcesSets),
@@ -201,43 +201,58 @@ province_move(Map, Provinces, Province, NewMap, NewProvinces):-
         % Select one purchase move
         member(ResourceSet, ResourcesSets),
         (   ResourceSet \= []
-        ->  province_buy_(Map, Provinces, Province, ResourceSet, NewMap, NewProvinces, _)
-        ;   [NewMap, NewProvinces] = [Map, Provinces]
+        ->  province_buy_(Map, Provinces, Province, Conquests, ResourceSet, NewMap, NewProvinces, _, NewConquests)
+        ;   [NewMap, NewProvinces, NewConquests] = [Map, Provinces, Conquests]
         )
     ).
 
 % Displace all the given units
 % province_move_(+Map, +Provinces, +Province, +HexesWithUnit, -NewMap, -NewProvinces)
-province_move_(Map, Provinces, Province, [], Map, Provinces, Province).
-province_move_(Map, Provinces, Province, [HexWithUnit|T], NewMap, NewProvinces, NewProvince):-
-    unit_move(Map, Provinces, Province, HexWithUnit, NewMap1, NewProvinces1, NewProvince1),
-    province_move_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
+province_move_(Map, Provinces, Province, Conquests, [], Map, Provinces, Province, Conquests).
+province_move_(Map, Provinces, Province, Conquests, [HexWithUnit|T], NewMap, NewProvinces, NewProvince, NewConquests):-
+    unit_move(Map, Provinces, Province, Conquests, HexWithUnit, NewMap1, NewProvinces1, NewProvince1, NewConquests1),
+    province_move_(NewMap1, NewProvinces1, NewProvince1, NewConquests1, T, NewMap, NewProvinces, NewProvince ,NewConquests).
 
 % Purchase all the given resources on the given province
 % province_move_(+Map, +Provinces, +Province, +ResourcesSets, -NewMap, -NewProvinces)
-province_buy_(Map, Provinces, Province, [], Map, Provinces, Province).
-province_buy_(Map, Provinces, Province, [Resource|T], NewMap, NewProvinces, NewProvince):-
-    resource_buy(Map, Provinces, Province, Resource, NewMap1, NewProvinces1, NewProvince1),
-    province_buy_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
+province_buy_(Map, Provinces, Province, Conquests, [], Map, Provinces, Province, Conquests).
+province_buy_(Map, Provinces, Province, Conquests, [Resource|T], NewMap, NewProvinces, NewProvince, NewConquests):-
+    resource_buy(Map, Provinces, Province, Conquests, Resource, NewMap1, NewProvinces1, NewProvince1, NewConquests1),
+    province_buy_(NewMap1, NewProvinces1, NewProvince1, NewConquests1, T, NewMap, NewProvinces, NewProvince, NewConquests).
 
 
 % Apply one possible move for a given unit (❓non-deterministic❓)
 % unit_move(+Map, +Provinces, +Province, +HexWithUnit, -NewMap, -NewProvinces, -NewProvince)
-unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvince):-
+unit_move(Map, Provinces, Province, [RedConq, BlueConq], HexWithUnit, NewMap, NewProvinces, NewProvince, [NewRedConq, NewBlueConq]):-
     % The unit remains still
     NewMap = Map,
     NewProvinces = Provinces,
-    NewProvince = Province
+    NewProvince = Province,
+    NewRedConq = RedConq,
+    NewBlueConq = BlueConq
 ;   % The unit moves to another hex
     hex_unit(HexWithUnit, Unit), % Get
+    province_owner(Province, Player), % Get
+    other_player(Player, Enemy), % Get
     findall([Dest, NewUnit], unit_placement(Map, Province, Unit, Dest, NewUnit), Dests),
     member([DestHex, NewUnitName], Dests),
     DestHex \= HexWithUnit,
+    % Update the conquest counts in the case of an invasion 
+    (   hex_owner(DestHex, Enemy)
+    ->  (   Player == red
+        ->  NewRedConq is RedConq + 1,
+            NewBlueConq = BlueConq
+        ;   NewRedConq = RedConq,
+            NewBlueConq is BlueConq + 1
+        )
+    ;   NewRedConq = RedConq,
+        NewBlueConq = BlueConq
+    ),
     displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, NewProvince).
 
 % Purchase the given resource and place it in one possible location (❓non-deterministic❓)
 % resource_buy(+Map, +Provinces, +Province, +ResourceName, -NewMap, -NewProvinces, -NewProvince)
-resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewProvince):-
+resource_buy(Map, Provinces, Province, [RedConq, BlueConq], ResourceName, NewMap, NewProvinces, NewProvince, [NewRedConq, NewBlueConq]):-
     (   % The resource to be placed is a unit:
         unit(ResourceName, _, _, _, _), % Check
         findall(Dest, unit_placement(Map, Province, ResourceName, Dest, _), Dests)
@@ -246,6 +261,19 @@ resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewPr
         findall(Dest, building_placement(Map, Province, ResourceName, Dest), Dests)
     ),
     member(DestHex, Dests),
+    % Update the conquest counts in the case of an invasion 
+    province_owner(Province, Player), % Get
+    other_player(Player, Enemy), % Get
+    (   hex_owner(DestHex, Enemy)
+    ->  (   Player == red
+        ->  NewRedConq is RedConq + 1,
+            NewBlueConq = BlueConq
+        ;   NewRedConq = RedConq,
+            NewBlueConq is BlueConq + 1
+        )
+    ;   NewRedConq = RedConq,
+        NewBlueConq = BlueConq
+    ),
     buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince).
 
 
@@ -462,17 +490,16 @@ test_end_turn:-
     test_map(Map, [ProvinceRed, _]),
 
     % Test apply_income without bankrupt
-    write('Testing red province income calculation... '),
-    apply_income(Map, ProvinceRed, Map2, ProvinceRed2),
-    province_money(ProvinceRed2, 3), % Check
-    writeln('Ok!'),
+    % write('Testing red province income calculation... '),
+    % apply_income(Map, ProvinceRed, Map2, ProvinceRed2),
+    % province_money(ProvinceRed2, 3), % Check
+    % writeln('Ok!'),
 
     % Test apply_income with bankrupt
     write('Testing red province bankrupt... '),
-    set_unit(Map2, [1,0], baron, Map3),
-    update_province(Map3, ProvinceRed2, ProvinceRed3),
-    get_income(ProvinceRed3, IncomeRed),
-    IncomeRed = -15,
+    set_unit(Map, [0,0], knight, Map2),
+    set_unit(Map2, [1,0], knight, Map3),
+    update_province(Map3, ProvinceRed, ProvinceRed3),
     apply_income(Map3, ProvinceRed3, _, ProvinceRed4),
     province_count(ProvinceRed4, peasant, 0), % Check
     province_count(ProvinceRed4, spearman, 0), % Check

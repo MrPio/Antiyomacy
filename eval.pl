@@ -8,8 +8,9 @@ eval(Board, Score) :-
     board_provinces(Board, Provinces), % Get
     board_player(Board, Player), % Get
     board_state(Board, State), % Get
-    MAX = blue,
+    board_conquests(Board, [MINConquests, MAXConquests]), % Get
     MIN = red,
+    MAX = blue,
 
     % Filter player and enemy provinces
     include([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfMAX),
@@ -72,8 +73,9 @@ eval(Board, Score) :-
     ->  Score = -99999, !
     ;   % If the game is not in a win state, calculate the evaluation score
         Score is (
+            MAXConquests     * 100 +
             MAXMoneyScore    * 20 +
-            MAXTotalSize     * 30 +
+            MAXTotalSize     * 90 +
             MAXTotalIncome   * 10 +
             MAXFarmCount     * 2 +
             MAXTowerCount    * 3 +
@@ -82,8 +84,9 @@ eval(Board, Score) :-
             MAXBaronCount    * 6 +
             MAXKnightCount   * 10) 
             - (
+            MINConquests     * 100 +
             MINMoneyScore    * 20 +
-            MINTotalSize     * 30 +
+            MINTotalSize     * 90 +
             MINTotalIncome   * 10 +
             MINFarmCount     * 2 +
             MINTowerCount    * 3 +

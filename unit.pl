@@ -14,9 +14,11 @@ unit(knight,    4,          3,      40,   -36).
 max_displacement_distance(2).
 % Determine whether one unit or one building can be destroyed by another unit
 % Note: If any of the two unit names is none, it fails
-stronger(unit(_, Strength1, _, _, _), unit(_, _, Protection2, _, _)) :-
+stronger(UnitName1, UnitName2) :-
+    unit(UnitName1, Strength1, _, _, _), unit(UnitName2, _, Protection2, _, _),
     Strength1>Protection2.
-stronger(unit(_, Strength1, _, _, _), building(_, Protection2, _, _)) :-
+stronger(UnitName, BuildingName) :-
+    unit(UnitName, Strength1, _, _, _), building(BuildingName, Protection2, _, _),
     Strength1>Protection2.
 
 % Moves ======================================================

@@ -1,19 +1,15 @@
-:- module(minimax, [count/1, cuts/1, update_start_time/1,
+:- module(minimax, [count/1, cuts/1,start_time/1, update_start_time/1,
     minimax/4,
+    board/5,
     board_map/2,
     change_board_provinces/3,
     board_provinces/2,
     change_board_map/3,
     board_player/2,
-    board_state/2]).
-:- use_module([game, hex, province, eval]).
+    board_state/2,
+    board_conquests/2]).
+:- use_module([game, hex, province, eval, utils]).
 
-% Board struct ====================================================================
-board(_Map, Provinces, Player, State) :-
-    player(Player),
-    is_list(Provinces),
-    state(State).
-state(X):-member(X,[play, win]).
 
 :- dynamic(count/1).
 count(0).
@@ -28,31 +24,48 @@ update_cuts(Cuts):-
     assert(cuts(Cuts)).
 
 :- dynamic(start_time/1).
-start_time(0).
 update_start_time(Time):-
     retractall(time(_)),
     assert(start_time(Time)).
 
+
+
+% Board struct ====================================================================
+board(_Map, Provinces, Player, State, _Conquests) :-
+    player(Player),
+    is_list(Provinces),
+    state(State).
+state(X):-member(X,[play, win]).
 % Check/Get hex Map
-board_map(board(Map, _, _, _),Map).
-change_board_map(board(_, Provinces, Player, State),NewMap,board(NewMap, Provinces, Player, State)).
+board_map(board(Map, _, _, _, _),Map).
+change_board_map(board(_, Provinces, Player, State, Conquests),NewMap,board(NewMap, Provinces, Player, State, Conquests)).
 % Check/Get hex Provinces
-board_provinces(board(_, Provinces, _, _),Provinces).
-change_board_provinces(board(Map, _, Player, State),NewProvinces,board(Map, NewProvinces, Player, State)).
+board_provinces(board(_, Provinces, _, _, _),Provinces).
+change_board_provinces(board(Map, _, Player, State, Conquests),NewProvinces,board(Map, NewProvinces, Player, State, Conquests)).
 % Check/Get hex Player
-board_player(board(_, _, Player, _),Player).
+board_player(board(_, _, Player, _, _),Player).
 % Check/Get hex State
-board_state(board(_, _, _, State),State).
+board_state(board(_, _, _, State, _),State).
+% Check/Get RedConquests
+board_conquests(board(_, _, _, _, Conquests),Conquests).
 
 % Finds the best move using minimax with alpha-beta pruning
 % minimax(+Board, +AlphaBeta, +Depth, -BestBoardVal)
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     start_time(T1), get_time(T2), T is T2-T1,
-    Depth > 0, T < 1,
+    Depth > 0, T < 10,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
+
+    % Print the number of possible moves
     % length(NextBoards, NextBoardsLength),
-    % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
     %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
+    
+    % Update the count
+    % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
+
+    % Print all the possible boards
+    % foreach((member(board(Map, Provinces, _, State, Conquests), NextBoards)), (print_map(Map), print_provinces(Provinces), writeln(State), writeln(Conquests))),
+    
     best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
     eval(Board,Val)
@@ -108,6 +121,12 @@ better([Board, Val], [_, Val1], [Board, Val]) :-
     ;
     is_turn(Board, max),
     Val < Val1, !.
+better([_, Val], [Board, Val1], [Board, Val1]) :-
+    is_turn(Board, min),
+    Val < Val1, !
+    ;
+    is_turn(Board, max),
+    Val > Val1, !.
 better(BoardVal1, BoardVal2, BoardVal):-
     random_member(BoardVal, [BoardVal1, BoardVal2]).
 
