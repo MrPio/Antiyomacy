@@ -67,7 +67,7 @@ farm_nearby(Map, [X, Y], Province) :-
 % Note: It is assumed that a building that is not a farm can only be constructed
 %       on the inner border of the province, not within it. Farms, on the other hand,
 %       should be placed near other farms
-% building_placement(+Map, +Province, +BuildingName, ?ToHex) [non-deterministic]
+% building_placement(+Map, +Province, +BuildingName, ?ToHex) (❓non-deterministic❓)
 building_placement(Map, Province, farm, Hex) :-!,
     % Find one possible destination / Check the destination validity on the province
     province_hexes(Province, Hexes),

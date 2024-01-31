@@ -101,8 +101,8 @@ update_province(Map, province(Owner, OldHexes, Money), UpdatedProvince) :-
     sort(NewHexes, NewHexesSorted),    
     UpdatedProvince=province(Owner, NewHexesSorted, Money),!.
 
-% Given a province, refresh only the provided coords, or add them if not already present
-% This is faster than update_province
+% Refresh only the provided coords on the given province, or add them if not already owned
+% Note: this is faster than update_province
 % refresh_province(+Map, +Province, +Coords, -NewProvince)
 refresh_province(Map, Province, Coords, NewProvince):-
     province_hexes(Province, ProvinceHexes), % Get
@@ -123,6 +123,9 @@ refresh_province_(Map, ProvinceHexes, ProvinceCoords, [Coord|TCoords], NewProvin
     ),
     refresh_province_(Map, NewProvinceHexes1, ProvinceCoords, TCoords, NewProvinceHexes).
 
+% Add the income to the provinces money and go bankrupt if necessary
+% Note: this simply calls apply_income/4 recursively
+% apply_incomes(+Map, +Provinces, -NewMap, -NewProvinces)
 apply_incomes(Map, Provinces, NewMap, NewProvinces):-
     apply_incomes_(Map, Provinces, [], NewMap, NewProvinces).
 apply_incomes_(Map, [], Acc, Map, Acc).
@@ -338,7 +341,7 @@ buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvin
         get_hex(Map, [X, Y], OldHex),
         get_hex(NewMap, [X, Y], NewHex),
         province_hexes(ProvinceWithNewMoney, OldHexes),
-        append(NotChangedHexes, [OldHex], OldHexes),
+        subtract(OldHexes, [OldHex], NotChangedHexes),
         append(NotChangedHexes, [NewHex], NewHexes),
         sort(NewHexes, NewHexesSorted),
         change_province_hexes(ProvinceWithNewMoney, NewHexesSorted, NewProvince),
@@ -412,7 +415,7 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
 % Note: This won't fail in case there hasn't been any merge
 % Time: ~ 15 micro
 % check_for_merge(+Map, +OldProvinces, +NewProvince, +Hex, -NewProvinces):-
-check_for_merge(Map, OldProvinces, NewProvince, Hex, NewProvinces):-
+check_for_merge(_Map, OldProvinces, NewProvince, Hex, NewProvinces):-
     province_owner(NewProvince, Player), % Get
     hex_coord(Hex, [X,Y]), % Get
 

@@ -11,6 +11,7 @@ update_time(Time):-
     assert(time(Time)).
 
 % Take a stopwatch lap and print the elapsed time if demanded
+% Note: this is useful for benchmarking purposes
 % lap(+Print)
 lap:-lap(0).
 lap(Print):-
@@ -24,6 +25,7 @@ lap(Print):-
     ), !.
     
 
+% Print a list of provinces in a nice pleasant way
 print_provinces(Provinces):-
     include([In]>>(province_owner(In, red)), Provinces, ProvincesRed),
     exclude([In]>>(province_owner(In, red)), Provinces, ProvincesBlue),

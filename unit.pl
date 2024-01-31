@@ -11,7 +11,7 @@ unit(spearman,  2,          2,      20,   -6).
 unit(baron,     3,          3,      30,   -18).
 unit(knight,    4,          3,      40,   -36).
 
-max_displacement_distance(1).
+max_displacement_distance(2).
 % Determine whether one unit or one building can be destroyed by another unit
 % Note: If any of the two unit names is none, it fails
 stronger(unit(_, Strength1, _, _, _), unit(_, _, Protection2, _, _)) :-
@@ -30,7 +30,7 @@ stronger(unit(_, Strength1, _, _, _), building(_, Protection2, _, _)) :-
 %       in the case of a displace action
 % Note: this predicate only checks the validity of the placement, it does not
 %       edit the map in any way.
-% unit_placement(+Map, +Province, +UnitName, ?Hex, -NewUnitName) [non-deterministic]
+% unit_placement(+Map, +Province, +UnitName, ?Hex, -NewUnitName) (❓non-deterministic❓)
 unit_placement(Map, Province, UnitName, Hex, NewUnitName) :-
     hex_unit(Hex, UnitAtDestName), % Get
     hex_owner(Hex, OwnerAtDest), % Get

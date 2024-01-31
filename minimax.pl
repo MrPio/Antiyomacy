@@ -38,7 +38,7 @@ board_player(board(_, _, Player, _),Player).
 % Check/Get hex State
 board_state(board(_, _, _, State),State).
 
-% Calculating Minimax with alpha-beta pruning
+% Finds the best move using minimax with alpha-beta pruning
 % minimax(+Board, +AlphaBeta, +Depth, -BestBoardVal)
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
@@ -52,7 +52,7 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     %format(' ~w ', Val)
     .
 
-% Finds the BestBoard from a list of possible successors, whose Val always
+% Finds the best board from a list of possible successors, whose value always
 % remains within the Alpha and Beta limits
 % best_board(+Boards, +AlphaBeta, +Depth, -BestBoardVal)
 best_board([Board|TBoards], [Alpha, Beta], Depth, BestBoardVal) :-
@@ -63,7 +63,7 @@ best_board([Board|TBoards], [Alpha, Beta], Depth, BestBoardVal) :-
 % Evaluate one Board checking for any alpha or beta cuts
 % best_board_(+LeftBoards, +AlphaBeta, +BoardVal, +Depth, -EnoughBoardVal)
 best_board_([], _, BoardVal, _, BoardVal) :- !.
-best_board_(LeftBoards, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
+best_board_(_LeftBoards, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
     % Check beta test condition
     is_turn(Board, min), 
     Val > Beta,
@@ -93,6 +93,7 @@ update_alpha_beta([Alpha, Beta], [Board, Val], [Alpha, Val])  :-
 update_alpha_beta(AlphaBeta, _, AlphaBeta).
 
 % Returns the best configuration based on the player's turn
+% Note: in case of equality, a random board is choosen
 % better(+BoardVal1, +BoardVal2, -BestBoardVal)
 better([Board, Val], [_, Val1], [Board, Val]) :-
     is_turn(Board, min),

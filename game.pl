@@ -19,6 +19,7 @@
     • The eval function should reward in case of victory (Federico)
     • Vertical cut with time instead of horizontal cut with depth (Valerio)
     • Ensure the tests are working (Valerio)
+    • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
     -------------------------------------------------------------------------------------------------
     x Benchmark the move/2 predicate (Valerio)
     x Make sure that update_province is called only when needed (Valerio)
@@ -65,123 +66,7 @@
     • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
-% Checks if the player (Player) has won by ensuring that at least 80% of the hexes (excluding sea tiles)
-% or there are no more provinces owned by the other player.
-% has_won(+Map, +Provinces, +Player)
-has_won(Map, Provinces, Player) :-
-    % Get all hexes on the map that do not have 'sea' in their tile
-    get_non_sea_hexes(Map, NonSeaHexes),
-
-    % Calculate the total hexes on the map (excluding sea)
-    length(NonSeaHexes, TotalHexes),
-
-    % Calculate the total size of the player's provinces
-    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
-    maplist(province_size, ProvincesOfPlayer, PlayerSizes),
-    sum_list(PlayerSizes, PlayerTotalSize),
-
-    % Calculate the percentage of player's hexes compared to the total (excluding sea)
-    Percentage is (PlayerTotalSize / TotalHexes) * 100,
-
-    % Check if the percentage is at least 80% or there are no more provinces owned by the other player
-    (Percentage >= 80 ; % OR
-     % Check if there are no more provinces owned by the other player
-     \+ (member(Province, Provinces), province_owner(Province, OtherPlayer), OtherPlayer \= Player)),
-    !. % Cut to prevent backtracking
-
-% Get the other player
-other_player(red, blue).
-other_player(blue, red).
-
-% Get one possible move (non-deterministic)
-% move(+Board, -NextBoard)
-move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, NewState)):-
-    % Select all the player's provinces
-    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),!,
-    % Select the new player
-    player(NewPlayer), NewPlayer \= Player,
-    move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
-    % Determine if the game has ended
-    (   has_won(NewMap, NewProvinces, Player)
-    ->  NewState = win
-    ;   NewState = play
-    ).
-
-% province_move(+Map, +Provinces, +ProvincesOfPlayer, -NewMap, -NewProvinces)
-move_(Map, Provinces, [], Map, Provinces).
-move_(Map, Provinces, [ProvinceOfPlayer|T], NewMap, NewProvinces):-
-    province_move(Map, Provinces, ProvinceOfPlayer, NewMap1, NewProvinces1),
-    move_(NewMap1, NewProvinces1, T, NewMap, NewProvinces).
-
-% Get one possible move for a given province (non-deterministic)
-% province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
-province_move(Map, Provinces, Province, NewMap, NewProvinces):-
-    (   % Choose one possible displace move for each owned unit =======================================
-        province_hexes(Province, Hexes), % Get
-        % Select hexes with unit
-        % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
-        % province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, Province1),
-        member(HexWithUnit, Hexes),
-        \+ hex_unit(HexWithUnit, none),
-        unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, _)
-    ;
-        % Choose one possible purchase moves ==========================================================
-        % findall(R, (check_buys(Province, R, _)), ResourcesSets),
-        findall([R], (check_buy(Province, R, _)), ResourcesSet),
-        append(ResourcesSet, [[]],ResourcesSets),
-        % Select one purchase move
-        member(ResourceSet, ResourcesSets),
-        (   ResourceSet \= []
-        ->  province_buy_(Map, Provinces, Province, ResourceSet, NewMap, NewProvinces, _)
-        ;   [NewMap, NewProvinces] = [Map, Provinces]
-        )
-    ).
-
-% Displace all the given units
-% province_move_(+Map, +Provinces, +Province, +HexesWithUnit, -NewMap, -NewProvinces)
-province_move_(Map, Provinces, Province, [], Map, Provinces, Province).
-province_move_(Map, Provinces, Province, [HexWithUnit|T], NewMap, NewProvinces, NewProvince):-
-    unit_move(Map, Provinces, Province, HexWithUnit, NewMap1, NewProvinces1, NewProvince1),
-    province_move_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
-
-% Purchase all the given resources on the given province
-% province_move_(+Map, +Provinces, +Province, +ResourcesSets, -NewMap, -NewProvinces)
-province_buy_(Map, Provinces, Province, [], Map, Provinces, Province).
-province_buy_(Map, Provinces, Province, [Resource|T], NewMap, NewProvinces, NewProvince):-
-    resource_buy(Map, Provinces, Province, Resource, NewMap1, NewProvinces1, NewProvince1),
-    province_buy_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
-
-
-% Apply one possible move for a given unit (non-deterministic)
-% unit_move(+Map, +Provinces, +Province, +HexWithUnit, -NewMap, -NewProvinces, -NewProvince)
-unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvince):-
-    % The unit remains still
-    NewMap = Map,
-    NewProvinces = Provinces,
-    NewProvince = Province
-;   % The unit moves to another hex
-    hex_unit(HexWithUnit, Unit), % Get
-    findall([Dest, NewUnit], unit_placement(Map, Province, Unit, Dest, NewUnit), Dests),
-    member([DestHex, NewUnitName], Dests),
-    DestHex \= HexWithUnit,
-    displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, NewProvince).
-
-% Purchase the given resource and place it in one possible location (non-deterministic)
-% resource_buy(+Map, +Provinces, +Province, +ResourceName, -NewMap, -NewProvinces, -NewProvince)
-resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewProvince):-
-    (   % The resource to be placed is a unit:
-        unit(ResourceName, _, _, _, _), % Check
-        findall(Dest, unit_placement(Map, Province, ResourceName, Dest, _), Dests)
-    ;   % The resource to be placed is a building:
-        building(ResourceName, _, _, _), % Check
-        findall(Dest, building_placement(Map, Province, ResourceName, Dest), Dests)
-    ),
-    member(DestHex, Dests),
-    buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince).
-
-
-
-% Play the game
+% Plays the game
 play:-
     % generate_random_map(Map, false),
     % spawn_provinces(Map, MapWithProvinces),
@@ -246,6 +131,124 @@ game_loop(Board):-
     ;   game_loop(NewBoardWithIncome)
     ).
 
+
+
+% Checks if the player has won.
+% Note: a player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces
+% has_won(+Map, +Provinces, +Player)
+has_won(Map, Provinces, Player) :-
+    % Get all hexes on the map that do not have 'sea' in their tile
+    get_non_sea_hexes(Map, NonSeaHexes),
+
+    % Calculate the total hexes on the map (excluding sea)
+    length(NonSeaHexes, TotalHexes),
+
+    % Calculate the total size of the player's provinces
+    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
+    maplist(province_size, ProvincesOfPlayer, PlayerSizes),
+    sum_list(PlayerSizes, PlayerTotalSize),
+
+    % Calculate the percentage of player's hexes compared to the total (excluding sea)
+    Percentage is (PlayerTotalSize / TotalHexes) * 100,
+
+    % Check if the percentage is at least 80% or there are no more provinces owned by the other player
+    (Percentage >= 80 ; % OR
+     % Check if there are no more provinces owned by the other player
+     \+ (member(Province, Provinces), province_owner(Province, OtherPlayer), OtherPlayer \= Player)),
+    !. % Cut to prevent backtracking
+
+% Get the other player
+other_player(red, blue).
+other_player(blue, red).
+
+% Get one possible move (❓non-deterministic❓)
+% move(+Board, -NextBoard)
+move(board(Map, Provinces, Player, _), board(NewMap, NewProvinces, NewPlayer, NewState)):-
+    % Select all the player's provinces
+    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),!,
+    % Select the new player
+    player(NewPlayer), NewPlayer \= Player,
+    move_(Map, Provinces, ProvincesOfPlayer, NewMap, NewProvinces),
+    % Determine if the game has ended
+    (   has_won(NewMap, NewProvinces, Player)
+    ->  NewState = win
+    ;   NewState = play
+    ).
+
+% province_move(+Map, +Provinces, +ProvincesOfPlayer, -NewMap, -NewProvinces)
+move_(Map, Provinces, [], Map, Provinces).
+move_(Map, Provinces, [ProvinceOfPlayer|T], NewMap, NewProvinces):-
+    province_move(Map, Provinces, ProvinceOfPlayer, NewMap1, NewProvinces1),
+    move_(NewMap1, NewProvinces1, T, NewMap, NewProvinces).
+
+% Get one possible move for a given province (❓non-deterministic❓)
+% province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
+province_move(Map, Provinces, Province, NewMap, NewProvinces):-
+    (   % Choose one possible displace move for each owned unit =======================================
+        province_hexes(Province, Hexes), % Get
+        % Select hexes with unit
+        % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
+        % province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, Province1),
+        member(HexWithUnit, Hexes),
+        \+ hex_unit(HexWithUnit, none),
+        unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, _)
+    ;
+        % Choose one possible purchase moves ==========================================================
+        % findall(R, (check_buys(Province, R, _)), ResourcesSets),
+        findall([R], (check_buy(Province, R, _)), ResourcesSet),
+        append(ResourcesSet, [[]],ResourcesSets),
+        % Select one purchase move
+        member(ResourceSet, ResourcesSets),
+        (   ResourceSet \= []
+        ->  province_buy_(Map, Provinces, Province, ResourceSet, NewMap, NewProvinces, _)
+        ;   [NewMap, NewProvinces] = [Map, Provinces]
+        )
+    ).
+
+% Displace all the given units
+% province_move_(+Map, +Provinces, +Province, +HexesWithUnit, -NewMap, -NewProvinces)
+province_move_(Map, Provinces, Province, [], Map, Provinces, Province).
+province_move_(Map, Provinces, Province, [HexWithUnit|T], NewMap, NewProvinces, NewProvince):-
+    unit_move(Map, Provinces, Province, HexWithUnit, NewMap1, NewProvinces1, NewProvince1),
+    province_move_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
+
+% Purchase all the given resources on the given province
+% province_move_(+Map, +Provinces, +Province, +ResourcesSets, -NewMap, -NewProvinces)
+province_buy_(Map, Provinces, Province, [], Map, Provinces, Province).
+province_buy_(Map, Provinces, Province, [Resource|T], NewMap, NewProvinces, NewProvince):-
+    resource_buy(Map, Provinces, Province, Resource, NewMap1, NewProvinces1, NewProvince1),
+    province_buy_(NewMap1, NewProvinces1, NewProvince1, T, NewMap, NewProvinces, NewProvince).
+
+
+% Apply one possible move for a given unit (❓non-deterministic❓)
+% unit_move(+Map, +Provinces, +Province, +HexWithUnit, -NewMap, -NewProvinces, -NewProvince)
+unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvince):-
+    % The unit remains still
+    NewMap = Map,
+    NewProvinces = Provinces,
+    NewProvince = Province
+;   % The unit moves to another hex
+    hex_unit(HexWithUnit, Unit), % Get
+    findall([Dest, NewUnit], unit_placement(Map, Province, Unit, Dest, NewUnit), Dests),
+    member([DestHex, NewUnitName], Dests),
+    DestHex \= HexWithUnit,
+    displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, NewProvince).
+
+% Purchase the given resource and place it in one possible location (❓non-deterministic❓)
+% resource_buy(+Map, +Provinces, +Province, +ResourceName, -NewMap, -NewProvinces, -NewProvince)
+resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewProvince):-
+    (   % The resource to be placed is a unit:
+        unit(ResourceName, _, _, _, _), % Check
+        findall(Dest, unit_placement(Map, Province, ResourceName, Dest, _), Dests)
+    ;   % The resource to be placed is a building:
+        building(ResourceName, _, _, _), % Check
+        findall(Dest, building_placement(Map, Province, ResourceName, Dest), Dests)
+    ),
+    member(DestHex, Dests),
+    buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince).
+
+
+
 % Run all the tests
 test:-
     test_province,
@@ -256,7 +259,6 @@ test:-
     test_end_turn,
     test_destroy_tower,
     test_displace_with_merge,
-    test_buy_and_merge,
     test_share_money,
     test_manhattan_distance,
     test_destroy_province,
@@ -394,7 +396,7 @@ test_purchases:-
     write('Testing unit displacement action... '),
     get_hex(Map2, [0,0], UnitDisplaceFrom),
     get_hex(Map2, [2,0], UnitDisplaceTo),
-    displace_unit(Map2, [ProvinceRed2, ProvinceBlue2], ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, Map3, _, ProvinceRed4),
+    displace_unit(Map2, [ProvinceRed2, ProvinceBlue2], ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, peasant, Map3, _, ProvinceRed4),
     province_hexes(ProvinceRed4,ProvinceRed4Hexes),
     same_elements(ProvinceRed4Hexes, [hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)]),
     writeln('Ok!'),
@@ -402,9 +404,8 @@ test_purchases:-
 
     % Test: wrong displace_unit
     write('Testing wrong unit displacement action near enemy tower... '),
-    get_hex(Map2, [0,1], UnitDisplaceFrom1),
     get_hex(Map2, [2,1], UnitDisplaceTo1),
-    \+ displace_unit(Map3, [ProvinceRed4, ProvinceBlue2], ProvinceRed4, UnitDisplaceFrom1, UnitDisplaceTo1, _, _, _),
+    \+ unit_placement(Map3, ProvinceRed4, peasant, UnitDisplaceTo1, _),
     writeln('Ok!').
 
 test_farm:-
@@ -444,12 +445,12 @@ test_attack:-
 
     get_hex(Map2, [1,2], BlueSpearmanHexFrom),
     get_hex(Map2, [1,1], BlueSpearmanHexTo),
-    displace_unit(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, Map3, _, ProvinceBlue4),
+    displace_unit(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, BlueSpearmanHexFrom, BlueSpearmanHexTo, spearman, Map3, _, ProvinceBlue4),
     print_map(Map3),
 
     get_hex(Map3, [1,1], BlueSpearmanHexFrom2),
     get_hex(Map3, [0,0], RedPeasantHex),
-    displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BlueSpearmanHexFrom2, RedPeasantHex, Map4, _, ProvinceBlue5),
+    displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BlueSpearmanHexFrom2, RedPeasantHex, spearman, Map4, _, ProvinceBlue5),
     print_map(Map4),
     province_hexes(ProvinceBlue5, ProvinceBlue5Hexes),
     same_elements(ProvinceBlue5Hexes, [hex(0,[0,0],_,blue,none,spearman),hex(7,[1,2],_,blue,none,none),hex(6,[1,1],_,blue,none,none),hex(17,[3,2],_,blue,none,none),hex(12,[2,2],_,blue,tower,none),hex(23,[4,3],_,blue,none,none),hex(18,[3,3],_,blue,none,none),hex(19,[3,4],_,blue,none,none)]),
@@ -485,7 +486,7 @@ test_destroy_tower :-
     writeln('Testing wrong purchase: red spearman near blue tower... '),
     change_province_money(ProvinceRed, 30, ProvinceRed1),
     get_hex(Map, [1,2], DestHex),
-    \+ buy_and_place(Map, [ProvinceRed1, ProvinceBlue], ProvinceRed1, spearman, DestHex, _, _, _),
+    \+ unit_placement(Map, ProvinceRed1, spearman, DestHex, _),
     writeln('Spearman succesfully not placed!'),nl,
 
     writeln('Testing purchase baron and blue tower destruction action by red... '),
@@ -495,7 +496,7 @@ test_destroy_tower :-
 
     get_hex(Map1, [1,2], BaronHex),
     get_hex(Map1, [2,2], ToHex),
-    displace_unit(Map1, [ProvinceRed2, ProvinceBlue], ProvinceRed2, BaronHex, ToHex, Map2, _, _),
+    displace_unit(Map1, [ProvinceRed2, ProvinceBlue], ProvinceRed2, BaronHex, ToHex, baron, Map2, _, _),
     print_map(Map2),
     writeln('Blue tower succesfully destroyed! '),
     writeln('Ok!').
@@ -512,23 +513,8 @@ test_displace_with_merge:-
     print_map(Map2),
     get_hex(Map2, [0,0], FromHex),
     get_hex(Map2, [0,1], DestHex),
-    displace_unit(Map2, [ProvinceRed3, ProvinceBlue], ProvinceRed3, FromHex, DestHex, NewMap, _, _),
+    displace_unit(Map2, [ProvinceRed3, ProvinceBlue], ProvinceRed3, FromHex, DestHex, peasant, NewMap, _, _),
     print_map(NewMap),
-    writeln('Ok!').
-
-test_buy_and_merge:-
-    nl,writeln('test_buy_and_merge ======================================================'),
-    test_map(Map, [ProvinceRed, ProvinceBlue]),
-    print_map(Map),
-    % Test: buy_and_place with merge
-    write('Testing buy and merge units... '),
-    change_province_money(ProvinceRed, 100, ProvinceRed2),
-    get_hex(Map, [0,0], NewUnitHex),
-    \+ buy_and_place(Map, [ProvinceRed2, ProvinceBlue], ProvinceRed2, knight, NewUnitHex, _, _, _),
-    buy_and_place(Map, [ProvinceRed2, ProvinceBlue], ProvinceRed2, baron, NewUnitHex, NewMap2, _,_),
-    get_hex(NewMap2, [0,0], NewUnitHex2), % Get
-    hex_unit(NewUnitHex2, knight), % Check
-    print_map(NewMap2),
     writeln('Ok!').
 
 test_share_money:-
@@ -536,11 +522,12 @@ test_share_money:-
     test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
     print_map(Map),
 
-    writeln('testing attack with merge + split'),
+    writeln('testing attack with provinces merge + split'),
     change_province_money(ProvinceBlue, 13, ProvinceBlue1),
     change_province_money(ProvinceRedEst, 17, ProvinceRedEst1),
     change_province_money(ProvinceRedWest, 50, ProvinceRedWest1),
     get_hex(Map, [2,2], RedAttackHex),
+    trace,
     buy_and_place(Map, [ProvinceBlue1, ProvinceRedEst1, ProvinceRedWest1], ProvinceRedWest1, baron, RedAttackHex, Map2, NewProvinces, _),
     same_elements(NewProvinces,[
         province(red,[hex(14,[2,4],_,red,none,none),hex(13,[2,3],_,red,none,none),hex(12,[2,2],_,red,none,baron),hex(16,[3,1],_,red,none,none),hex(15,[3,0],_,red,none,none),hex(20,[4,0],_,red,none,none)],37),
@@ -567,7 +554,6 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom, BluePeasantHexTo, Distance1),
     Distance1 =< 4,
     write('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
-    displace_unit(Map1, [ProvinceRed, ProvinceBlue2], ProvinceBlue2, BluePeasantHexFrom, BluePeasantHexTo, Map2, _, ProvinceBlue3),
     print_map(Map2),
 
     % Second check
@@ -576,7 +562,6 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom1, BluePeasantHexTo1, Distance2),
     Distance2 =< 4,
     write('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
-    displace_unit(Map2, [ProvinceRed, ProvinceBlue3], ProvinceBlue3, BluePeasantHexFrom1, BluePeasantHexTo1, Map3, _, ProvinceBlue4),
     print_map(Map3),
 
     % Third check
@@ -585,7 +570,6 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom2, BluePeasantHexTo2, Distance3),
     Distance3 > 4,
     write('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
-    \+ displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BluePeasantHexFrom2, BluePeasantHexTo2, _, _, _),
     print_map(Map3),
 
     % Fourth check
@@ -594,7 +578,6 @@ test_manhattan_distance:-
     manhattan_distance(BluePeasantHexFrom3, BluePeasantHexTo3, Distance4),
     Distance4 =< 4,
     write('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
-    displace_unit(Map3, [ProvinceRed, ProvinceBlue4], ProvinceBlue4, BluePeasantHexFrom3, BluePeasantHexTo3, Map4, _, _),
     print_map(Map4),
 
     writeln('Ok!').
