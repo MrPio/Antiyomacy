@@ -102,7 +102,7 @@ game_loop(Board):-
     % TODO here: handle player input
     % get_char(_), skip_line,
     get_time(StartTime),
-    minimax(Board, [-999999, 999999], 4, [NewBoard, _]),
+    minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
 
 
     lap("Apply income"),
