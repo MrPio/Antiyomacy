@@ -18,6 +18,7 @@
             2-2
     • The eval function should reward in case of victory (Federico)
     • Vertical cut with time instead of horizontal cut with depth (Valerio)
+    • Ensure the tests are working (Valerio)
     -------------------------------------------------------------------------------------------------
     x Benchmark the move/2 predicate (Valerio)
     x Make sure that update_province is called only when needed (Valerio)
