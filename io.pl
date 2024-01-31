@@ -53,20 +53,20 @@ purchase_input:-
         purchase_input
     ).
 
+% Validate the format and range of coordinates
 validate_coordinate(Coord):-
+    % Convert the Prolog term to an atom
     term_to_atom(Coord, AtomCoord),
+    % Convert the atom to a list of character codes
     atom_codes(AtomCoord, Codes),
+    % Split the codes using "-" as a delimiter, obtaining XStr and YStr
     split_string(Codes, "-", "", [XStr, YStr]),
+    % Convert XStr and YStr to integers X and Y
     number_codes(X, XStr),
     number_codes(Y, YStr),
+    % Check that both X and Y are greater than 0
     X > 0,
     Y > 0.
-
-
-parse_number(Number) -->
-    { number_codes(Number, Codes) },
-    Codes.
-
 
 % Validate the resource name
 validate_resource_name(ResName):-
