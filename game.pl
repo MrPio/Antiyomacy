@@ -2,15 +2,31 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 
 /* TODO:
-    • Make sure that update_province is called only when needed (Valerio)
-    • Benchmark the move/2 predicate (Valerio)
+    • New eval function for province money and units (Federico)
+    • I/O handling(Federico, Federica)
+            1) Displace
+            2) Purchase
+            -----------------
+            FromCoord 
+            1-2
+            ToCoord
+            2-2
+            -----------------
+            ResName
+            farm
+            ToCoord
+            2-2
+    • The eval function should reward in case of victory
+    • Vertical cut with time instead of horizontal cut with depth
     -------------------------------------------------------------------------------------------------
+    x Benchmark the move/2 predicate (Valerio)
+    x Make sure that update_province is called only when needed (Valerio)
     X Upgrade the evaluation function (Federico)
     X Start game adding some money to the provinces (Valerio)
     X Complete the move/2 predicate handling both purchase actions (Valerio)
     X Write the game controller which calls the minimax module (Valerio)
     X Write the has_won/3 predicate (Federico)
-    X When a province becomes smaller than 2 hexes, it must be destroyed immediately 
+    X When a province becomes smaller than 2 hexes, it must be destroyed immediately
       and its owner should become 'none'. (Federico)
     X Write the minimax algorithm with alpha beta pruning (Valerio)
     X Write a first draft of the evaluation function (Valerio)
@@ -36,6 +52,7 @@
  */
 
 /* Things to write in the paper:
+    • Vertical cut with time instead of horizontal cut with depth
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
     • yall library was used to define a lambda expressions
@@ -101,11 +118,11 @@ province_move(Map, Provinces, Province, NewMap, NewProvinces):-
     (   % Choose one possible displace move for each owned unit =======================================
         province_hexes(Province, Hexes), % Get
         % Select hexes with unit
-        % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit), 
+        % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
         % province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, Province1),
-        member(HexesWithUnit, Hexes),
-        \+ hex_unit(HexesWithUnit, none),
-        unit_move(Map, Provinces, Province, HexesWithUnit, NewMap, NewProvinces, _)
+        member(HexWithUnit, Hexes),
+        \+ hex_unit(HexWithUnit, none),
+        unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, _)
     ;
         % Choose one possible purchase moves ==========================================================
         % findall(R, (check_buys(Province, R, _)), ResourcesSets),
@@ -147,7 +164,7 @@ unit_move(Map, Provinces, Province, HexWithUnit, NewMap, NewProvinces, NewProvin
     member([DestHex, NewUnitName], Dests),
     DestHex \= HexWithUnit,
     displace_unit(Map, Provinces, Province, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, NewProvince).
-    
+
 % Purchase the given resource and place it in one possible location (non-deterministic)
 % resource_buy(+Map, +Provinces, +Province, +ResourceName, -NewMap, -NewProvinces, -NewProvince)
 resource_buy(Map, Provinces, Province, ResourceName, NewMap, NewProvinces, NewProvince):-
@@ -189,15 +206,17 @@ play:-
     update_province(MapWithProvinces, ProvinceRed2, ProvinceRedSorted),
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
-    
+
     game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], red, play)).
 
 game_loop(Board):-
     board_player(Board, Player), % Get
     format('It is ~w turn:', Player),nl,
+
+    % TODO here: handle player input
     % get_char(_), skip_line,
     get_time(StartTime),
-    minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
+    minimax(Board, [-999999, 999999], 4, [NewBoard, _]),
 
 
     lap("Apply income"),
@@ -583,7 +602,7 @@ test_destroy_province:-
     nl,writeln('test_destroy_province ======================================================'),
     test_map2(Map, [ProvinceBlue, _ProvinceRedEst, ProvinceRedWest]),
     print_map(Map),
-        
+
     % Purchase Peasant
     writeln('Purchasing Paesant:'),
     change_province_money(ProvinceRedWest, 10, ProvinceRedWest1),

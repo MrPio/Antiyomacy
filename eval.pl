@@ -6,56 +6,58 @@
 % eval(+Board, -Score)
 eval(Board, Score) :-
     board_provinces(Board, Provinces), % Get
+    board_player(Board, Player), % Get
+    board_state(Board, State), % Get
     MAX = blue,
 
     % Filter player and enemy provinces
-    include([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfPlayer),
-    exclude([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfEnemy),
+    include([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfMAX),
+    exclude([In]>>(province_owner(In, MAX)), Provinces, ProvincesOfMIN),
 
     % Calculate the total money
-    maplist(province_money, ProvincesOfPlayer, PlayerMoneys),
-    sum_list(PlayerMoneys, PlayerTotalMoney),
-    maplist(province_money, ProvincesOfEnemy, EnemyMoneys),
-    sum_list(EnemyMoneys, EnemyTotalMoney),
+    maplist(province_money, ProvincesOfMAX, MAXMoneys),
+    sum_list(MAXMoneys, MAXTotalMoney),
+    maplist(province_money, ProvincesOfMIN, MINMoneys),
+    sum_list(MINMoneys, MINTotalMoney),
 
     % Calculate the total owned hexes count
-    maplist(province_size, ProvincesOfPlayer, PlayerSizes),
-    sum_list(PlayerSizes, PlayerTotalSize),
-    maplist(province_size, ProvincesOfEnemy, EnemySizes),
-    sum_list(EnemySizes, EnemyTotalSize),
+    maplist(province_size, ProvincesOfMAX, MAXSizes),
+    sum_list(MAXSizes, MAXTotalSize),
+    maplist(province_size, ProvincesOfMIN, MINSizes),
+    sum_list(MINSizes, MINTotalSize),
 
     % Calculate the total income
-    maplist(get_income, ProvincesOfPlayer, PlayerIncomes),
-    sum_list(PlayerIncomes, PlayerTotalIncome),
-    maplist(get_income, ProvincesOfEnemy, EnemyIncomes),
-    sum_list(EnemyIncomes, EnemyTotalIncome),
+    maplist(get_income, ProvincesOfMAX, MAXIncomes),
+    sum_list(MAXIncomes, MAXTotalIncome),
+    maplist(get_income, ProvincesOfMIN, MINIncomes),
+    sum_list(MINIncomes, MINTotalIncome),
 
     % Calculate the number of 'farm' buildings in the player's provinces
-    province_counts(ProvincesOfPlayer, [farm], PlayerFarmCount),
-    province_counts(ProvincesOfEnemy, [farm], EnemyFarmCount),
+    province_counts(ProvincesOfMAX, [farm], MAXFarmCount),
+    province_counts(ProvincesOfMIN, [farm], MINFarmCount),
 
     % Calculate the number of 'tower' buildings in the player's provinces
-    province_counts(ProvincesOfPlayer, [tower], PlayerTowerCount),
-    province_counts(ProvincesOfEnemy, [tower], EnemyTowerCount),
+    province_counts(ProvincesOfMAX, [tower], MAXTowerCount),
+    province_counts(ProvincesOfMIN, [tower], MINTowerCount),
 
     % Calculate the number of units in the player's provinces
-    province_counts(ProvincesOfPlayer, [peasant,spearman,baron,knight], PlayerUnitsCount),
-    province_counts(ProvincesOfEnemy, [peasant,spearman,baron,knight], EnemyUnitsCount),
+    province_counts(ProvincesOfMAX, [peasant,spearman,baron,knight], MAXUnitsCount),
+    province_counts(ProvincesOfMIN, [peasant,spearman,baron,knight], MINUnitsCount),
 
     % Calculate the evaluation score
     Score is (
-        PlayerTotalMoney    * 0.2 +
-        PlayerTotalSize     * 15 +
-        PlayerTotalIncome   * 8 +
-        PlayerFarmCount     * 1 +
-        PlayerTowerCount    * 0.5 +
-        PlayerUnitsCount    * 1) 
+        MAXTotalMoney    * 0.2 +
+        MAXTotalSize     * 15 +
+        MAXTotalIncome   * 8 +
+        MAXFarmCount     * 1 +
+        MAXTowerCount    * 0.5 +
+        MAXUnitsCount    * 1) 
         - (
-        EnemyTotalMoney    * 0.2 +
-        EnemyTotalSize     * 15 +
-        EnemyTotalIncome   * 8 +
-        EnemyFarmCount     * 1 +
-        EnemyTowerCount    * 0.5 +
-        EnemyUnitsCount    * 1).
+        MINTotalMoney    * 0.2 +
+        MINTotalSize     * 15 +
+        MINTotalIncome   * 8 +
+        MINFarmCount     * 1 +
+        MINTowerCount    * 0.5 +
+        MINUnitsCount    * 1).
 
 
