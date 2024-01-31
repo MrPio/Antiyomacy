@@ -424,12 +424,12 @@ check_for_merge(_Map, OldProvinces, NewProvince, Hex, NewProvinces):-
     % near8(Map, HexCoord, NearHexes),
     Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
     findall([X1,Y1], (between(Left, Right, X1), between(Down, Up, Y1)), NearbyCoords),
-    setof(Province,
+    findall(Province, 
         (   % member(NearHex, NearHexes),
             member(Province, OldProvinces),
             province_owner(Province, Player), % Check
             province_hexes(Province, ProvinceHexes), % Get
-            maplist(hex_coord,ProvinceHexes, ProvinceCoords),
+            maplist(hex_coord,ProvinceHexes, ProvinceCoords), % Get
             member(ProvinceCoord, ProvinceCoords),
             member(ProvinceCoord, NearbyCoords)
             % hex_index(NearHex, Index), % Get
@@ -439,15 +439,15 @@ check_for_merge(_Map, OldProvinces, NewProvince, Hex, NewProvinces):-
 
     % Remove the duplicates
     % Time: ~ 6 micro
-    % filter(ProvincesToRemove, [X, Partial] >> (\+ member(X, Partial)), ProvincesToRemoveFiltered),
+    filter(ProvincesToRemove, [In, Partial] >> (\+ member(In, Partial)), ProvincesToRemoveFiltered),
 
     % Add money to new province from provinces to remove
     % Time: ~ 6 micro
-    share_money(ProvincesToRemove, [NewProvince], NewProvinceWithMoney),
+    share_money(ProvincesToRemoveFiltered, [NewProvince], NewProvinceWithMoney),
 
     % Update the new provinces list
     % Time: ~ 2 micro
-    subtract(OldProvinces, ProvincesToRemove, ProvincesWithoutNewProvince),
+    subtract(OldProvinces, ProvincesToRemoveFiltered, ProvincesWithoutNewProvince),
     append(ProvincesWithoutNewProvince, NewProvinceWithMoney, NewProvinces),!.
 
 % Checks if a province has been split

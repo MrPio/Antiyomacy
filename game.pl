@@ -527,58 +527,60 @@ test_share_money:-
     change_province_money(ProvinceRedEst, 17, ProvinceRedEst1),
     change_province_money(ProvinceRedWest, 50, ProvinceRedWest1),
     get_hex(Map, [2,2], RedAttackHex),
-    trace,
     buy_and_place(Map, [ProvinceBlue1, ProvinceRedEst1, ProvinceRedWest1], ProvinceRedWest1, baron, RedAttackHex, Map2, NewProvinces, _),
     same_elements(NewProvinces,[
-        province(red,[hex(14,[2,4],_,red,none,none),hex(13,[2,3],_,red,none,none),hex(12,[2,2],_,red,none,baron),hex(16,[3,1],_,red,none,none),hex(15,[3,0],_,red,none,none),hex(20,[4,0],_,red,none,none)],37),
-        province(blue,[hex(7,[1,2],_,blue,none,none),hex(1,[0,1],_,blue,none,none),hex(6,[1,1],_,blue,none,none)],7),
-        province(blue,[hex(22,[4,2],_,blue,none,none),hex(17,[3,2],_,blue,none,none)],5)
+        province(red,
+            [ hex(12,[2,2],_,red,none,baron),
+                hex(15,[3,0],_,red,none,none),
+                hex(16,[3,1],_,red,none,none),
+                hex(20,[4,0],_,red,none,none)
+            ],
+        37),
+        province(blue,
+            [ hex(7,[1,2],_,blue,none,none),
+                hex(1,[0,1],_,blue,none,none),
+                hex(6,[1,1],_,blue,none,none)
+            ],
+        7),
+        province(blue,
+            [ hex(22,[4,2],_,blue,none,none),
+                hex(17,[3,2],_,blue,none,none)
+            ],
+        5)
     ]),
     print_map(Map2),
     writeln('Ok!').
 
 test_manhattan_distance:-
     nl,writeln('test_manhattan_distance ======================================================'),
-    test_map(Map, [ProvinceRed, ProvinceBlue]),
-
-    % Purchase Peasant
-    writeln('Purchasing Paesant:'),
-    change_province_money(ProvinceBlue, 10, ProvinceBlue1),
-    get_hex(Map, [3,4], BluePeasantHex),
-    buy_and_place(Map, [ProvinceRed, ProvinceBlue1], ProvinceBlue1, peasant, BluePeasantHex, Map1, _, ProvinceBlue2),
-    print_map(Map1),
+    test_map(Map, [_ProvinceRed, _ProvinceBlue]),
 
     % First check
-    get_hex(Map1, [3,4], BluePeasantHexFrom),
-    get_hex(Map1, [3,1], BluePeasantHexTo), % legal
+    get_hex(Map, [3,4], BluePeasantHexFrom),
+    get_hex(Map, [3,1], BluePeasantHexTo), % legal
     manhattan_distance(BluePeasantHexFrom, BluePeasantHexTo, Distance1),
     Distance1 =< 4,
     write('Legal move from [3,4] to [3,1], distance:'), write(Distance1),
-    print_map(Map2),
-
     % Second check
-    get_hex(Map2, [3,1], BluePeasantHexFrom1),
-    get_hex(Map2, [3,0], BluePeasantHexTo1),
+    get_hex(Map, [3,1], BluePeasantHexFrom1),
+    get_hex(Map, [3,0], BluePeasantHexTo1),
     manhattan_distance(BluePeasantHexFrom1, BluePeasantHexTo1, Distance2),
     Distance2 =< 4,
     write('Legal move from [3,1] to [3,0], distance:'), write(Distance2),
-    print_map(Map3),
 
     % Third check
-    get_hex(Map3, [3,0], BluePeasantHexFrom2),
-    get_hex(Map3, [2,4], BluePeasantHexTo2), % illegal
+    get_hex(Map, [3,0], BluePeasantHexFrom2),
+    get_hex(Map, [2,4], BluePeasantHexTo2), % illegal
     manhattan_distance(BluePeasantHexFrom2, BluePeasantHexTo2, Distance3),
     Distance3 > 4,
     write('Illegal move from [3,0] to [2,4], distance:'), write(Distance3),
-    print_map(Map3),
 
     % Fourth check
-    get_hex(Map3, [3,0], BluePeasantHexFrom3),
-    get_hex(Map3, [3,4], BluePeasantHexTo3), % legal
+    get_hex(Map, [3,0], BluePeasantHexFrom3),
+    get_hex(Map, [3,4], BluePeasantHexTo3), % legal
     manhattan_distance(BluePeasantHexFrom3, BluePeasantHexTo3, Distance4),
     Distance4 =< 4,
     write('Legal move from [3,0] to [3,4], distance:'), write(Distance4),
-    print_map(Map4),
 
     writeln('Ok!').
 
