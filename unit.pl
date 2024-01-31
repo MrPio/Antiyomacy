@@ -2,7 +2,7 @@
     unit_placement/5,
     unit_mergeable/3,
     max_displacement_distance/1]).
-:- use_module([hex, province, building]).
+:- use_module([hex, province, building, utils]).
 
 % Unit enum =================================================
 % unit(Name, Strength, Protection, Cost, Income)
@@ -14,13 +14,9 @@ unit(knight,    4,          3,      40,   -36).
 max_displacement_distance(1).
 % Determine whether one unit or one building can be destroyed by another unit
 % Note: If any of the two unit names is none, it fails
-stronger(UnitName1, UnitName2) :-
-    unit(UnitName1, Strength1, _, _, _), % Get
-    unit(UnitName2, _, Protection2, _, _), % Get
+stronger(unit(_, Strength1, _, _, _), unit(_, _, Protection2, _, _)) :-
     Strength1>Protection2.
-stronger(UnitName1, BuildingName1) :-
-    unit(UnitName1, Strength1, _, _, _), % Get
-    building(BuildingName1, Protection2, _, _), % Get
+stronger(unit(_, Strength1, _, _, _), building(_, Protection2, _, _)) :-
     Strength1>Protection2.
 
 % Moves ======================================================
@@ -36,17 +32,19 @@ stronger(UnitName1, BuildingName1) :-
 %       edit the map in any way.
 % unit_placement(+Map, +Province, +UnitName, ?Hex, -NewUnitName) [non-deterministic]
 unit_placement(Map, Province, UnitName, Hex, NewUnitName) :-
-    unit(UnitName, UnitStrength, _, _, _), % Check & Get
-    % The destination should be in one of those two inner and outer borders: (Geography)
-    inner_border(Map, Province, InnerBorder),
-    outer_border(Map, Province, OuterBorder),
-    (member(Hex, InnerBorder); member(Hex, OuterBorder)),
-    % The destination should not host any allied units or stronger enemy units: (Invade; Kill; Merge)
     hex_unit(Hex, UnitAtDestName), % Get
     hex_owner(Hex, OwnerAtDest), % Get
     hex_building(Hex, BuildAtDest), % Get
     province_owner(Province, Player), % Get
     hex_coord(Hex, [X, Y]), % Get
+    unit(UnitName, UnitStrength, _, _, _), % Check & Get
+    % The destination should be in one of those two inner and outer borders: (Geography)
+    inner_border(Map, Province, InnerBorder),
+    outer_border(Map, Province, OuterBorder),!,
+
+    (member(Hex, InnerBorder); member(Hex, OuterBorder)),
+
+    % The destination should not host any allied units or stronger enemy units: (Invade; Kill; Merge)
     (   % The destination does not host any units (Invade)
         UnitAtDestName == none,
         NewUnitName = UnitName

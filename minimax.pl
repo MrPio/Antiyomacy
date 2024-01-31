@@ -1,4 +1,5 @@
-:- module(minimax, [minimax/4,
+:- module(minimax, [count/1, cuts/1,
+    minimax/4,
     board_map/2,
     change_board_provinces/3,
     board_provinces/2,
@@ -13,6 +14,18 @@ board(_Map, Provinces, Player, State) :-
     is_list(Provinces),
     state(State).
 state(X):-member(X,[play, win]).
+
+:- dynamic(count/1).
+count(0).
+update_count(Count):-
+    retractall(count(_)),
+    assert(count(Count)).
+
+:- dynamic(cuts/1).
+cuts(0).
+update_cuts(Cuts):-
+    retractall(cuts(_)),
+    assert(cuts(Cuts)).
 
 % Check/Get hex Map
 board_map(board(Map, _, _, _),Map).
@@ -31,7 +44,8 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
     length(NextBoards, NextBoardsLength),
-    %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
+    % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),
+    % format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
     best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
     eval(Board,Val)
@@ -49,14 +63,20 @@ best_board([Board|TBoards], [Alpha, Beta], Depth, BestBoardVal) :-
 % Evaluate one Board checking for any alpha or beta cuts
 % best_board_(+LeftBoards, +AlphaBeta, +BoardVal, +Depth, -EnoughBoardVal)
 best_board_([], _, BoardVal, _, BoardVal) :- !.
-best_board_(_, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
+best_board_(LeftBoards, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
     % Check beta test condition
     is_turn(Board, min), 
-    Val > Beta, !
+    Val > Beta,
+    % length(LeftBoards, LeftBoardsLength),
+    % cuts(Cuts),NewCuts is Cuts + LeftBoardsLength,update_cuts(NewCuts), 
+    !
     ;
     % Check alpha test condition
     is_turn(Board, max),
-    Val < Alpha, !.
+    Val < Alpha, 
+    % length(LeftBoards, LeftBoardsLength),
+    % cuts(Cuts),NewCuts is Cuts + LeftBoardsLength,update_cuts(NewCuts), 
+    !.
 best_board_(LeftBoards, AlphaBeta, BoardVal, Depth, EnoughBoardVal)  :-
   update_alpha_beta(AlphaBeta, BoardVal, NewAlphaBeta),
   best_board(LeftBoards, NewAlphaBeta, Depth, OtherBestBoardVal),

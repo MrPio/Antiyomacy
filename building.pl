@@ -23,20 +23,28 @@ building_cost(BuildingName, _, Cost) :-
     building(BuildingName, _, Cost, _).
 
 % Checks if there is an enemy tower nearby that prevents a unit move 
+% Time: ~ 10 micro
 % tower_nearby(+Map, +Coord, +Player)
 tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy towers
-    near8(Map, [X, Y], Hexes),
-    (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
+    % near8(Map, [X, Y], Hexes),
+    % (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
+    Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
+    findall([X1,Y1], (between(Left, Right, X1), between(Down, Up, Y1)), NearbyCoords),
+    member(Coord, NearbyCoords), get_hex(Map, Coord, Hex),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, tower).
 
 % Checks if there is a enemy strong_tower nearby that prevents a unit move 
-% tower_nearby(+Map, +Coord, +Player)
+% Time: ~ 30 micro
+% strong_tower_nearby(+Map, +Coord, +Player)
 strong_tower_nearby(Map, [X, Y], Player) :-
     % Look for enemy strong towers
-    near24(Map, [X, Y], Hexes),
-    (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
+    % near24(Map, [X, Y], Hexes),
+    % (member(Hex, Hexes); get_hex(Map, [X,Y], Hex)),
+    Left is X-2, Right is X+2, Down is Y-2, Up is Y+2,
+    findall([X1,Y1], (between(Left, Right, X1), between(Down, Up, Y1)), NearbyCoords),
+    member(Coord, NearbyCoords), get_hex(Map, Coord, Hex),
     \+ hex_owner(Hex, Player),
     hex_building(Hex, strong_tower).
 

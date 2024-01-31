@@ -98,18 +98,25 @@ move_(Map, Provinces, [ProvinceOfPlayer|T], NewMap, NewProvinces):-
 % Get one possible move for a given province (non-deterministic)
 % province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
 province_move(Map, Provinces, Province, NewMap, NewProvinces):-
-    % Choose one possible displace move for each owned unit =======================================
-    province_hexes(Province, Hexes), % Get
-    % Select hexes with unit
-    include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit),
-    province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, NewProvince1),
-    % Choose one possible purchase moves ==========================================================
-    findall(R, (check_buys(Province, R, _)), ResourcesSets),
-    % Select one purchase move
-    member(ResourceSet, ResourcesSets),
-    (   ResourceSet \= []
-    ->  province_buy_(NewMap1, NewProvinces1, NewProvince1, ResourceSet, NewMap, NewProvinces, _)
-    ;   [NewMap, NewProvinces] = [NewMap1, NewProvinces1]
+    (   % Choose one possible displace move for each owned unit =======================================
+        province_hexes(Province, Hexes), % Get
+        % Select hexes with unit
+        % include([In]>>(\+ hex_unit(In, none)), Hexes, HexesWithUnit), 
+        % province_move_(Map, Provinces, Province, HexesWithUnit, NewMap1, NewProvinces1, Province1),
+        member(HexesWithUnit, Hexes),
+        \+ hex_unit(HexesWithUnit, none),
+        unit_move(Map, Provinces, Province, HexesWithUnit, NewMap, NewProvinces, _)
+    ;
+        % Choose one possible purchase moves ==========================================================
+        % findall(R, (check_buys(Province, R, _)), ResourcesSets),
+        findall([R], (check_buy(Province, R, _)), ResourcesSet),
+        append(ResourcesSet, [[]],ResourcesSets),
+        % Select one purchase move
+        member(ResourceSet, ResourcesSets),
+        (   ResourceSet \= []
+        ->  province_buy_(Map, Provinces, Province, ResourceSet, NewMap, NewProvinces, _)
+        ;   [NewMap, NewProvinces] = [Map, Provinces]
+        )
     ).
 
 % Displace all the given units
@@ -188,7 +195,7 @@ play:-
 game_loop(Board):-
     board_player(Board, Player), % Get
     format('It is ~w turn:', Player),nl,
-    get_char(_), skip_line,
+    % get_char(_), skip_line,
     get_time(StartTime),
     minimax(Board, [-999999, 999999], 2, [NewBoard, _]),
 
@@ -208,6 +215,8 @@ game_loop(Board):-
     get_time(EndTime),
     ElapsedTime is truncate((EndTime-StartTime)*1000000),
     format('Total time = ~w micro', ElapsedTime), nl,
+    % count(Count), cuts(Cuts), format('[Count = ~w | Cuts = ~w]', [Count, Cuts]), nl,
+    % Perc= Cuts/Count*100, format('AlphaBeta efficiency = ~f %', Perc),
 
     print_map(NewMapWithIncome),
     print_provinces(NewProvincesWithIncome),
