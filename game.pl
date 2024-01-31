@@ -1,5 +1,5 @@
 :- module(game, [move/2, play/0, test/0]).
-:- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
+:- use_module([utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 
 /* TODO:
     • New eval function for province money and units (Federico)
@@ -102,7 +102,7 @@ game_loop(Board):-
     % get_char(_), skip_line,
     get_time(StartTime),
     update_start_time(StartTime),
-    minimax(Board, [-999999, 999999], 4, [NewBoard, Val]),
+    minimax(Board, [-999999, 999999], 2, [NewBoard, Val]),
 
 
     lap("Apply income"),
@@ -647,4 +647,9 @@ test_has_won:-
     has_won(Map1, [ProvinceRed, ProvinceBlue2], blue),
     writeln('Blue has now won'),
 
+    writeln('Ok!').
+
+test_io:-
+    nl,writeln('test_io ======================================================'),
+    player_input,
     writeln('Ok!').
