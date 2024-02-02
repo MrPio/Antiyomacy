@@ -92,7 +92,6 @@ Note: The term "resource" refers to both units and buildings.
 ### Game controller file
 - `game.pl`
     - **play/3** : Plays the game.
-    - **has_won/3** : Checks if the player has won. A player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces.
     - **move/4** : Get one possible move. (❓non-deterministic❓)
     - **test/0** : Test various game predicates.
 
@@ -113,9 +112,8 @@ Note: The term "resource" refers to both units and buildings.
     - **set_unit/4** : Spawns a unit on a given coordinate.
     - **destroy_units/3** : Destroy all units located on the specified hexes on the map. This is useful for handling bankruptcy cases.
     - **spawn_provinces/2** : Randomly spawns a red and a blue province. This is used at the start of a game. (⬆️higher-order⬆️)
-    - **set_hexes_to_empty/3** : Sets the specified hexes unit, building and owner in the hex list to none.
-    - **get_non_sea_hexes/2** : Get all hexes on the map that do not have 'sea' in their tile.
-
+    - **free_hexes/3** : Sets the specified hexes unit, building and owner in the hex list to none.
+    - **has_won/3** : Checks if the player has won. A player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces. (❔semi-deterministic❔)
 - `province.pl`
     - **province/3** : The struct of a player's province.
     - **province_count/3** : Checks or calculates the number of buildings or units owned by the province.

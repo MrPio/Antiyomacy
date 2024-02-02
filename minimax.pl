@@ -1,4 +1,4 @@
-:- module(minimax, [count/1, cuts/1,start_time/1, update_start_time/1,
+:- module(minimax, [start_time/1, update_start_time/1,
     minimax/4,
     board/5,
     board_map/2,
@@ -10,19 +10,6 @@
     board_conquests/2,
     set_board_player/3]).
 :- use_module([game, hex, province, eval, utils]).
-
-
-:- dynamic(count/1).
-count(0).
-update_count(Count):-
-    retractall(count(_)),
-    assert(count(Count)).
-
-:- dynamic(cuts/1).
-cuts(0).
-update_cuts(Cuts):-
-    retractall(cuts(_)),
-    assert(cuts(Cuts)).
 
 :- dynamic(start_time/1).
 update_start_time(Time):-

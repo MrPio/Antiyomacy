@@ -1,7 +1,7 @@
 :- module(io, [player_color/1, player_move/1, purchase_input/2, displace_input/2]).
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 :- use_module(library(random)).
-
+:- use_module(library(readutil)).
 
 % Predicate to check user color choice
 % player_color(-Choice)
@@ -31,7 +31,20 @@ player_color(Choice):-
     player_color(Choice)
     ).
 
-% Predicate to check user move choice
+ask_color(Color):-
+    writeln('Choose a color:\n1) Red\n2) Blue\n3) Random'),
+    read_line_to_string(user_input, Choice),
+    (   Choice == "1" 
+    ->  Color = red
+    ;   Choice == "2"
+    ->  Color = blue
+    ;   Choice == "3"
+    ->  random_member(Color, [red, blue])
+    ;   writeln('Invalid choice'),
+        ask_color(Color)
+    ).
+    % The caller: format('You play as ~w player', Color)
+
 % player_move(-Choice)
 player_move(Choice):-
     writeln('Choose a move:'),

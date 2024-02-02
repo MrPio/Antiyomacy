@@ -3,6 +3,7 @@
                 terrain/1,
                 owner/1,
                 player/1,
+                other_player/2,
                 hex/6,
                 hex_index/2,
                 hex_coord/2,
@@ -28,6 +29,11 @@ terrain(X) :- member(X,[desert, wood, rock, sheep, clay, hay]).
 owner(none).
 owner(X) :- player(X).
 player(X) :- member(X,[red, blue]).
+
+% Gets the other player
+% other_playe(?Player1, ?Player2)
+other_player(red, blue).
+other_player(blue, red).
 
 % Hex struct ====================================================================
 
