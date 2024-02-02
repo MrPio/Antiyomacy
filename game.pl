@@ -2,8 +2,11 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 
 /* TODO:
-    • New eval function for province money and units (Federico)
-    • I/O handling(Federico, Federica)
+    • Loop input for each provinces, print province counter
+    • Color menu (Federico)
+    • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
+    -------------------------------------------------------------------------------------------------
+    • I/O handling(Federico)
             1) Displace
             2) Purchase
             -----------------
@@ -16,9 +19,8 @@
             farm
             ToCoord
             2-2
-    • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
-    -------------------------------------------------------------------------------------------------
     X Vertical cut with time instead of horizontal cut with depth (Valerio)
+    X New eval function for province money and units (Federico)
     X Ensure the tests are working (Valerio)
     X The eval function should reward in case of victory (Federico)
     x Benchmark the move/2 predicate (Valerio)
@@ -92,9 +94,10 @@ play:-
     update_province(MapWithProvinces, ProvinceRed2, ProvinceRedSorted),
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
+    % TODO: input color
     game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], blue, play, [0, 0])).
 
-game_loop(Board):-
+game_loop(Board, User):-
     board_player(Board, Player), % Get
     format('It is ~w turn:', Player),nl,
 
@@ -129,7 +132,7 @@ game_loop(Board):-
     (   board_state(NewBoardWithIncome, State), % Get
         State = win
     ->  format('~w won the game! ---------------------', Player),nl
-    ;   game_loop(NewBoardWithIncome)
+    ;   game_loop(NewBoardWithIncome, User)
     ),!.
 
 
@@ -651,5 +654,10 @@ test_has_won:-
 
 test_io:-
     nl,writeln('test_io ======================================================'),
-    player_input,
+    writeln('Test choice'),
+    player_input(Choice),
+    writeln('Test displace_input'),
+    displace_input([X1,Y1], [X2,Y2]),
+    writeln('Test purchase_input'),
+    purchase_input(ResName,[X,Y]),
     writeln('Ok!').
