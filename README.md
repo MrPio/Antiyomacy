@@ -10,7 +10,7 @@ An implementation of a strategy game heavily inspired by Antiyoy and with some e
 
 <a name="game_moves"></a>
 ## 🎲 Moves in the game
-In Antiyoy the two players, Red and Blue, take turns. In each player's turn, they can choose from the following three types of move:
+In Antiyoy the two players, Red and Blue, take turns. In each player's turn, they can choose from the following three types of moves:
 
 | Move  | How many times it can be made |  
 |---|---:|
@@ -23,7 +23,7 @@ Now, it is important to note that there are three different ways in which a unit
 - **Defend the border of its province**: the unit moves inside the inner border of its province.
 - **Merge with another unit** (if possible): the unit moves to the location of another unit and the two form a stronger unit.
 ---
-In Antiyomacy, however, the list of possible moves for each turn has been reduced for performance issue:
+In Antiyomacy, however, the list of possible moves for each turn has been reduced for performance issues:
 
 | Move  | How many times it can be made |  
 |---|---:|
@@ -47,7 +47,8 @@ In Antiyomacy, however, the list of possible moves for each turn has been reduce
 ## 🪓 Province merge/split algorithm
 As you can see in the following image, handling the possibility of merging or splitting provinces after an attack is quite tricky.
 
-<img src="img/screen2.png" width="250rem">
+<img src="https://github.com/MrPio/Antiyomacy/assets/22773005/5e5f5132-fc60-4781-9059-9c343b11c611" width="350rem">
+
 
 This is due to the need for a map scan after each attack. Since the goal of this project revolves around the minimax algorithm, it is clear that runtime performance is of utmost importance. This means that it would be nice to avoid recalculating all provinces on every move (with the `province:find_provinces/2` predicate) due to the complexity of the breadth-first search. Furthermore, even if you did this after every move, there is still the problem of identifying which provinces have split or merged with which other provinces.
 
@@ -66,7 +67,7 @@ That being said, we propose a lazy algorithm that takes advantage of sufficient 
 3. If this is the case, select one of these hexes and check that it is not connected to all the other hexes surrounding the invaded hex, using a breadth-first search,
 4. If this is the case, a split has certainly occurred. Find all the provinces using a breadth-first on the enemy hexes surrounding the invaded hex,
 5. Select the split province from the list of the old provinces and use it to calculate the new split provinces' money,
-6. Remove the former and add the latter to the list of the provinces.
+6. Remove the former and add the latter to the list of provinces.
 7. Otherwise, if the split hasn't happened, the invaded enemy province will still have to be recalculated due to the attack.
 
 The use of these two predicates in sequences makes it possible to detect the occurrence of both simultaneous splitting and merging.
