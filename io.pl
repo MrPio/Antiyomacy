@@ -38,19 +38,13 @@ displace_input([X1,Y1], [X2,Y2]):-
 % Predicate to handle user input for the "Purchase" move
 purchase_input(ResName,[X,Y]):-
     writeln('ResName (options: farm, tower, strong_tower, peasant, spearman, baron, knight):'),
-    read(ResName),
-    (validate_resource_name(ResName) ->
-        true
-    ; 
-        writeln('Invalid resource name. Please choose from the provided options.'),
-        purchase_input(ResName,[X,Y])
-    ),
+    read(ResName1),
     writeln('ToCoord (format X-Y):'),
     read(ToCoord),
-    (validate_coordinate(ToCoord,[X,Y]) ->
-        true
+    (validate_resource_name(ResName1), validate_coordinate(ToCoord,[X,Y]) ->
+        ResName = ResName1
     ; 
-        writeln('Invalid coordinates. Please use the format X-Y.'),
+        writeln('Invalid input. Please try again.'),
         purchase_input(ResName,[X,Y])
     ).
 
@@ -66,8 +60,8 @@ validate_coordinate(Coord,[X,Y]):-
     number_codes(X, XStr),
     number_codes(Y, YStr),
     % Check that both X and Y are greater than 0
-    X > 0,
-    Y > 0,
+    X >= 0,
+    Y >= 0,
     inside_map([X, Y]).
 
 % Validate the resource name
