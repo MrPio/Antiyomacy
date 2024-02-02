@@ -30,9 +30,10 @@ owner(X) :- player(X).
 player(X) :- member(X,[red, blue]).
 
 % Hex struct ====================================================================
+
 hex(Index,[X,Y], Tile, Owner, Building, Unit) :- 
     number(Index),
-    X>=0,Y>=0,
+    X >= 0, Y >= 0,
     tile(Tile),
     owner(Owner),
     \+ (building(Building,_,_,_), unit(Unit,_,_,_,_)).

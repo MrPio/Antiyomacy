@@ -247,9 +247,8 @@ province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
     hex_owner(Hex, Owner), % Check
     hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
-    % note: We use near8/4 instead of near4/4 because units can move
-    %       in the outer border and we don't want to create a new
-    %       province after a unit has moved.
+    % Note: We use near8/4 instead of near4/4 because units can move in the outer border
+    %       and we don't want to create a new province after a unit has moved.
     near8(Map, [X, Y], NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
@@ -398,7 +397,6 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     ;   subtract(Provinces, [Province], ProvincesWithoutNewProvince),
         append(ProvincesWithoutNewProvince, [NewProvince], NewProvincesMerge)
     ),
-
     % Check for enemy split in case of invasion
     (   (OwnerBefore \= none, OwnerBefore \= Player)
     ->  check_for_split(NewMap1, NewProvincesMerge, NewProvince, Hex, NewProvinces, NewMap)

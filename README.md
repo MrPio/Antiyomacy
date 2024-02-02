@@ -29,7 +29,7 @@ In Antiyomacy, however, the list of possible moves for each turn has been reduce
 |---|---:|
 |***Buy a unit or building*** | for each province, if any displacement has taken place, once  |
 |***Displace a unit***   |  for each province, if no purchase has taken place, once | 
-
+    
 
 ---
 ### Predicates used

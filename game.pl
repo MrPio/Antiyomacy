@@ -57,13 +57,13 @@
     • Vertical cut with time instead of horizontal cut with depth
     • Trees cannot randomly spawn during the gameplay. Instead they can spawn at the beginning
     of the game, or supply centers can be introduced.
-    • yall library was used to define a lambda expressions
-    • When going bankrupt, buildings are not destroyed. This means that it is possible
+    X yall library was used to define a lambda expressions
+    X When going bankrupt, buildings are not destroyed. This means that it is possible
       to have a negative income even after killing all units
     • Library "clpfd" was used to achieve two-way unifications.
     • Tests were used to prevent any issues with code updates affecting existing functionalities.
-    • The terrain on the map was randomly generated using the random walker's algorithm.
-    • To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
+    X The terrain on the map was randomly generated using the random walker's algorithm.
+    X To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
 % Plays the game

@@ -21,15 +21,17 @@
 
 % Map parameters
 :- dynamic(map/1).
+
 map_size(5).
 smooth(2).
-walkers(X) :-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth.
+walkers(X) :-       map_size(MapSize), smooth(Smooth), X is MapSize / 16 * Smooth.
+walker_steps(X) :-  map_size(MapSize), smooth(Smooth), X is MapSize *  8 / Smooth.
 
-% Convert index to coordinate and vice versa. Can also be used as checker
+% Convert index to coordinate and vice versa.
+% Note: this can also be used as checker
 % index2coord(?Index, ?Coord)
 index2coord(Index, [X, Y]) :-
-    map_size(MapSize),   
+    map_size(MapSize),
     X #= Index // MapSize,
     Y #= Index mod MapSize,
     inside_map([X, Y]).
@@ -53,7 +55,7 @@ generate_random_map(Map, Empty) :-
     % Generate a map with only sea tiles
     empty_map(EmptyMap),
     update_map(EmptyMap),
-    (   Empty 
+    (   Empty
     ->  % Fill the map with terrain tiles
         MaxIndex is MapSize^2 -1,
         foreach((
@@ -74,15 +76,16 @@ empty_map(Map) :-
     empty_rows(MapSize, Map,0),!.
 
 % Generates an empty row of the specified size
-empty_rows(_, [],_).
-empty_rows(Size, [Row|Rest],Count) :-
+empty_rows([], _, _).
+empty_rows([Row|Rest], Size, Count) :-
     length(Row, Size),
-    empty_hex(Row, Size, Count,0),
-    NewCount is Count+1,
-    empty_rows(Size, Rest,NewCount).
+    empty_hex(Row, Size, Count, 0),
+    NewCount is Count + 1,
+    empty_rows(Rest, Size, NewCount).
 
+% Generates an empty map's cell
 empty_hex([],_,_,_).
-empty_hex([Hex|Rest], Size, RowCount,ColCount) :-
+empty_hex([Hex|Rest], Size, RowCount, ColCount) :-
     hex_tile(Hex, sea),
     Index is RowCount*Size + ColCount,
     Hex = hex(Index, [RowCount,ColCount],_,none,none,none),
@@ -104,7 +107,7 @@ random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
     random_between(MinWalkerSteps,MaxWalkerSteps,Steps),
     % Spawn the new walker
     % Note: the yall library is used here to define a lambda expression
-    StepAction = [ActionMap, ActionCoord, ActionNewMap] >>  
+    StepAction = [ActionMap, ActionCoord, ActionNewMap] >>
         (   % Place a random terrain tile on the walker location
             findall(Terrain, terrain(Terrain), Terrains),
             random_member(Terrain, Terrains),
@@ -118,7 +121,7 @@ random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
     random_walkers(NewMap, [MaxX, MaxY],NewCount, ResultMap).
 
 % Simulate a walker random walk
-% walk(+Map, +Coord, +StepAction, +WalkableCoordCondition, +Count, -NewMap)
+% walk(+Map, +Coord, :StepAction, :WalkableCoordCondition, +Count, -NewMap)
 walk(Map, _, _, _, Count, Map) :- Count=<0.
 walk(Map, [X, Y], StepAction, WalkableCoordCondition, Count, NewMap) :-
     % Invoke the action on the current coordinate
@@ -252,10 +255,10 @@ spawn_provinces(Map, NewMap):-
     % Select the first and the last hexes as a spawn point for the two provinces
     nth0(0, CoordsWithTerrain, [RedX,RedY]),
     last(CoordsWithTerrain, [BlueX,BlueY]),
-    % Define the Random Walker actions to be invoked at each step
+    % Define the Random Walker action to be invoked at each step
     % Note: the yall library is used here to define a lambda expression
     StepAction = [Player, Action] >>
-    (   Action = [ActionMap, ActionCoord, ActionNewMap] >>  
+    (   Action = [ActionMap, ActionCoord, ActionNewMap] >>
         (   % Check if the walker is on a terrain hex
             get_hex(ActionMap, ActionCoord, Hex),
             hex_tile(Hex, terrain), % Check
@@ -267,7 +270,7 @@ spawn_provinces(Map, NewMap):-
         )
     ),
     % Define the condition for a walkable hex
-    WalkableCoordCondition = [ActionMap, ActionCoord] >> 
+    WalkableCoordCondition = [ActionMap, ActionCoord] >>
         (   check_tile(ActionMap, ActionCoord, terrain),
             get_hex(ActionMap, ActionCoord, Hex),
             hex_owner(Hex, none)
@@ -303,4 +306,4 @@ set_hex_empty(Map, Hex, UpdatedMap) :-
 get_non_sea_hexes(Map, NonSeaHexes) :-
     findall(Hex, (get_hex(Map, _, Hex), \+ hex_tile(Hex, sea)), NonSeaHexes).
 
-    
+
