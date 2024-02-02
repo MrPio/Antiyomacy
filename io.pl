@@ -1,22 +1,56 @@
-:- module(io, [player_input/1, purchase_input/2, displace_input/2]).
+:- module(io, [player_color/1, player_move/1, purchase_input/2, displace_input/2]).
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
+:- use_module(library(random)).
 
-% Check user choice
-% TODO: add null move
-player_input(Choice):-
+
+% Predicate to check user color choice
+% player_color(-Choice)
+player_color(Choice):-
+    writeln('Choose a color:'),
+    writeln('1) Red'),
+    writeln('2) Blue'),
+    writeln('3) Random'),
+    read(Choice1),
+    (Choice1 =:= 1 ->
+        writeln('You chose Red territory'),
+        Choice = Choice1;
+    Choice1 =:= 2 ->
+        writeln('You chose Blue territory'),
+        Choice = Choice1;
+    Choice1 =:= 3 ->
+        % Randomly choose between 1 and 2
+        random_between(1, 2, RandomChoice),
+        (RandomChoice =:= 1 ->
+            writeln('Randomly chosen: Red territory'),
+            Choice = 1
+        ; 
+            writeln('Randomly chosen: Blue territory'),
+            Choice = 2
+        );
+    writeln('Invalid choice'),
+    player_color(Choice)
+    ).
+
+% Predicate to check user move choice
+% player_move(-Choice)
+player_move(Choice):-
     writeln('Choose a move:'),
     writeln('1) Displace'),
     writeln('2) Purchase'),
+    writeln('3) Skip turn'),
     read(Choice1),
     (Choice1 =:= 1 ->
         Choice = Choice1;
     Choice1 =:= 2 ->
         Choice = Choice1;
+    Choice1 =:= 3 ->
+        Choice = Choice1;
     writeln('Invalid choice'),
-    player_input(Choice)
+    player_move(Choice)
     ).
 
 % Predicate to handle user input for the "Displace" move
+% displace_input(-[X1,Y1], -[X2,Y2])
 displace_input([X1,Y1], [X2,Y2]):-
     writeln('FromCoord (format X-Y):'),
     read(FromCoord),
@@ -36,6 +70,7 @@ displace_input([X1,Y1], [X2,Y2]):-
     ).
 
 % Predicate to handle user input for the "Purchase" move
+% purchase_input(-ResName, -[X,Y])
 purchase_input(ResName,[X,Y]):-
     writeln('ResName (options: farm, tower, strong_tower, peasant, spearman, baron, knight):'),
     read(ResName1),
@@ -48,7 +83,8 @@ purchase_input(ResName,[X,Y]):-
         purchase_input(ResName,[X,Y])
     ).
 
-% Validate the format and range of coordinates
+% Validate coordinates and return the format [X,Y]
+% validate_coordinate(+Coord,-[X,Y])
 validate_coordinate(Coord,[X,Y]):-
     % Convert the Prolog term to an atom
     term_to_atom(Coord, AtomCoord),
@@ -59,12 +95,13 @@ validate_coordinate(Coord,[X,Y]):-
     % Convert XStr and YStr to integers X and Y
     number_codes(X, XStr),
     number_codes(Y, YStr),
-    % Check that both X and Y are greater than 0
+    % Check that both X and Y are greater than 0 and inside map
     X >= 0,
     Y >= 0,
     inside_map([X, Y]).
 
 % Validate the resource name
+% validate_resource_name(+ResName)
 validate_resource_name(ResName):-
     member(ResName, [farm, tower, strong_tower, peasant, spearman, baron, knight]).
 

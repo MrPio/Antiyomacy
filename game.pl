@@ -2,11 +2,11 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 
 /* TODO:
-    • Loop input for each provinces, print province counter
-    • Color menu (Federico)
+    • Loop input for each provinces, print province counter (Federico)
     • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
     -------------------------------------------------------------------------------------------------
-    • I/O handling(Federico)
+    X Territory color choice menu (Federico)
+    X I/O handling(Federico)
             1) Displace
             2) Purchase
             -----------------
@@ -654,8 +654,10 @@ test_has_won:-
 
 test_io:-
     nl,writeln('test_io ======================================================'),
-    writeln('Test choice'),
-    player_input(Choice),
+    writeln('Test color choice'),
+    player_color(Choice),
+    writeln('Test move choice'),
+    player_move(Choice),
     writeln('Test displace_input'),
     displace_input([X1,Y1], [X2,Y2]),
     writeln('Test purchase_input'),
