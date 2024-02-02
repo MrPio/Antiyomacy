@@ -2,23 +2,14 @@
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 
 /* TODO:
-    • New eval function for province money and units (Federico)
-    • I/O handling(Federico, Federica)
-            1) Displace
-            2) Purchase
-            -----------------
-            FromCoord 
-            1-2
-            ToCoord
-            2-2
-            -----------------
-            ResName
-            farm
-            ToCoord
-            2-2
+    • Logic to handle user buy and place and unit displace (Federico)
     • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
     -------------------------------------------------------------------------------------------------
+    X Loop input for each provinces, print province counter (Federico)
+    X Territory color choice menu (Federico)
+    X I/O handling(Federico)
     X Vertical cut with time instead of horizontal cut with depth (Valerio)
+    X New eval function for province money and units (Federico)
     X Ensure the tests are working (Valerio)
     X The eval function should reward in case of victory (Federico)
     x Benchmark the move/2 predicate (Valerio)
@@ -68,6 +59,16 @@
 
 % Plays the game
 play:-
+    writeln('Welcome to Antitomacy!'),
+
+    % User input color choice
+    player_color(Choice),
+    (Choice =:= 1 ->
+        User = red
+    ; 
+        User = blue
+    ),
+
     % generate_random_map(Map, false),
     % spawn_provinces(Map, MapWithProvinces),
     % print_map(MapWithProvinces),
@@ -92,18 +93,38 @@ play:-
     update_province(MapWithProvinces, ProvinceRed2, ProvinceRedSorted),
     update_province(MapWithProvinces, ProvinceBlue2, ProvinceBlueSorted),
     print_provinces([ProvinceRedSorted, ProvinceBlueSorted]),
-    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], blue, play, [0, 0])).
 
-game_loop(Board):-
+    % Random choice for who plays first
+    random_between(1, 2, RandomChoice),
+    (RandomChoice =:= 1 ->
+        Color = 'red'
+    ; 
+        Color = 'blue'
+    ),
+
+    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], Color, play, [0, 0]), User).
+
+game_loop(Board, User):-
     board_player(Board, Player), % Get
     format('It is ~w turn:', Player),nl,
 
-    % TODO here: handle player input
-    % get_char(_), skip_line,
-    get_time(StartTime),
-    update_start_time(StartTime),
-    minimax(Board, [-999999, 999999], 2, [NewBoard, Val]),
+    (Player == User ->
+        % Get the map from the board
+        board_map(Board, Map),
+        % Get the provinces from the board
+        board_provinces(Board, Provinces),
+        get_provinces_by_owner(Provinces, User, UserProvinces),
 
+        % Loop through each province owned by the user
+        process_user_provinces(UserProvinces, Map, Player, Board, NewBoard),
+
+        get_time(StartTime),
+        update_start_time(StartTime)
+    ;
+        get_time(StartTime),
+        update_start_time(StartTime),
+        minimax(Board, [-999999, 999999], 2, [NewBoard, Val])
+    ),
 
     lap("Apply income"),
     % Apply income
@@ -129,10 +150,72 @@ game_loop(Board):-
     (   board_state(NewBoardWithIncome, State), % Get
         State = win
     ->  format('~w won the game! ---------------------', Player),nl
-    ;   game_loop(NewBoardWithIncome)
+    ;   game_loop(NewBoardWithIncome, User)
     ),!.
 
 
+% Process actions for each province owned by the user
+process_user_provinces(Provinces, Map, Player, Board, NewBoard):-
+    length(Provinces, TotalProvinces), % Get the total number of provinces
+    process_user_provinces(Provinces, Map, Player, Board, NewBoard, 1, TotalProvinces).
+% Helper predicate
+process_user_provinces([], _, _, _, _).
+process_user_provinces([Province|Rest], Map, Player, Board, NewBoard, CurrentNumber, TotalProvinces):-
+    format('Province number: ~w/~w', [CurrentNumber, TotalProvinces]),
+    nl,
+    format('Province description: ~w~n', [Province]),
+    % Take user move
+    player_move(MoveChoice),
+
+    (MoveChoice =:= 1 ->
+        % Code for Displace
+        writeln('Player chose Displace'),
+        displace_input([X1,Y1], [X2,Y2]),
+        % Get FromHex
+        get_hex(Map, [X1,Y1], FromHex),
+        % Get DestHex
+        get_hex(Map, [X2,Y2], DestHex),
+        % TODO: Add Displace logic here
+        unit_placement(Map, Province, UnitName, DestHex, NewUnitName), % Check & Get
+        %displace_unit(Map, Provinces, Province, FromHex, ToHex, NewUnitName, NewMap, NewProvinces, NewProvince),
+        true
+    ; MoveChoice =:= 2 ->
+        % Code for Purchase
+        writeln('Player chose Purchase'),
+        purchase_input(ResName,[X,Y]),
+        % Check if ResName corresponds to a building
+        is_building(ResName, IsBuilding),
+        (IsBuilding =:= 1 ->
+            % Get DestHex
+            get_hex(Map, [X,Y], DestHex),
+            % Check legal move
+            building_placement(Map, Province, ResName, DestHex),
+            % TODO: Add building placement logic here
+            %buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
+            true
+        ;   
+            % TODO: Add purchasing unit logic here
+            get_hex(Map, [X,Y], DestHex),
+            % Check legal move
+            unit_placement(Map, Province, UnitName, DestHex, NewUnitName), % Check & Get
+            %buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
+            true
+        ),
+        true
+    ; MoveChoice =:= 3 ->
+        % Code for Skip turn
+        writeln('Player chose Skip move for this province'),
+        % Change player color turn
+        other_player(Player, NewPlayer),
+        set_board_player(Board, NewPlayer, NewBoard),
+        true
+    ; writeln('Invalid choice')
+    ),
+
+    % Increment the counter for the next iteration
+    NextNumber is CurrentNumber + 1,
+
+    process_user_provinces(Rest, Map, Player, Board, NewBoard, NextNumber, TotalProvinces).
 
 % Checks if the player has won.
 % Note: a player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces
@@ -291,6 +374,7 @@ test:-
     test_share_money,
     test_manhattan_distance,
     test_destroy_province,
+    test_io,
     nl, writeln('-- All the tests have succeeded! ---'), nl, !.
 
 % Generate the following test map
@@ -651,5 +735,12 @@ test_has_won:-
 
 test_io:-
     nl,writeln('test_io ======================================================'),
-    player_input,
+    writeln('Test color choice'),
+    player_color(_),
+    writeln('Test move choice'),
+    player_move(_),
+    writeln('Test displace_input'),
+    displace_input(_, _),
+    writeln('Test purchase_input'),
+    purchase_input(_,_),
     writeln('Ok!').
