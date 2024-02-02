@@ -7,7 +7,8 @@
     change_board_map/3,
     board_player/2,
     board_state/2,
-    board_conquests/2]).
+    board_conquests/2,
+    set_board_player/3]).
 :- use_module([game, hex, province, eval, utils]).
 
 
@@ -48,6 +49,16 @@ board_player(board(_, _, Player, _, _),Player).
 board_state(board(_, _, _, State, _),State).
 % Check/Get RedConquests
 board_conquests(board(_, _, _, _, Conquests),Conquests).
+
+% Predicate to set the new player of a board
+% set_board_player(+OldBoard, +NewPlayer, -NewBoard)
+set_board_player(Board, NewPlayer, NewBoard) :-
+    change_board_player(Board, NewPlayer, NewBoard).
+
+% Predicate to change the player of a board
+% change_board_player(+OldBoard, +NewPlayer, -NewBoard)
+change_board_player(board(Map, Provinces, _, State, Conquests), NewPlayer, board(Map, Provinces, NewPlayer, State, Conquests)).
+
 
 % Finds the best move using minimax with alpha-beta pruning
 % minimax(+Board, +AlphaBeta, +Depth, -BestBoardVal)

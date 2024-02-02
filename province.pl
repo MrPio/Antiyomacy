@@ -8,6 +8,7 @@
                      province_size/2,
                      province_count/3,
                      province_counts/3,
+                     get_provinces_by_owner/3,
                      update_province/3,
                      apply_incomes/4,
                      apply_income/4,
@@ -54,6 +55,11 @@ get_hexes_from_provinces(Provinces, Hexes) :-
 province_size(Province, Size):-
     province_hexes(Province, Hexes),
     length(Hexes, Size).
+
+% Get provinces by owner
+% get_provinces_by_owner(+AllProvinces, +Owner, -OwnerProvinces)
+get_provinces_by_owner(AllProvinces, Owner, OwnerProvinces) :-
+    include([Province]>>(province_owner(Province, Owner)), AllProvinces, OwnerProvinces).
 
 % Checks or calculates the number of buildings or units owned by the province
 % province_count(+Province, +ResourceName, ?Count)

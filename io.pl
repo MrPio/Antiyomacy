@@ -104,7 +104,3 @@ validate_coordinate(Coord,[X,Y]):-
 % validate_resource_name(+ResName)
 validate_resource_name(ResName):-
     member(ResName, [farm, tower, strong_tower, peasant, spearman, baron, knight]).
-
-% TODO: check valid purchase or displace
-%building_placement(Map, Province, ResourceName, DestHex), % Check
-% unit_placement(Map, Province, UnitName, Hex, NewUnitName), % Check & Get ---- Pass NuwUnitName to displace_unit
