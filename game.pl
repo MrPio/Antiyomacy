@@ -59,29 +59,33 @@
 
 % Asks the user to choose a move for each of their provinces
 ask_provinces_moves(_, _).
-ask_provinces_moves(board(Map, Provinces, Player, _, Conquests), board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
-    % The human player is playing, so they will be asked to input their move
-    include([In]>>(province_owner(In, HumanPlayer)), Provinces, HumanProvinces),
+ask_provinces_moves(board(Map, Provinces, HumanPlayer, _, Conquests), board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
+    include([In]>>(province_owner(In, HumanPlayer)), Provinces, HumanProvinces),!,
     length(HumanProvinces, TotHumanProvinces),
-    ask_province_moves(Map, Provinces, Conquests, [HumanProvince|Rest], NewMap, NewConquests, 1, TotHumanProvinces).
-    % check win state
+    ask_province_moves(Map, Provinces, Conquests, HumanProvinces, NewMap, NewProvinces, NewConquests, 1, TotHumanProvinces),
+    other_player(HumanPlayer, NewPlayer),
+    (   has_won(NewMap, NewProvinces, HumanPlayer)
+    ->  NewState = win
+    ;   NewState = play
+    ).
 
-ask_provinces_moves_(_,_,_,[],_,_,_,_,_).
-ask_provinces_moves_(Map, Provinces, Conquests, [HumanProvince|Rest], NewMap, NewProvinces, NewConquests, CurrentNumber, TotHumanProvinces):-
-    ask_province_move(Map, Provinces,Conquests,HumanProvince, NewMap, NewProvinces, CurrentNumber, TotHumanProvinces,NewProvinces, NewConquests),
+ask_province_moves(_,_,_,[],_,_,_,_,_).
+ask_province_moves(Map, Provinces, Conquests, [HumanProvince|Rest], NewMap, NewProvinces, NewConquests, CurrentNumber, TotHumanProvinces):-
+    ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, NewProvinces, NewConquests, CurrentNumber, TotHumanProvinces),
     CurrentNumber1 is CurrentNumber + 1,
-    ask_provinces_moves_(Map, Provinces,Conquests,[HumanProvince|Rest], NewMap, NewProvinces, NewConquests, CurrentNumber1, TotHumanProvinces).
+    ask_province_moves(Map, Provinces, Conquests, Rest, NewMap, NewProvinces, NewConquests, CurrentNumber1, TotHumanProvinces).
 
-ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, CurrentNumber, TotHumanProvinces,NewProvinces, NewConquests):-
-    format('Province number: ~w/~w', [CurrentNumber, TotalProvinces]),nl,
+ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, NewProvinces, NewConquests, CurrentNumber, TotHumanProvinces):-
+    format('Province number: ~w/~w', [CurrentNumber, TotHumanProvinces]),nl,
     format('Province description: ~w~n', [HumanProvince]),
+    % Get human color
+    province_owner(HumanProvince, Player),
     % Take user move
     player_move(MoveChoice),
 
     % Based on the user's choice, ask them for the move information
-    (   MoveChoice == 1 ->
-        % Code for Displace
-        writeln('Player chose Displace'),
+    (   MoveChoice == 1 % Code for Displace
+    ->  writeln('Player chose Displace'),
         displace_input([X1,Y1], [X2,Y2]),
         get_hex(Map, [X1,Y1], FromHex),
         get_hex(Map, [X2,Y2], DestHex),
@@ -99,9 +103,8 @@ ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, CurrentNumbe
         ;   NewRedConq = RedConq,
             NewBlueConq = BlueConq
         )
-    ; MoveChoice =:= 2 ->
-        % Code for Purchase
-        writeln('Player chose Purchase'),
+    ; MoveChoice == 2 % Code for Purchase
+    ->  writeln('Player chose Purchase'),
         purchase_input(ResName,[X,Y]),
         % Check if ResName corresponds to a building
         is_building(ResName, IsBuilding),
@@ -122,16 +125,11 @@ ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, CurrentNumbe
             true
         ),
         true
-    ; MoveChoice == 3 ->
-        % Code for Skip turn
-        writeln('Player chose Skip move for this province'),
-        (CurrentNumber =:= TotalProvinces ->
-            % Change player color turn
-            other_player(Player, NewPlayer),
-            set_board_player(Board, NewPlayer, NewBoard),
-            province_owner(Province, User),
-            game_loop(NewBoard, User)
-        )
+    ; MoveChoice == 3 % Code for Skip turn
+    ->  writeln('Player chose Skip move for this province'),
+        NewMap = Map,
+        NewProvinces = Provinces,
+        NewConquests = Conquests
     ; writeln('Invalid choice')
     ).
 
@@ -256,7 +254,8 @@ game_loop(Board, HumanPlayer) :-
     (   Player == HumanPlayer 
     ->  % Loop through each province owned by the user
         ask_provinces_moves(Board, NewBoard),
-        NewBoardWithIncome = NewBoard
+        NewBoardWithIncome = NewBoard,
+        get_time(StartTime), update_start_time(StartTime)
     ;   % The cpu is playing, so the minimax will be used to choose a move
         get_time(StartTime), update_start_time(StartTime),
         minimax(Board, [-999999, 999999], 3, [NewBoard, Val]),
