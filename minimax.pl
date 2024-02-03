@@ -19,11 +19,12 @@ update_start_time(Time):-
 
 
 % Board struct ====================================================================
-board(_Map, Provinces, Player, State, _Conquests) :-
+board(_Map, Provinces, Player, State, Conquests) :-
     player(Player),
     is_list(Provinces),
-    state(State).
-state(X):-member(X,[play, win]).
+    state(State),
+    Conquests = [RedConquests, BlueConquests].
+state(X) :- member(X, [play, win]).
 % Check/Get hex Map
 board_map(board(Map, _, _, _, _),Map).
 change_board_map(board(_, Provinces, Player, State, Conquests),NewMap,board(NewMap, Provinces, Player, State, Conquests)).
@@ -78,7 +79,7 @@ best_board([Board|TBoards], [Alpha, Beta], Depth, BestBoardVal) :-
     minimax(Board, [Alpha, Beta], NewDepth, [_, Val]), % Get (Val)
     best_board_(TBoards, [Alpha, Beta], [Board, Val], Depth, BestBoardVal).
 
-% Evaluate one Board checking for any alpha or beta cuts
+% Evaluates one Board checking for any alpha or beta cuts
 % best_board_(+LeftBoards, +AlphaBeta, +BoardVal, +Depth, -EnoughBoardVal)
 best_board_([], _, BoardVal, _, BoardVal) :- !.
 best_board_(_LeftBoards, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
@@ -110,7 +111,7 @@ update_alpha_beta([Alpha, Beta], [Board, Val], [Alpha, Val])  :-
     is_turn(Board, max), Val < Beta, !.
 update_alpha_beta(AlphaBeta, _, AlphaBeta).
 
-% Returns the best configuration based on the player's turn
+% Returns the best game state based on the player's turn
 % Note: in case of equality, a random board is choosen
 % better(+BoardVal1, +BoardVal2, -BestBoardVal)
 better([Board, Val], [_, Val1], [Board, Val]) :-

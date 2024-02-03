@@ -43,6 +43,9 @@ In Antiyomacy, however, the list of possible moves for each turn has been reduce
 **Displace a unit** : 
 `province:displace_unit/8` ---> `province:place_unit/5` ---> `unit:unit_placement/5` ---> `unit:unit_mergeable/4`
 
+**Minimax logic** : 
+`minimax/4` ---> (`best_board/5` ---> (`minimax/4`, (*Alfa/Beta cut* ; `best_board/5` ---> `better/3`)) ; `eval/2`)
+
 <a name="merge_split"></a>
 ## 🪓 Province merge/split algorithm
 As you can see in the following image, handling the possibility of merging or splitting provinces after an attack is quite tricky.
