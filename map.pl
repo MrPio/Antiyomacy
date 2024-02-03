@@ -13,23 +13,26 @@
                 set_unit/2, set_unit/4,
                 destroy_units/3,
                 spawn_provinces/2,
-                set_hexes_to_empty/3,
-                get_non_sea_hexes/2]).
+                free_hexes/3,
+                free_hex/3,
+                has_won/3]).
 :- use_module(library(random)).
 :- use_module(library(clpfd)).
-:- use_module([utils, hex]).
+:- use_module([utils, hex, province]).
 
 % Map parameters
 :- dynamic(map/1).
+
 map_size(5).
 smooth(2).
-walkers(X) :-map_size(MapSize), smooth(Smooth),X is MapSize /16 * Smooth.
-walker_steps(X) :-map_size(MapSize),smooth(Smooth),X is MapSize*8 / Smooth.
+walkers(X) :-       map_size(MapSize), smooth(Smooth), X is MapSize / 16 * Smooth.
+walker_steps(X) :-  map_size(MapSize), smooth(Smooth), X is MapSize *  8 / Smooth.
 
-% Convert index to coordinate and vice versa. Can also be used as checker
+% Convert index to coordinate and vice versa.
+% Note: this can also be used as checker
 % index2coord(?Index, ?Coord)
 index2coord(Index, [X, Y]) :-
-    map_size(MapSize),   
+    map_size(MapSize),
     X #= Index // MapSize,
     Y #= Index mod MapSize,
     inside_map([X, Y]).
@@ -53,7 +56,7 @@ generate_random_map(Map, Empty) :-
     % Generate a map with only sea tiles
     empty_map(EmptyMap),
     update_map(EmptyMap),
-    (   Empty 
+    (   Empty
     ->  % Fill the map with terrain tiles
         MaxIndex is MapSize^2 -1,
         foreach((
@@ -71,18 +74,19 @@ generate_random_map(Map, Empty) :-
 empty_map(Map) :-
     map_size(MapSize),
     length(Map, MapSize),
-    empty_rows(MapSize, Map,0),!.
+    empty_rows(Map, MapSize, 0),!.
 
 % Generates an empty row of the specified size
-empty_rows(_, [],_).
-empty_rows(Size, [Row|Rest],Count) :-
+empty_rows([], _, _).
+empty_rows([Row|Rest], Size, Count) :-
     length(Row, Size),
-    empty_hex(Row, Size, Count,0),
-    NewCount is Count+1,
-    empty_rows(Size, Rest,NewCount).
+    empty_hex(Row, Size, Count, 0),
+    NewCount is Count + 1,
+    empty_rows(Rest, Size, NewCount).
 
+% Generates an empty map's cell
 empty_hex([],_,_,_).
-empty_hex([Hex|Rest], Size, RowCount,ColCount) :-
+empty_hex([Hex|Rest], Size, RowCount, ColCount) :-
     hex_tile(Hex, sea),
     Index is RowCount*Size + ColCount,
     Hex = hex(Index, [RowCount,ColCount],_,none,none,none),
@@ -104,7 +108,7 @@ random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
     random_between(MinWalkerSteps,MaxWalkerSteps,Steps),
     % Spawn the new walker
     % Note: the yall library is used here to define a lambda expression
-    StepAction = [ActionMap, ActionCoord, ActionNewMap] >>  
+    StepAction = [ActionMap, ActionCoord, ActionNewMap] >>
         (   % Place a random terrain tile on the walker location
             findall(Terrain, terrain(Terrain), Terrains),
             random_member(Terrain, Terrains),
@@ -118,7 +122,7 @@ random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
     random_walkers(NewMap, [MaxX, MaxY],NewCount, ResultMap).
 
 % Simulate a walker random walk
-% walk(+Map, +Coord, +StepAction, +WalkableCoordCondition, +Count, -NewMap)
+% walk(+Map, +Coord, :StepAction, :WalkableCoordCondition, +Count, -NewMap)
 walk(Map, _, _, _, Count, Map) :- Count=<0.
 walk(Map, [X, Y], StepAction, WalkableCoordCondition, Count, NewMap) :-
     % Invoke the action on the current coordinate
@@ -169,7 +173,7 @@ get_hex(Map, Index, Hex) :-
 
 % Checks or returns the tile in a given location
 check_tile(Map, [X, Y], Tile) :-
-    get_hex(Map, [X,Y],Hex),
+    get_hex(Map, [X, Y],Hex),
     hex_tile(Hex,Tile).
 
 % Change an hex tile type
@@ -252,10 +256,10 @@ spawn_provinces(Map, NewMap):-
     % Select the first and the last hexes as a spawn point for the two provinces
     nth0(0, CoordsWithTerrain, [RedX,RedY]),
     last(CoordsWithTerrain, [BlueX,BlueY]),
-    % Define the Random Walker actions to be invoked at each step
+    % Define the Random Walker action to be invoked at each step
     % Note: the yall library is used here to define a lambda expression
     StepAction = [Player, Action] >>
-    (   Action = [ActionMap, ActionCoord, ActionNewMap] >>  
+    (   Action = [ActionMap, ActionCoord, ActionNewMap] >>
         (   % Check if the walker is on a terrain hex
             get_hex(ActionMap, ActionCoord, Hex),
             hex_tile(Hex, terrain), % Check
@@ -267,7 +271,7 @@ spawn_provinces(Map, NewMap):-
         )
     ),
     % Define the condition for a walkable hex
-    WalkableCoordCondition = [ActionMap, ActionCoord] >> 
+    WalkableCoordCondition = [ActionMap, ActionCoord] >>
         (   check_tile(ActionMap, ActionCoord, terrain),
             get_hex(ActionMap, ActionCoord, Hex),
             hex_owner(Hex, none)
@@ -283,24 +287,38 @@ spawn_provinces(Map, NewMap):-
     update_map(NewMap),!.
 
 % Sets the specified hexes unit, building and owner in the hex list to none
-% set_hexes_to_empty(+Map, +HexList, -UpdatedMap)
-set_hexes_to_empty(Map, HexList, UpdatedMap) :-
-    set_hexes_to_empty_(Map, HexList, UpdatedMap).
-% Base case: empty list, nothing to do
-set_hexes_to_empty_(Map, [], Map).
-% Recursive case: set the current hex to empty and continue with the others
-set_hexes_to_empty_(Map, [Hex | RestHexes], UpdatedMap) :-
-    set_hex_empty(Map, Hex, TempMap),
-    set_hexes_to_empty_(TempMap, RestHexes, UpdatedMap).
+% free_hexes(+Map, +HexList, -UpdatedMap)
+free_hexes(Map, [], Map).
+free_hexes(Map, [Hex | T], UpdatedMap) :-
+    free_hex(Map, Hex, UpdatedMap1),
+    free_hexes(UpdatedMap1, T, UpdatedMap).
 % Set a single hex to empty
-set_hex_empty(Map, Hex, UpdatedMap) :-
+% free_hex(+Map, +Hex, -UpdatedMap)
+free_hex(Map, Hex, UpdatedMap) :-
     hex_coord(Hex, Coord), % Get
     set_owner(Map, Coord, none, MapWithNoneOwner),
     set_building(MapWithNoneOwner, Coord, none, MapWithNoneBuilding),
     set_unit(MapWithNoneBuilding, Coord, none, UpdatedMap).
-
-% Get all hexes on the map that do not have 'sea' in their tile
-get_non_sea_hexes(Map, NonSeaHexes) :-
-    findall(Hex, (get_hex(Map, _, Hex), \+ hex_tile(Hex, sea)), NonSeaHexes).
-
     
+
+% Checks if the player has won. (❔semi-deterministic❔)
+% Note: a player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces
+% has_won(+Map, +Provinces, +Player)
+has_won(Map, Provinces, Player) :-
+    % Count the terrain hexes on the map
+    findall(Coord, (check_tile(Map, Coord, terrain)), NonSeaHexes),
+    length(NonSeaHexes, TotalHexes),
+
+    % Calculate the total size of the player's provinces
+    include([In]>>(province_owner(In, Player)), Provinces, ProvincesOfPlayer),
+    maplist(province_size, ProvincesOfPlayer, PlayerSizes),
+    sum_list(PlayerSizes, PlayerTotalSize),
+
+    % Calculate the percentage of player's owned terrain hexes
+    Percentage is (PlayerTotalSize / TotalHexes) * 100,
+
+    % Check if the percentage is at least 80% or there are no more provinces owned by the other player
+    (   Percentage >= 80, !
+    ;   % Check if there are no more enemy provinces
+        \+ (member(Province, Provinces), \+ province_owner(Province, Player))
+    ).

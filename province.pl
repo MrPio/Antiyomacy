@@ -8,7 +8,6 @@
                      province_size/2,
                      province_count/3,
                      province_counts/3,
-                     get_provinces_by_owner/3,
                      update_province/3,
                      apply_incomes/4,
                      apply_income/4,
@@ -55,11 +54,6 @@ get_hexes_from_provinces(Provinces, Hexes) :-
 province_size(Province, Size):-
     province_hexes(Province, Hexes),
     length(Hexes, Size).
-
-% Get provinces by owner
-% get_provinces_by_owner(+AllProvinces, +Owner, -OwnerProvinces)
-get_provinces_by_owner(AllProvinces, Owner, OwnerProvinces) :-
-    include([Province]>>(province_owner(Province, Owner)), AllProvinces, OwnerProvinces).
 
 % Checks or calculates the number of buildings or units owned by the province
 % province_count(+Province, +ResourceName, ?Count)
@@ -253,9 +247,8 @@ province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
     hex_owner(Hex, Owner), % Check
     hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
-    % note: We use near8/4 instead of near4/4 because units can move
-    %       in the outer border and we don't want to create a new
-    %       province after a unit has moved.
+    % Note: We use near8/4 instead of near4/4 because units can move in the outer border
+    %       and we don't want to create a new province after a unit has moved.
     near8(Map, [X, Y], NeighborHexes),
     % Filter only the valid neighbor hexes
     findall(NeighborHex,(
@@ -404,7 +397,6 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     ;   subtract(Provinces, [Province], ProvincesWithoutNewProvince),
         append(ProvincesWithoutNewProvince, [NewProvince], NewProvincesMerge)
     ),
-
     % Check for enemy split in case of invasion
     (   (OwnerBefore \= none, OwnerBefore \= Player)
     ->  check_for_split(NewMap1, NewProvincesMerge, NewProvince, Hex, NewProvinces, NewMap)
@@ -506,7 +498,7 @@ check_for_split(Map, OldProvinces, NewProvince, Hex, NewProvinces, UpdatedMap) :
     get_hexes_from_provinces(NewEnemyProvincesToRemove, HexesToRemove),
     
     % Set the hexes specified in HexesToRemove to empty in the map
-    set_hexes_to_empty(Map, HexesToRemove, UpdatedMap),
+    free_hexes(Map, HexesToRemove, UpdatedMap),
 
     % Update the new provinces list:
     % Exclude the split province from the old provinces list

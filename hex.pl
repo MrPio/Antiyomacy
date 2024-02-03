@@ -3,6 +3,7 @@
                 terrain/1,
                 owner/1,
                 player/1,
+                other_player/2,
                 hex/6,
                 hex_index/2,
                 hex_coord/2,
@@ -29,10 +30,16 @@ owner(none).
 owner(X) :- player(X).
 player(X) :- member(X,[red, blue]).
 
+% Gets the other player
+% other_playe(?Player1, ?Player2)
+other_player(red, blue).
+other_player(blue, red).
+
 % Hex struct ====================================================================
+
 hex(Index,[X,Y], Tile, Owner, Building, Unit) :- 
     number(Index),
-    X>=0,Y>=0,
+    X >= 0, Y >= 0,
     tile(Tile),
     owner(Owner),
     \+ (building(Building,_,_,_), unit(Unit,_,_,_,_)).

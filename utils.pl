@@ -1,7 +1,8 @@
 :- module(utils, [lap/0,lap/1, print_provinces/1, print_map/1, 
     same_elements/2,
     op_list/3,
-    filter/3]).
+    filter/3,
+    pipe/4]).
 :- use_module([hex, province, economy]).
 
 :- dynamic(time/1).
@@ -78,14 +79,14 @@ same_elements(L1, L2) :-
     same_length(L1, L2),!.
 
 % Invoke an operation on all the element of a list (deterministic)
-% prod_list(+List,+Num,-ResultList)
+% prod_list(+List,:Num,-ResultList)
 op_list([],_,[]):-!.
 op_list([H|T], Op, [H1|T1]) :- 
     (call(Op,H,H1); H1 = H),
     op_list(T, Op, T1).
 
 % Filter a list with a condition related to the list being generated (deterministic)
-% filter(+List, +Condition, -Sol)
+% filter(+List, :Condition, -Sol)
 filter(List, Condition, Sol):- filter_(List, Condition, [], Sol).
 filter_([],_,Sol,Sol):-!.
 filter_([H|T], Condition, Temp, Sol) :-
@@ -94,3 +95,15 @@ filter_([H|T], Condition, Temp, Sol) :-
     filter_(T, Condition, NewTemp, Sol)
     ;
     filter_(T, Condition, Temp, Sol).
+
+% Recursively pipe the calls of a predicate, taking the output of the previous step
+% as input at each step, and returning the output as the input for the next step.
+% pipe(:Functor, +InputList, +List, -LastOutput)
+pipe(_, Out, [], Out).
+pipe(Op, In, [H|T], Out):-
+    length(Out, OutLength), 
+    length(Out1, OutLength),
+    append([Op|In], [H|Out1], UnivList),
+    Caller =.. UnivList,
+    call(Caller),
+    pipe(Op, Out1, T, Out).
