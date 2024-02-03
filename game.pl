@@ -159,7 +159,7 @@ process_user_provinces(Provinces, Map, Player, Board, NewBoard):-
     length(Provinces, TotalProvinces), % Get the total number of provinces
     process_user_provinces(Provinces, Map, Player, Board, NewBoard, 1, TotalProvinces).
 % Helper predicate
-process_user_provinces([], _, _, _, _).
+process_user_provinces([], _, _, _, _, _, _).
 process_user_provinces([Province|Rest], Map, Player, Board, NewBoard, CurrentNumber, TotalProvinces):-
     format('Province number: ~w/~w', [CurrentNumber, TotalProvinces]),
     nl,
@@ -205,17 +205,20 @@ process_user_provinces([Province|Rest], Map, Player, Board, NewBoard, CurrentNum
     ; MoveChoice =:= 3 ->
         % Code for Skip turn
         writeln('Player chose Skip move for this province'),
-        % Change player color turn
-        other_player(Player, NewPlayer),
-        set_board_player(Board, NewPlayer, NewBoard),
-        true
+        (CurrentNumber =:= TotalProvinces ->
+            % Change player color turn
+            other_player(Player, NewPlayer),
+            set_board_player(Board, NewPlayer, NewBoard),
+            province_owner(Province, User),
+            game_loop(NewBoard, User)
+        ;   
+            % Increment the counter for the next iteration
+            NextNumber is CurrentNumber + 1,
+            process_user_provinces(Rest, Map, Player, Board, NewBoard, NextNumber, TotalProvinces)
+        )
     ; writeln('Invalid choice')
-    ),
+    ).
 
-    % Increment the counter for the next iteration
-    NextNumber is CurrentNumber + 1,
-
-    process_user_provinces(Rest, Map, Player, Board, NewBoard, NextNumber, TotalProvinces).
 
 % Checks if the player has won.
 % Note: a player wins if they own at least 80% of the terrain map hexes or there are no more enemy provinces
