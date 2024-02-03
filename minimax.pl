@@ -7,8 +7,7 @@
     change_board_map/3,
     board_player/2,
     board_state/2,
-    board_conquests/2,
-    set_board_player/3]).
+    board_conquests/2]).
 :- use_module([game, hex, province, eval, utils]).
 
 :- dynamic(start_time/1).
@@ -37,11 +36,6 @@ board_player(board(_, _, Player, _, _),Player).
 board_state(board(_, _, _, State, _),State).
 % Check/Get RedConquests
 board_conquests(board(_, _, _, _, Conquests),Conquests).
-
-% Predicate to set the new player of a board
-% set_board_player(+OldBoard, +NewPlayer, -NewBoard)
-set_board_player(Board, NewPlayer, NewBoard) :-
-    change_board_player(Board, NewPlayer, NewBoard).
 
 % Predicate to change the player of a board
 % change_board_player(+OldBoard, +NewPlayer, -NewBoard)
@@ -85,17 +79,10 @@ best_board_([], _, BoardVal, _, BoardVal) :- !.
 best_board_(_LeftBoards, [Alpha, Beta], [Board, Val], _, [Board, Val]) :-
     % Check beta test condition
     is_turn(Board, min), 
-    Val > Beta,
-    % length(LeftBoards, LeftBoardsLength),
-    % cuts(Cuts),NewCuts is Cuts + LeftBoardsLength,update_cuts(NewCuts), 
-    !
-    ;
-    % Check alpha test condition
+    Val > Beta, !
+;   % Check alpha test condition
     is_turn(Board, max),
-    Val < Alpha, 
-    % length(LeftBoards, LeftBoardsLength),
-    % cuts(Cuts),NewCuts is Cuts + LeftBoardsLength,update_cuts(NewCuts), 
-    !.
+    Val < Alpha, !.
 best_board_(LeftBoards, AlphaBeta, BoardVal, Depth, EnoughBoardVal)  :-
   update_alpha_beta(AlphaBeta, BoardVal, NewAlphaBeta),
   best_board(LeftBoards, NewAlphaBeta, Depth, OtherBestBoardVal),
@@ -111,8 +98,8 @@ update_alpha_beta([Alpha, Beta], [Board, Val], [Alpha, Val])  :-
     is_turn(Board, max), Val < Beta, !.
 update_alpha_beta(AlphaBeta, _, AlphaBeta).
 
-% Returns the best game state based on the player's turn
-% Note: in case of equality, a random board is choosen
+% Returns the best game state based on who is playing
+% Note: in case of equality, a random board is chosen
 % better(+BoardVal1, +BoardVal2, -BestBoardVal)
 better([Board, Val], [_, Val1], [Board, Val]) :-
     is_turn(Board, min),
