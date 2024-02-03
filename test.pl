@@ -403,7 +403,7 @@ test_has_won:-
 test_io:-
     nl,writeln('test_io ======================================================'),
     writeln('Test color choice'),
-    player_color(_),
+    ask_color(_),
     writeln('Test move choice'),
     player_move(_),
     writeln('Test displace_input'),

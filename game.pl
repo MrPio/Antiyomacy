@@ -57,54 +57,59 @@
     X To follow the CBDP philosophy, module/2 and use_module/1 were used instead of consult/1.
 */
 
-/*
-• is_building non ha senso
-• (->)/2 va strutturato bene
-• i commenti devono aggiungere contenuto!
-• =:= non va usato se non serve
-• i true non servono
-• i predicati con nome terminante in "_" vanno usati come ausiliari
-• aggiungere la firma secondo le convenzioni swipl (https://www.swi-prolog.org/pldoc/man?section=preddesc)
-• CurrentNumber non è necessario
-• read/1 non è semanticamente corretto utilizzarlo in questo contesto (https://www.swi-prolog.org/pldoc/doc_for?object=read/1), usare read_line_to_string
-• validate_resource_name è ridondante rispetto a building/4 e unit/5
-• ask_color invece di player_color
-• Inutile random between in play/0
-*/
-
 % Asks the user to choose a move for each of their provinces
-ask_provinces_moves(Provinces, Map, Player, Board, NewBoard):-
-    length(Provinces, TotalProvinces), % Get the total number of provinces
-ask_provinces_moves(Provinces, Map, Player, Board, NewBoard, 1, TotalProvinces).
-ask_provinces_moves([], _, _, _, _).
-ask_provinces_moves([Province|Rest], Map, Player, Board, NewBoard, CurrentNumber, TotalProvinces):-
+ask_provinces_moves(_, _).
+ask_provinces_moves(board(Map, Provinces, Player, _, Conquests), board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
+    % The human player is playing, so they will be asked to input their move
+    include([In]>>(province_owner(In, HumanPlayer)), Provinces, HumanProvinces),
+    length(HumanProvinces, TotHumanProvinces),
+    ask_province_moves(Map, Provinces, Conquests, [HumanProvince|Rest], NewMap, NewConquests, 1, TotHumanProvinces).
+    % check win state
+
+ask_provinces_moves_(_,_,_,[],_,_,_,_,_).
+ask_provinces_moves_(Map, Provinces, Conquests, [HumanProvince|Rest], NewMap, NewProvinces, NewConquests, CurrentNumber, TotHumanProvinces):-
+    ask_province_move(Map, Provinces,Conquests,HumanProvince, NewMap, NewProvinces, CurrentNumber, TotHumanProvinces,NewProvinces, NewConquests),
+    CurrentNumber1 is CurrentNumber + 1,
+    ask_provinces_moves_(Map, Provinces,Conquests,[HumanProvince|Rest], NewMap, NewProvinces, NewConquests, CurrentNumber1, TotHumanProvinces).
+
+ask_province_move(Map, Provinces, Conquests, HumanProvince, NewMap, CurrentNumber, TotHumanProvinces,NewProvinces, NewConquests):-
     format('Province number: ~w/~w', [CurrentNumber, TotalProvinces]),nl,
-    format('Province description: ~w~n', [Province]),
+    format('Province description: ~w~n', [HumanProvince]),
     % Take user move
     player_move(MoveChoice),
 
     % Based on the user's choice, ask them for the move information
-    (   MoveChoice =:= 1 ->
+    (   MoveChoice == 1 ->
         % Code for Displace
         writeln('Player chose Displace'),
         displace_input([X1,Y1], [X2,Y2]),
         get_hex(Map, [X1,Y1], FromHex),
         get_hex(Map, [X2,Y2], DestHex),
         % TODO: Add Displace logic here
-        unit_placement(Map, Province, UnitName, DestHex, NewUnitName), % Check & Get
-        %displace_unit(Map, Provinces, Province, FromHex, ToHex, NewUnitName, NewMap, NewProvinces, NewProvince),
-        true
+        unit_placement(Map, HumanProvince, UnitName, DestHex, NewUnitName), % Check & Get
+        displace_unit(Map, Provinces, HumanProvince, FromHex, ToHex, NewUnitName, NewMap, NewProvinces, _),
+        % Update the conquest counts in the case of an invasion 
+        (   hex_owner(DestHex, Enemy)
+        ->  (   Player == red
+            ->  NewRedConq is RedConq + 1,
+                NewBlueConq = BlueConq
+            ;   NewRedConq = RedConq,
+                NewBlueConq is BlueConq + 1
+            )
+        ;   NewRedConq = RedConq,
+            NewBlueConq = BlueConq
+        )
     ; MoveChoice =:= 2 ->
         % Code for Purchase
         writeln('Player chose Purchase'),
         purchase_input(ResName,[X,Y]),
         % Check if ResName corresponds to a building
         is_building(ResName, IsBuilding),
-        (IsBuilding =:= 1 ->
+        (IsBuilding == 1 ->
             % Get DestHex
             get_hex(Map, [X,Y], DestHex),
             % Check legal move
-            building_placement(Map, Province, ResName, DestHex),
+            building_placement(Map, HumanProvince, ResName, DestHex),
             % TODO: Add building placement logic here
             %buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
             true
@@ -112,12 +117,12 @@ ask_provinces_moves([Province|Rest], Map, Player, Board, NewBoard, CurrentNumber
             % TODO: Add purchasing unit logic here
             get_hex(Map, [X,Y], DestHex),
             % Check legal move
-            unit_placement(Map, Province, UnitName, DestHex, NewUnitName), % Check & Get
-            %buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
+            unit_placement(Map, HumanProvince, UnitName, DestHex, NewUnitName), % Check & Get
+            %buy_and_place(Map, Provinces, HumanProvince, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
             true
         ),
         true
-    ; MoveChoice =:= 3 ->
+    ; MoveChoice == 3 ->
         % Code for Skip turn
         writeln('Player chose Skip move for this province'),
         (CurrentNumber =:= TotalProvinces ->
@@ -126,10 +131,6 @@ ask_provinces_moves([Province|Rest], Map, Player, Board, NewBoard, CurrentNumber
             set_board_player(Board, NewPlayer, NewBoard),
             province_owner(Province, User),
             game_loop(NewBoard, User)
-        ;   
-            % Increment the counter for the next iteration
-            NextNumber is CurrentNumber + 1,
-            process_user_provinces(Rest, Map, Player, Board, NewBoard, NextNumber, TotalProvinces)
         )
     ; writeln('Invalid choice')
     ).
@@ -242,7 +243,8 @@ play:-
     random_member(HumanPlayer, [red, blue]),
     random_member(FirstPlayer,[red, blue]),
 
-    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], FirstPlayer, play, [0, 0]), none).
+    %game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], FirstPlayer, play, [0, 0]), none).
+    game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], FirstPlayer, play, [0, 0]), HumanPlayer).
 
 game_loop(Board, HumanPlayer) :-
     board_player(Board, Player), % Get
@@ -252,10 +254,8 @@ game_loop(Board, HumanPlayer) :-
     
     % Depending on the playing player, the minimax searches for a move or the user is asked to commit their move
     (   Player == HumanPlayer 
-    ->  % The human player is playing, so they will be asked to input their move
-        include([In]>>(province_owner(In, HumanPlayer)), Provinces, UserProvinces),
-        % Loop through each province owned by the user
-        ask_provinces_moves(UserProvinces, Map, Player, Board, NewBoard),
+    ->  % Loop through each province owned by the user
+        ask_provinces_moves(Board, NewBoard),
         NewBoardWithIncome = NewBoard
     ;   % The cpu is playing, so the minimax will be used to choose a move
         get_time(StartTime), update_start_time(StartTime),

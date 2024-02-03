@@ -1,35 +1,7 @@
-:- module(io, [player_color/1, player_move/1, purchase_input/2, displace_input/2]).
+:- module(io, [ask_color/1, player_move/1, purchase_input/2, displace_input/2]).
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 :- use_module(library(random)).
 :- use_module(library(readutil)).
-
-% Predicate to check user color choice
-% player_color(-Choice)
-player_color(Choice):-
-    writeln('Choose a color:'),
-    writeln('1) Red'),
-    writeln('2) Blue'),
-    writeln('3) Random'),
-    read(Choice1),
-    (Choice1 =:= 1 ->
-        writeln('You chose Red territory'),
-        Choice = Choice1;
-    Choice1 =:= 2 ->
-        writeln('You chose Blue territory'),
-        Choice = Choice1;
-    Choice1 =:= 3 ->
-        % Randomly choose between 1 and 2
-        random_between(1, 2, RandomChoice),
-        (RandomChoice =:= 1 ->
-            writeln('Randomly chosen: Red territory'),
-            Choice = 1
-        ; 
-            writeln('Randomly chosen: Blue territory'),
-            Choice = 2
-        );
-    writeln('Invalid choice'),
-    player_color(Choice)
-    ).
 
 ask_color(Color):-
     writeln('Choose a color:\n1) Red\n2) Blue\n3) Random'),
@@ -52,11 +24,11 @@ player_move(Choice):-
     writeln('2) Purchase'),
     writeln('3) Skip turn'),
     read(Choice1),
-    (Choice1 =:= 1 ->
+    (Choice1 == 1 ->
         Choice = Choice1;
-    Choice1 =:= 2 ->
+    Choice1 == 2 ->
         Choice = Choice1;
-    Choice1 =:= 3 ->
+    Choice1 == 3 ->
         Choice = Choice1;
     writeln('Invalid choice'),
     player_move(Choice)
