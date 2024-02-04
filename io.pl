@@ -1,16 +1,32 @@
-:- module(io, [ask_color/1, player_move/1, purchase_input/2, displace_input/2]).
+:- module(io, [ask_game_mode/1, player_move/1, purchase_input/2, displace_input/2]).
 :- use_module([utils, map, hex, province, unit, building, economy, eval, minimax]).
 :- use_module(library(random)).
 :- use_module(library(readutil)).
 
+% Asks the user for the game mode and initiates the appropriate actions
+% ask_game_mode(-Color)
+ask_game_mode(Color):-
+    writeln('Choose game mode:\n1) Player vs Computer\n2) Computer vs Computer'),
+    read_line_to_string(user_input, ModeChoice),
+    (   ModeChoice == "1."
+    ->  ask_color(Color),
+        format('You play as ~w player', Color),nl
+    ;   ModeChoice == "2."
+    ->  Color = none
+    ;   writeln('Invalid choice'),
+        ask_game_mode(Color)
+    ).
+
+% Asks the user for color
+% ask_color(-Color)
 ask_color(Color):-
     writeln('Choose a color:\n1) Red\n2) Blue\n3) Random'),
     read_line_to_string(user_input, Choice),
-    (   Choice == "1" 
+    (   Choice == "1." 
     ->  Color = red
-    ;   Choice == "2"
+    ;   Choice == "2."
     ->  Color = blue
-    ;   Choice == "3"
+    ;   Choice == "3."
     ->  random_member(Color, [red, blue])
     ;   writeln('Invalid choice'),
         ask_color(Color)
