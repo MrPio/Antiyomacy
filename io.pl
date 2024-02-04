@@ -8,10 +8,10 @@
 ask_game_mode(Color):-
     writeln('Choose game mode:\n1) Player vs Computer\n2) Computer vs Computer'),
     read_line_to_string(user_input, ModeChoice),
-    (   ModeChoice == "1."
+    (   ModeChoice == "1"
     ->  ask_color(Color),
         format('You play as ~w player', Color),nl
-    ;   ModeChoice == "2."
+    ;   ModeChoice == "2"
     ->  Color = none
     ;   writeln('Invalid choice'),
         ask_game_mode(Color)
@@ -22,11 +22,11 @@ ask_game_mode(Color):-
 ask_color(Color):-
     writeln('Choose a color:\n1) Red\n2) Blue\n3) Random'),
     read_line_to_string(user_input, Choice),
-    (   Choice == "1." 
+    (   Choice == "1" 
     ->  Color = red
-    ;   Choice == "2."
+    ;   Choice == "2"
     ->  Color = blue
-    ;   Choice == "3."
+    ;   Choice == "3"
     ->  random_member(Color, [red, blue])
     ;   writeln('Invalid choice'),
         ask_color(Color)
@@ -39,7 +39,7 @@ player_move(Choice):-
     writeln('1) Displace'),
     writeln('2) Purchase'),
     writeln('3) Skip turn'),
-    read(Choice1),
+    read_line_to_string(user_input, Choice1),
     (Choice1 == 1 ->
         Choice = Choice1;
     Choice1 == 2 ->
@@ -54,7 +54,7 @@ player_move(Choice):-
 % displace_input(-[X1,Y1], -[X2,Y2])
 displace_input([X1,Y1], [X2,Y2]):-
     writeln('FromCoord (format X-Y):'),
-    read(FromCoord),
+    read_line_to_string(user_input, FromCoord),
     (validate_coordinate(FromCoord,[X1,Y1]) ->
         true
     ; 
@@ -62,7 +62,7 @@ displace_input([X1,Y1], [X2,Y2]):-
         displace_input([X1,Y1], [X2,Y2])
     ),
     writeln('ToCoord (format X-Y):'),
-    read(ToCoord),
+    read_line_to_string(user_input, ToCoord),
     (validate_coordinate(ToCoord,[X2,Y2]) ->
         true
     ; 
@@ -74,9 +74,9 @@ displace_input([X1,Y1], [X2,Y2]):-
 % purchase_input(-ResName, -[X,Y])
 purchase_input(ResName,[X,Y]):-
     writeln('ResName (options: farm, tower, strong_tower, peasant, spearman, baron, knight):'),
-    read(ResName1),
+    read_line_to_string(user_input, ResName1),
     writeln('ToCoord (format X-Y):'),
-    read(ToCoord),
+    read_line_to_string(user_input, ToCoord),
     (validate_resource_name(ResName1), validate_coordinate(ToCoord,[X,Y]) ->
         ResName = ResName1
     ; 
