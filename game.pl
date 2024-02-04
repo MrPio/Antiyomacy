@@ -146,8 +146,8 @@ ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, Ne
             ->  NewRedConq is RedConq + 1,
                 NewBlueConq = BlueConq
             ;   NewRedConq = RedConq,
+        )
                 NewBlueConq is BlueConq + 1
-            )
         ;   NewRedConq = RedConq,
             NewBlueConq = BlueConq
         ),
@@ -264,7 +264,7 @@ play:-
     % find_provinces(MapWithProvinces, Provinces),
     test_map4(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted]),
     
-    % Choose the game mode and, if human wants to play, asks colour of the human player
+    % Choose the game mode and, if human wants to play, asks color of the human player
     ask_game_mode(HumanPlayer),
     % Determine who will be the first player
     random_member(FirstPlayer,[red, blue]),

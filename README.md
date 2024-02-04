@@ -162,7 +162,6 @@ Note: The term "resource" refers to both units and buildings.
     - **op_list/3** : Invoke an operation on all the elements of a list. (⬆️higher-order⬆️)
     - **filter/3** : Filter a list with a condition related to the list being generated. (⬆️higher-order⬆️)
     
-
 <a name="screenshots"></a>
 ## 🖼 Screenshots
 

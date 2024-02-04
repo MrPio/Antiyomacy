@@ -96,14 +96,19 @@ filter_([H|T], Condition, Temp, Sol) :-
     ;
     filter_(T, Condition, Temp, Sol).
 
-% Recursively pipe the calls of a predicate, taking the output of the previous step
-% as input at each step, and returning the output as the input for the next step.
+% Recursively pipe the calls of a predicate, taking the output 
+% of the previous step as input at each step, and returning
+% the output as the input for the next step. (⬆️higher-order⬆️)
 % pipe(:Functor, +InputList, +List, -LastOutput)
 pipe(_, Out, [], Out).
 pipe(Op, In, [H|T], Out):-
-    length(Out, OutLength), 
-    length(Out1, OutLength),
+    % Instantiate the list of output vars
+    length(Out, OutLength), length(Out1, OutLength),
+    % Create the univ list with the the functor as
+    % the first element and its arguments as the tail
     append([Op|In], [H|Out1], UnivList),
+    % Instantiate the funtor with univ predicate
     Caller =.. UnivList,
     call(Caller),
+    % Perform the recursion preserving the output vars
     pipe(Op, Out1, T, Out).

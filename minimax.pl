@@ -15,8 +15,6 @@ update_start_time(Time):-
     retractall(time(_)),
     assert(start_time(Time)).
 
-
-
 % Board struct ====================================================================
 board(_Map, Provinces, Player, State, Conquests) :-
     player(Player),
@@ -45,8 +43,9 @@ change_board_player(board(Map, Provinces, _, State, Conquests), NewPlayer, board
 % Finds the best move using minimax with alpha-beta pruning
 % minimax(+Board, +AlphaBeta, +Depth, -BestBoardVal)
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
-    start_time(T1), get_time(T2), T is T2-T1,
-    Depth > 0, T < 10,
+    Depth > 0,
+    start_time(T1), get_time(T2),
+    T is T2-T1, T < 10,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
 
     % Print the number of possible moves
@@ -61,9 +60,7 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     
     best_board(NextBoards, AlphaBeta, Depth, [BestBoard, Val])
 ;   % The depth has expired or there are no available moves
-    eval(Board,Val)
-    %format(' ~w ', Val)
-    .
+    eval(Board,Val).
 
 % Finds the best board from a list of possible successors, whose value always
 % remains within the Alpha and Beta limits
