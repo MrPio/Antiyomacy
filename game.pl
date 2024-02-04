@@ -2,9 +2,9 @@
 :- use_module([test, utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 
 /* TODO:
-    ? Logic for choosing the first colour to play (Federico)
     • Use the already written predicates to randomly generate map and provinces at startup. (Valerio)
     -------------------------------------------------------------------------------------------------
+    X Logic for choosing the first colour to play (Federico)
     X Logic to handle user buy and place and unit displace (Federico)
     X Loop input for each provinces, print province counter (Federico)
     X Territory color choice menu (Federico)
