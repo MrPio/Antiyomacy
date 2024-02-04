@@ -254,8 +254,12 @@ game_loop(Board, HumanPlayer) :-
     (   Player == HumanPlayer 
     ->  % Loop through each province owned by the user
         ask_provinces_moves(Board, NewBoard),
-        NewBoardWithIncome = NewBoard,
-        get_time(StartTime), update_start_time(StartTime)
+        board_map(NewBoard, NewMap), % Get
+        board_provinces(NewBoard, NewProvinces), % Get    
+        % Print the board
+        print_map(NewMap),
+        print_provinces(NewProvinces),
+        game_loop(NewBoard, HumanPlayer)
     ;   % The cpu is playing, so the minimax will be used to choose a move
         get_time(StartTime), update_start_time(StartTime),
         minimax(Board, [-999999, 999999], 3, [NewBoard, Val]),
