@@ -35,22 +35,23 @@ lap(Print):-
 print_board(Board):-
     board_map(Board, Map), % Get
     board_provinces(Board, Provinces), % Get
+    board_conquests(Board, Conquests), % Get
+    board_provinces(Board, Provinces), % Get
     print_map(Map),
-    print_provinces(Provinces).
+    print_provinces(Provinces),
+    format("Red conquests = ~w,   Blue conquests = ~w", Conquests), nl.
 
 % Print a list of provinces in a nice pleasant way
 print_provinces(Provinces):-
     include([In]>>(province_owner(In, red)), Provinces, ProvincesRed),
     exclude([In]>>(province_owner(In, red)), Provinces, ProvincesBlue),
-    (   ProvincesRed \== []
-    ->  writeln('Red provinces: --------------------'),
+    (   ProvincesRed == []
+    ;   writeln('Red provinces: --------------------'),
         print_provinces_(ProvincesRed),nl
-    ;   true
     ),
-    (   ProvincesBlue \== []
-    ->  writeln('Blue provinces: -------------------'),
+    (   ProvincesBlue == []
+    ;   writeln('Blue provinces: -------------------'),
         print_provinces_(ProvincesBlue),nl
-    ;   true
     ).
 print_provinces_([]).
 print_provinces_([Province|T]):-

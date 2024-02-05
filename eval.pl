@@ -66,10 +66,10 @@ eval(Board, Score) :-
     province_counts(ProvincesOfMIN, [knight], MINKnightCount),
     
     % Check if MAX wins and assign a score of 99999
-    (   State == win, Player == MAX 
+    (   State == win, Player == MIN 
     ->  Score = 99999, !
     ;   % Check if MIN wins and assign a score of -99999
-        State == win, Player == MIN 
+        State == win, Player == MAX 
     ->  Score = -99999, !
     ;   % If the game is not in a win state, calculate the evaluation score
         Score is (

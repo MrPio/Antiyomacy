@@ -74,7 +74,8 @@ ask_purchase_to_(Map, Province, ResName, Coord, Cancel):-
     (   Cancel1 == true, Cancel = Cancel1
     ;   get_hex(Map, CoordToCheck, DestHex),
         % Prevent a unit merge on purchase
-        hex_unit(DestHex, none), % Check
+        province_owner(Province, Player),
+        \+ (hex_owner(DestHex, Player), \+ hex_unit(DestHex, none)),
         % Check if the placement is valid based on the resource type
         (   building(ResName, _, _, _)
         ->  building_placement(Map, Province, ResName, DestHex)

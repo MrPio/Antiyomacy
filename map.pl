@@ -23,7 +23,7 @@
 % Map parameters
 :- dynamic(map/1).
 
-map_size(5).
+map_size(8).
 smooth(2).
 walkers(X) :-       map_size(MapSize), smooth(Smooth), X is MapSize / 16 * Smooth.
 walker_steps(X) :-  map_size(MapSize), smooth(Smooth), X is MapSize *  8 / Smooth.

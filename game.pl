@@ -160,11 +160,16 @@ play:-
     ask_choice([user_vs_ai, ai_vs_ai], GameMode), nl,
     
     % Generate the map and spawn the provinces
-    % generate_random_map(Map, false),
-    % spawn_provinces(Map, MapWithProvinces),
-    % print_map(MapWithProvinces),
-    % find_provinces(MapWithProvinces, Provinces),
-    test_map4(Map, Provinces),
+    generate_random_map(MapWithoutProvinces, false),
+    spawn_provinces(MapWithoutProvinces, Map),
+    print_map(Map),
+    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
+
+    % Assign start money
+    change_province_money(ProvinceRed, 12, ProvinceRed2),
+    change_province_money(ProvinceBlue, 12, ProvinceBlue2),
+
+    % test_map4(Map, Provinces),
 
     % Determine who will be the first player
     (   GameMode == user_vs_ai
@@ -173,7 +178,7 @@ play:-
     ;   % If the game mode is AI vs AI, there is no human player
         HumanPlayer = none
     ), 
-    game_loop(board(Map, Provinces, red, play, [0, 0]), HumanPlayer, red).
+    game_loop(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0]), HumanPlayer, red).
 
 game_loop(Board, HumanPlayer, StartPlayer) :-
     board_player(Board, Player), % Get
