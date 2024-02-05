@@ -3,8 +3,7 @@
     tower_nearby/3,
     strong_tower_nearby/3,
     farm_nearby/3,
-    building_placement/4,
-    is_building/2]).
+    building_placement/4]).
 :- use_module([map, hex, province]).
 
 % Building enum ==============================================
@@ -90,10 +89,3 @@ building_placement(Map, Province, _, Hex) :-
     % The destination should not host any units or buildings
     hex_unit(Hex, none), % Check
     hex_building(Hex, none). % Check
-
-% Predicate to check if ResName is a building
-% is_building(+ResName, -IsBuilding)
-is_building(ResName, IsBuilding) :-
-    member(ResName, [farm, tower, strong_tower]),
-    IsBuilding is 1, !.
-is_building(_, 0). % If ResName is not a building returns 0

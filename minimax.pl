@@ -20,7 +20,7 @@ board(_Map, Provinces, Player, State, Conquests) :-
     player(Player),
     is_list(Provinces),
     state(State),
-    Conquests = [RedConquests, BlueConquests].
+    Conquests = [_RedConquests, _BlueConquests].
 state(X) :- member(X, [play, win]).
 % Check/Get hex Map
 board_map(board(Map, _, _, _, _),Map).

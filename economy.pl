@@ -40,8 +40,9 @@ check_buy(Province, BuildingName, LeftMoney) :-
     province_money(Province, Money), % Get
     Money>=Cost,
     LeftMoney is Money - Cost.
-check_buy(province(_, _, Money), UnitName, LeftMoney) :-
+check_buy(Province, UnitName, LeftMoney) :-
     unit(UnitName, _, _, Cost, _),
+    province_money(Province, Money), % Get
     Money>=Cost,
     LeftMoney is Money - Cost.
 

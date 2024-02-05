@@ -93,7 +93,6 @@ test_map4(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted]):-
     map(MapWithProvinces),
     print_map(MapWithProvinces),
     find_provinces(MapWithProvinces, Provinces),
-    writeln('==============================================='),
     Provinces=[ProvinceRed, ProvinceBlue],
     change_province_money(ProvinceRed, 12, ProvinceRed2),
     change_province_money(ProvinceBlue, 12, ProvinceBlue2),

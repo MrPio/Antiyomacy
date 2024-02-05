@@ -1,9 +1,13 @@
-:- module(utils, [lap/0,lap/1, print_provinces/1, print_map/1, 
+:- module(utils, [
+    lap/0, lap/1,
+    print_board/1,
+    print_provinces/1,
+    print_map/1, 
     same_elements/2,
     op_list/3,
     filter/3,
     pipe/4]).
-:- use_module([hex, province, economy]).
+:- use_module([hex, province, economy, minimax]).
 
 :- dynamic(time/1).
 time(0).
@@ -26,14 +30,28 @@ lap(Print):-
     ), !.
     
 
+% Print a game board in a nice pleasant way
+% print_board(+Board)
+print_board(Board):-
+    board_map(Board, Map), % Get
+    board_provinces(Board, Provinces), % Get
+    print_map(Map),
+    print_provinces(Provinces).
+
 % Print a list of provinces in a nice pleasant way
 print_provinces(Provinces):-
     include([In]>>(province_owner(In, red)), Provinces, ProvincesRed),
     exclude([In]>>(province_owner(In, red)), Provinces, ProvincesBlue),
-    writeln('Red provinces:-------------'),
-    print_provinces_(ProvincesRed),nl,
-    writeln('Blue provinces:-------------'),
-    print_provinces_(ProvincesBlue),nl.
+    (   ProvincesRed \== []
+    ->  writeln('Red provinces: --------------------'),
+        print_provinces_(ProvincesRed),nl
+    ;   true
+    ),
+    (   ProvincesBlue \== []
+    ->  writeln('Blue provinces: -------------------'),
+        print_provinces_(ProvincesBlue),nl
+    ;   true
+    ).
 print_provinces_([]).
 print_provinces_([Province|T]):-
     province_money(Province, Money), % Get
@@ -112,3 +130,4 @@ pipe(Op, In, [H|T], Out):-
     call(Caller),
     % Perform the recursion preserving the output vars
     pipe(Op, Out1, T, Out).
+
