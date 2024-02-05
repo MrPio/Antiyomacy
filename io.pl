@@ -64,7 +64,7 @@ ask_purchase_res_(Province, ResName, Cancel):-
     ;   check_buy(Province, ResNameToCheck, _), !, % Check
         [ResName, Cancel] = [ResNameToCheck, false]
     ;   % The chosen hex does not belong to the province or contains no units
-        writeln('You don\'t have enough money. Please retry \'resource name\': '),
+        writeln('You don\'t have enough money. Please retry or press \'q\' to cancel: '),
         ask_purchase_res_(Province, ResName, Cancel)
     ).
 
@@ -82,7 +82,7 @@ ask_purchase_to_(Map, Province, ResName, Coord, Cancel):-
         ), !,
         [Coord, Cancel] = [CoordToCheck, false]
     ;   % The chosen hex does not belong to the province or contains no units
-        writeln('Please choose a valid destination \'X-Y\': '),
+        writeln('Please choose a valid destination \'X-Y\' or press \'q\' to cancel: '),
         ask_purchase_to_(Map, Province, ResName, Coord, Cancel)
     ).
 
@@ -111,7 +111,7 @@ ask_resource(ResName, Cancel):-
         atom_string(ResNameToCheck, ResNameStrLower),
         (building(ResNameToCheck, _, _, _); unit(ResNameToCheck, _, _, _, _))
     ->  [ResName, Cancel] = [ResNameToCheck, false]
-    ;   writeln('Please write a valid resource name: '),
+    ;   writeln('Please write a valid resource name or press \'q\' to cancel: '),
         ask_resource(ResName, Cancel)
     ).
 
@@ -127,6 +127,6 @@ ask_coordinates(Coord, Cancel) :-
         atom_number(XStr, X), atom_number(YStr, Y),
         inside_map([X, Y])
     ->  [Coord, Cancel] = [[X, Y], false]
-    ;   writeln('Please use the format \'X-Y\': '),
+    ;   writeln('Please use the format \'X-Y\' or press \'q\' to cancel: '),
         ask_coordinates(Coord, Cancel)
     ).

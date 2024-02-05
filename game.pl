@@ -17,7 +17,7 @@ ask_provinces_moves(board(Map, Provinces, HumanPlayer, _, Conquests), board(NewM
     ).
 
 % Asks the user for a move for a specific province
-% ask_province_move(+Map, +Provinces, +[RedConq, BlueConq], +Province, -NewMap, -NewProvinces, -[NewRedConq, NewBlueConq], -CurrentNumber, +TotHumanProvinces):-
+% ask_province_move(+Map, +Provinces, +[RedConq, BlueConq], +Province, -NewMap, -NewProvinces, -[NewRedConq, NewBlueConq]):-
 ask_province_move(Map, Provinces, [RedConq, BlueConq], Province, NewMap, NewProvinces, [NewRedConq, NewBlueConq]):-
     % Print province information
     print_provinces([Province]),
