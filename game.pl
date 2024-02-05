@@ -101,7 +101,7 @@ ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, Ne
     player_move(MoveChoice),
 
     % Based on the user's choice, ask for move information
-    (   MoveChoice == 1 % Code for Displace
+    (   MoveChoice == "1" % Code for Displace
     ->  writeln('Player chose Displace'),
         displace_input([X1,Y1], [X2,Y2]),
         get_hex(Map, [X1,Y1], HexWithUnit),
@@ -112,7 +112,11 @@ ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, Ne
         province_owner(HumanProvince, Player), % Get
         other_player(Player, Enemy), % Get
         % Check valid move
-        unit_placement(Map, HumanProvince, Unit, DestHex, NewUnitName),
+        (   unit_placement(Map, HumanProvince, Unit, DestHex, NewUnitName)
+        ->  true
+        ;   writeln('Invalid move, try again!'),
+            ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, NewProvinces, [NewRedConq, NewBlueConq], CurrentNumber, TotHumanProvinces)
+        ),
         % Update the conquest counts in the case of an invasion 
         (   hex_owner(DestHex, Enemy)
         ->  (   Player == red
@@ -125,18 +129,19 @@ ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, Ne
             NewBlueConq = BlueConq
         ),
         displace_unit(Map, Provinces, HumanProvince, HexWithUnit, DestHex, NewUnitName, NewMap, NewProvinces, _)
-    ; MoveChoice == 2 % Code for Purchase
+    ; MoveChoice == "2" % Code for Purchase
     ->  writeln('Player chose Purchase'),
         purchase_input(ResName,[X,Y]),
         % Get DestHex
         get_hex(Map, [X,Y], DestHex),
+        % Check if ResName is a building or a unit and check legit move
         is_building(ResName, IsBuilding),
-        (IsBuilding == 1 ->
-            % Check legal move
-            building_placement(Map, HumanProvince, ResName, DestHex)
-        ;   
-            % Check legal move
-            unit_placement(Map, HumanProvince, ResName, DestHex, NewUnitName) % Check & Get
+        (   (IsBuilding == 1, building_placement(Map, HumanProvince, ResName, DestHex))
+        ->  true
+        ;   (IsBuilding == 0, unit_placement(Map, HumanProvince, ResName, DestHex, NewUnitName)) % Check & Get
+        ->  true
+        ;   writeln('Invalid move, try again!'),
+            ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, NewProvinces, [NewRedConq, NewBlueConq], CurrentNumber, TotHumanProvinces)
         ),
         % Update the conquest counts in the case of an invasion 
         province_owner(HumanProvince, Player), % Get
@@ -152,12 +157,14 @@ ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, Ne
             NewBlueConq = BlueConq
         ),
         buy_and_place(Map, Provinces, HumanProvince, ResName, DestHex, NewMap, NewProvinces, _)
-    ; MoveChoice == 3 % Code for Skip turn
+    ; MoveChoice == "3" % Code for Skip turn
     ->  writeln('Player chose Skip move for this province'),
         NewMap = Map,
         NewProvinces = Provinces,
         [NewRedConq, NewBlueConq] = [RedConq, BlueConq]
-    ; writeln('Invalid choice')
+    ; 
+    writeln('Invalid choice, try again!'),
+    ask_province_move(Map, Provinces, [RedConq, BlueConq], HumanProvince, NewMap, NewProvinces, [NewRedConq, NewBlueConq], CurrentNumber, TotHumanProvinces)
     ).
 
 % Get one possible move for each province (❓non-deterministic❓)
@@ -264,10 +271,12 @@ play:-
     % find_provinces(MapWithProvinces, Provinces),
     test_map4(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted]),
     
-    % Choose the game mode and, if human wants to play, asks color of the human player
-    ask_game_mode(HumanPlayer),
+    % Choose the game mode and, if human wants to play, asks colour of the human player
+    ask_game_mode(HumanPlayer),nl,
     % Determine who will be the first player
-    random_member(FirstPlayer,[red, blue]),
+    writeln('Now choose which colour you want to play first'),nl,
+    ask_color(FirstPlayer),
+    format('First to play: ~w player', FirstPlayer),nl,
 
     game_loop(board(MapWithProvinces, [ProvinceRedSorted, ProvinceBlueSorted], FirstPlayer, play, [0, 0]), HumanPlayer).
 
