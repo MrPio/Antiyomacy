@@ -120,7 +120,7 @@ ask_resource(ResName, Cancel):-
 ask_coordinates(Coord, Cancel) :-
     read_line_to_string(user_input, CoordStr),
     string_lower(CoordStr,CoordStrLower),
-    (   member(CoordStrLower,["q","exit","quit","back","esc"])
+    (   member(CoordStrLower,["q","exit","quit","back","esc","stop"])
     ->  Cancel = true
     ;   % Converts input coordinates to atoms and validates them
         split_string(CoordStr, "-", "", [XStr, YStr]),

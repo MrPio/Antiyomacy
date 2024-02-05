@@ -20,7 +20,8 @@ get_income(Province, Income) :-
         hex_unit(Hex,UnitName),
         unit(UnitName, _, _, _, I)
     ), UnitIncomes) -> sumlist(UnitIncomes, TotalUnitIncome) ; TotalUnitIncome = 0),
-    Income is ProvinceSize + TotalBuildingIncome + TotalUnitIncome.
+    FullIncome is ProvinceSize + TotalBuildingIncome + TotalUnitIncome,
+    Income is round(FullIncome/2).
 
 % Moves ======================================================
 % Checks if a list of resources can be bought and returns the remaining money of the province

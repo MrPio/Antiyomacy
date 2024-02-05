@@ -138,7 +138,7 @@ apply_income(Map, Province, NewMap, NewProvince) :-
     province_money(Province, Money), % Get
     % Calculate the new money of the province
     get_income(Province, Income),
-    NewMoney is truncate(Money + Income/2),
+    NewMoney is Money + Income,
     % If the new money are negative...
     (   NewMoney < 0
         % ...go bankrupt by killing all units and setting the money

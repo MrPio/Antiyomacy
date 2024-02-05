@@ -173,21 +173,25 @@ play:-
     ;   % If the game mode is AI vs AI, there is no human player
         HumanPlayer = none
     ), 
-    game_loop(board(Map, Provinces, red, play, [0, 0]), HumanPlayer).
+    game_loop(board(Map, Provinces, red, play, [0, 0]), HumanPlayer, red).
 
-game_loop(Board, HumanPlayer) :-
+game_loop(Board, HumanPlayer, StartPlayer) :-
     board_player(Board, Player), % Get
     format('It is ~w turn: ===========================', Player), nl,
     
     % Depending on the playing player, the minimax searches for a move or the user is asked to commit their move
     (   Player == HumanPlayer 
     ->  % Loop through each province owned by the user
-        ask_provinces_moves(Board, NewBoard)
+        ask_provinces_moves(Board, NewBoardBeforeIncome)
     ;   % The cpu is playing, so the minimax will be used to choose a move
         get_time(StartTime), update_start_time(StartTime),
         minimax(Board, [-999999, 999999], 3, [NewBoardBeforeIncome, Val]),
-        format('Value = ~w', Val), nl,
-        % At the end of both players turn, apply the income on all the provinces
+        format('Value = ~w', Val), nl
+    ),
+    % At the end of both players turn, apply the income on all the provinces
+    (   Player == StartPlayer, !,
+        NewBoard = NewBoardBeforeIncome
+    ;   writeln('Applying income ========================='),
         board_map(NewBoardBeforeIncome, NewMapBeforeIncome), % Get
         board_provinces(NewBoardBeforeIncome, NewProvincesWithoutIncome), % Get    
         apply_incomes(NewMapBeforeIncome, NewProvincesWithoutIncome, NewMap, NewProvinces),
@@ -199,5 +203,5 @@ game_loop(Board, HumanPlayer) :-
     % Check if the playing player has won the game, if so, end the game
     (   board_state(NewBoard, win) % Check
     ->  format('~w won the game! ---------------------', Player),nl
-    ;   game_loop(NewBoard, HumanPlayer)
+    ;   game_loop(NewBoard, HumanPlayer, StartPlayer)
     ), !.
