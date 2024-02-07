@@ -66,7 +66,7 @@ print_provinces_([Province|T]):-
 % Print a map row with lateral coordinates
 print_map(Map) :- 
     \+ var(Map),
-    nl,write("    "),foreach(nth0(Index,Map,_),format(" ~w  ",Index)),nl,nl,
+    nl, write("    "),foreach(nth0(Index,Map,_), format(" ~w  ",Index)),nl,nl,
     foreach(nth0(Index, Map, Row),(format("~w  |",Index),print_row(Row))).
 
 % Print a map row following the pattern Owner-Building-Unit for each hex
