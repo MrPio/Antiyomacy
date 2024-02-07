@@ -1,7 +1,7 @@
 % :- module(gui, [draw_map/1]).
 :- use_module([map, hex, province, utils]).
 :- use_module(library(pce)).
-:- dynamic selected_unit/3.
+:- dynamic selected_unit/4.
 
 gui():-
     % map generation:
@@ -19,15 +19,14 @@ gui():-
     print_map(Map),
 
     % resources:
-    new(PeasantImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/peasant.gif')),
-    new(SpearmanImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/spearman.gif')),
-    new(BaronImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/baron.gif')),
-    new(KnightImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/knight.gif')),
-    new(CastleImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/castle1.gif')),
-    new(FarmImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/farm1.gif')),
-    new(TowerImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/tower1.gif')),
-    new(StrongTowerImage, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/strong_tower1.gif')),
-
+    new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
+    new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
+    new(BaronImage, image('resources/sprites/unit/baron.gif')),
+    new(KnightImage, image('resources/sprites/unit/knight.gif')),
+    new(CastleImage, image('resources/sprites/building/castle1.gif')),
+    new(FarmImage, image('resources/sprites/building/farm1.gif')),
+    new(TowerImage, image('resources/sprites/building/tower1.gif')),
+    new(StrongTowerImage, image('resources/sprites/building/strong_tower1.gif')),
     % parameters:
     MapSize = 7,
     HexSize = 100,
@@ -90,12 +89,12 @@ on_box_select(Box) :-
     % Get the position of the box
     get(Box, position, point(X, Y)),
     HexSize = 100,
-    XCoord is X // HexSize,
-    YCoord is Y // HexSize,
+    XCoord is Y // HexSize,
+    YCoord is X // HexSize,
     map(Map),
     get_hex(Map, [XCoord, YCoord], hex(_, _, _, Owner, _, Unit)),
     % Check if there is a selected unit
-    (   retract(selected_unit(SX, SY, SOwner)) ->
+    (   retract(selected_unit(SX, SY, SOwner, SBox)) ->
         % If there is a selected unit
         % Check if the selected box is of the same owner
         (   Owner = SOwner ->
@@ -104,12 +103,14 @@ on_box_select(Box) :-
         ;   % If he destination box is not of the same owner
             format('The destination box is not of the same owner.~n', []),
             % Memorize the selected unit for a new attempt
-            assertz(selected_unit(SX, SY, SOwner))
+            assertz(selected_unit(SX, SY, SOwner, SBox))
         ), 
         send(SBox, fill_pattern, colour(SOwner))
     ;   % If is the first click, memorize coordinates and owner of the selected unit
         (   Unit \= none ->  % Ensure there is a unit to select
-            assertz(selected_unit(XCoord, YCoord, Owner)),
+        assertz(selected_unit(XCoord, YCoord, Owner, Box)),
+            % Change the color of the selected box to yellow
+            send(Box, fill_pattern, colour(yellow)),
             format('Unit selected at (~w, ~w) owned by ~w~n', [XCoord, YCoord, Owner])
         ;   format('No unit selected.~n', [])
         )
