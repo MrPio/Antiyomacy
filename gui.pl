@@ -4,8 +4,17 @@
 
 gui():-
     % map generation:
-    generate_random_map(MapWithoutProvinces, false),
-    spawn_provinces(MapWithoutProvinces, Map),
+    generate_random_map(_, true),
+    % Manually populating the map
+    RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
+    BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
+    Buildings=[[2,2]-castle],
+    Units=[[0,0]-spearman],
+    foreach(member(Coord,RedHexes),set_owner(Coord,red)),
+    foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
+    foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
+    foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
+    map(Map),
     print_map(Map),
 
     % resources:
@@ -43,6 +52,26 @@ gui():-
         
         % Draw the unit
         % send(Finestra, display, bitmap(PeasantImage),point(GX,GY)),
+        (   Unit \= none -> 
+            (   Unit = peasant -> Image = PeasantImage
+            ;   Unit = spearman -> Image = SpearmanImage
+            ;   Unit = baron -> Image = BaronImage
+            ;   Unit = knight -> Image = KnightImage
+            ),
+            send(Finestra, display, bitmap(Image), point(GX+20,GY+20))
+        ;   true
+        ),
+
+        % Draw the building
+        (   Building \= none ->
+            (   Building = castle -> Image = CastleImage
+            ;   Building = farm -> Image = FarmImage
+            ;   Building = tower -> Image = TowerImage
+            ;   Building = strong_tower -> Image = StrongTowerImage
+            ),
+            send(Finestra, display, bitmap(Image), point(GX-15,GY-16))
+        ;   true
+        ),
 
         fail ; true
     ),
