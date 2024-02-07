@@ -8,8 +8,8 @@ gui():-
     % Manually populating the map
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
-    Buildings=[[2,2]-castle],
-    Units=[[0,0]-spearman],
+    Buildings=[[2,2]-strong_tower],
+    Units=[[0,0]-baron],
     foreach(member(Coord,RedHexes),set_owner(Coord,red)),
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
     foreach(member(Coord-Building,Buildings),set_building(Coord,Building)),
@@ -51,14 +51,17 @@ gui():-
         send(Finestra, display, M, point(GY,GX)),
         
         % Draw the unit
-        % send(Finestra, display, bitmap(PeasantImage),point(GX,GY)),
+        % send(Finestra, display, bitmap(PeasantImage),point(CenterX,CenterY)),
         (   Unit \= none -> 
             (   Unit = peasant -> Image = PeasantImage
             ;   Unit = spearman -> Image = SpearmanImage
             ;   Unit = baron -> Image = BaronImage
             ;   Unit = knight -> Image = KnightImage
             ),
-            send(Finestra, display, bitmap(Image), point(GX+20,GY+20))
+            get(Image, size, size(ImgWidth, ImgHeight)),
+            CenterX is GX + (HexSize - ImgWidth) / 2,
+            CenterY is GY + (HexSize - ImgHeight) / 2,
+            send(Finestra, display, bitmap(Image), point(CenterX, CenterY))
         ;   true
         ),
 
@@ -69,7 +72,10 @@ gui():-
             ;   Building = tower -> Image = TowerImage
             ;   Building = strong_tower -> Image = StrongTowerImage
             ),
-            send(Finestra, display, bitmap(Image), point(GX-15,GY-16))
+            get(Image, size, size(ImgWidth, ImgHeight)),
+            CenterX is GX + (HexSize - ImgWidth) / 2,
+            CenterY is GY + (HexSize - ImgHeight) / 2,
+            send(Finestra, display, bitmap(Image), point(CenterX, CenterY))
         ;   true
         ),
 
