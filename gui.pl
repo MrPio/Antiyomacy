@@ -8,7 +8,7 @@ gui():-
     % Manually populating the map
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
-    Buildings=[[2,2]-strong_tower],
+    Buildings=[[2,2]-farm],
     Units=[[0,0]-baron],
     foreach(member(Coord,RedHexes),set_owner(Coord,red)),
     foreach(member(Coord,BlueHexes),set_owner(Coord,blue)),
@@ -22,10 +22,10 @@ gui():-
     new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
     new(BaronImage, image('resources/sprites/unit/baron.gif')),
     new(KnightImage, image('resources/sprites/unit/knight.gif')),
-    new(CastleImage, image('resources/sprites/building/castle.gif')),
-    new(FarmImage, image('resources/sprites/building/farm.gif')),
-    new(TowerImage, image('resources/sprites/building/tower.gif')),
-    new(StrongTowerImage, image('resources/sprites/building/strong_tower.gif')),
+    new(CastleImage, image('resources/sprites/building/castle1.gif')),
+    new(FarmImage, image('resources/sprites/building/farm1.gif')),
+    new(TowerImage, image('resources/sprites/building/tower1.gif')),
+    new(StrongTowerImage, image('resources/sprites/building/strong_tower1.gif')),
 
     % parameters:
     MapSize = 7,
@@ -51,7 +51,7 @@ gui():-
         send(Finestra, display, M, point(GY,GX)),
         
         % Draw the unit
-        % send(Finestra, display, bitmap(PeasantImage),point(CenterX,CenterY)),
+        % send(Finestra, display, bitmap(Image),point(CenterX,CenterY)),
         (   Unit \= none -> 
             (   Unit = peasant -> Image = PeasantImage
             ;   Unit = spearman -> Image = SpearmanImage
