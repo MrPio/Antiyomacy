@@ -4,6 +4,7 @@
                 empty_map/1,
                 map_size/1,
                 map/1,
+                update_map/1,
                 inside_map/1,
                 get_hex/3,
                 check_tile/3,

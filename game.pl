@@ -180,8 +180,7 @@ play:-
         HumanPlayer = none
     ), 
 
-    % Initialize the gui
-    new(@window, picture('Antiyomacy')),
+    % TODO HERE: Initialize the gui
     game_loop(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0]), HumanPlayer, red).
 
 game_loop(Board, HumanPlayer, StartPlayer) :-
@@ -209,7 +208,7 @@ game_loop(Board, HumanPlayer, StartPlayer) :-
         change_board_provinces(NewBoardWithMap, NewProvinces, NewBoard)
     ),
     board_map(NewBoard, MapToPrint),
-    gui(MapToPrint),
+    % TODO HERE: gui(MapToPrint),
     print_board(NewBoard),
     % Check if the playing player has won the game, if so, end the game
     (   board_state(NewBoard, win) % Check

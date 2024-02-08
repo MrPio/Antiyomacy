@@ -52,6 +52,7 @@ hex_coord(hex(_,Coord,_,_,_,_), Coord).
 
 % Check/Get hex tile type
 % Note: Checker is expected to be a functor, so it is called with the meta-predicate call/2
+hex_tile(hex(_,_,Tile,_,_,_), Tile) :- !.
 hex_tile(hex(_,_,Tile,_,_,_), Checker) :- call(Checker,Tile).
 % Change an hex tile type
 change_hex_tile(hex(Index,Coord,_,Owner,Building,Unit),NewTile,hex(Index,Coord,NewTile,Owner,Building,Unit)).
