@@ -1,5 +1,6 @@
 :- module(game, [move/2, play/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
 :- use_module([test, utils, map, hex, province, unit, building, economy, eval, minimax, io, gui]).
+:- use_module(library(pce)).
 
 % Asks the user to choose a move for each of their provinces
 % ask_provinces_moves(+board(Map, Provinces, HumanPlayer, _, Conquests), -board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
@@ -178,6 +179,9 @@ play:-
     ;   % If the game mode is AI vs AI, there is no human player
         HumanPlayer = none
     ), 
+
+    % Initialize the gui
+    new(@window, picture('Antiyomacy')),
     game_loop(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0]), HumanPlayer, red).
 
 game_loop(Board, HumanPlayer, StartPlayer) :-

@@ -17,12 +17,12 @@ test_gui:-
     map(Map),
     print_map(Map),
 
-
+    new(@window, picture('Antiyomacy')),
     gui(Map).
 
 gui(Map):-
-    free(@window),
-
+    send(@window, clear),
+    
     % resources:
     new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
     new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
@@ -43,7 +43,6 @@ gui(Map):-
     HexSize = 100,
     TotalSize = MapSize* HexSize + HexSize,
 
-    new(@window, picture('Antiyomacy')),
     send(@window, size, size(TotalSize, TotalSize)),
     (   between(0, MapSize, X),
         between(0, MapSize, Y),
