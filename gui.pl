@@ -23,6 +23,8 @@ test_gui:-
     gui.
 
 init_gui:-
+    % TODO HERE
+    % new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
     free(@window),
     new(@window, picture('Antiyomacy')).
 
@@ -129,24 +131,25 @@ create_purchase_menu(MapHeight, HexSize):-
     BuildingActions = [
         farm-'/resources/sprites/building/farm.gif'-buy_farm,
         tower-'/resources/sprites/building/tower.gif'-buy_tower,
-        strongtower-'/resources/sprites/building/strong_tower.gif'-buy_strongtower,
-        castle-'/resources/sprites/building/castle.gif'-buy_castle
+        strongtower-'/resources/sprites/building/strong_tower.gif'-buy_strongtower
     ],
 
     % Create and display unit icons
-    findall(_, (
-        nth1(Index, UnitActions, Action-ImagePath-Callback),
-        X is (Index - 1) * IconSpacing,
-        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
-    ), _),
+    (   nth0(Index, UnitActions, Action-ImagePath-Callback),
+        X is Index * IconSpacing,
+        create_icon(@window, ImagePath, Callback, X, StartY, IconSize),
+        fail
+    ;   true
+    ),
 
     % Create and display building icons
     length(UnitActions, UnitCount),
-    findall(_, (
-        nth1(Index, BuildingActions, Action-ImagePath-Callback),
-        X is (UnitCount + Index - 1) * IconSpacing,
-        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
-    ), _).
+    (   nth0(Index, BuildingActions, Action-ImagePath-Callback),
+        X is (UnitCount + Index) * IconSpacing,
+        create_icon(@window, ImagePath, Callback, X, StartY, IconSize),
+        fail
+    ;   true
+    ).
 
 
 % Predicate to create an icon
