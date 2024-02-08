@@ -6,7 +6,7 @@
 
 test_gui:-
     % map generation:
-    generate_random_map(_, true),
+    generate_random_map(_, false),
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
     Buildings=[[2,2]-farm],
@@ -37,7 +37,7 @@ gui:-
         new(FarmImage, image('resources/sprites/building/farm.gif')),
         new(TowerImage, image('resources/sprites/building/tower.gif')),
         new(StrongTowerImage, image('resources/sprites/building/strong_tower.gif')),
-        new(SeaImage, image('resources/sprites/sea/idle_dark_small_2.gif')),
+        new(SeaImage, image('resources/sprites/sea/idle.gif')),
         new(FreeImage, image('resources/sprites/grass/grass.gif')),
         new(RedImage, image('resources/sprites/grass/grass_red.gif')),
         new(BlueImage, image('resources/sprites/grass/grass_blue.gif')),
@@ -66,7 +66,7 @@ gui:-
         GY is Y * HexSize,
         
         % Draw the tile
-        (   sea(Tile)
+        (   Tile == sea
         ->  TileImage=SeaImage
         ;   SelectedCoord == [X,Y]
         ->  TileImage=YellowImage
