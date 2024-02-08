@@ -24,19 +24,19 @@ gui(Map):-
     send(@window, clear),
     
     % resources:
-    new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
-    new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
-    new(BaronImage, image('resources/sprites/unit/baron.gif')),
-    new(KnightImage, image('resources/sprites/unit/knight.gif')),
-    new(CastleImage, image('resources/sprites/building/castle1.gif')),
-    new(FarmImage, image('resources/sprites/building/farm1.gif')),
-    new(TowerImage, image('resources/sprites/building/tower1.gif')),
-    new(StrongTowerImage, image('resources/sprites/building/strong_tower1.gif')),
-    new(SeaImage, image('resources/sprites/sea/idle_dark_small_2.gif')),
-    new(FreeImage, image('resources/sprites/grass/grass.gif')),
-    new(RedImage, image('resources/sprites/grass/grass_red.gif')),
-    new(BlueImage, image('resources/sprites/grass/grass_blue.gif')),
-    new(YellowImage, image('resources/sprites/grass/grass_yellow.gif')),
+    (   new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
+        new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
+        new(BaronImage, image('resources/sprites/unit/baron.gif')),
+        new(KnightImage, image('resources/sprites/unit/knight.gif')),
+        new(FarmImage, image('resources/sprites/building/farm.gif')),
+        new(TowerImage, image('resources/sprites/building/tower.gif')),
+        new(StrongTowerImage, image('resources/sprites/building/strong_tower.gif')),
+        new(SeaImage, image('resources/sprites/sea/idle.gif')),
+        new(FreeImage, image('resources/sprites/grass/grass.gif')),
+        new(RedImage, image('resources/sprites/grass/grass_red.gif')),
+        new(BlueImage, image('resources/sprites/grass/grass_blue.gif')),
+        new(YellowImage, image('resources/sprites/grass/grass_yellow.gif'))
+    ),
 
     % parameters:
     MapSize = 7,
@@ -105,7 +105,80 @@ gui(Map):-
         fail ; true
     ),
     send(@window, open),
+    MapHeight = 7 * 100,
+    create_purchase_menu(MapHeight, 100),
     true.
+
+
+% Predicate to create the purchase menu
+create_purchase_menu(MapHeight, HexSize):-
+    MenuHeight = 100, % Height of the menu
+    TotalWidth = 7 * HexSize, % map of 7 hexagons width
+    StartY is MapHeight + HexSize / 2, % Position below the map
+    IconSpacing = 100, % Spacing between icons
+    IconSize = 100, % Standard size for icons in the menu
+
+    % List of units with respective actions
+    UnitActions = [
+        peasant-'/resources/sprites/unit/peasant.gif'-buy_peasant,
+        spearman-'/resources/sprites/unit/spearman.gif'-buy_spearman,
+        knight-'/resources/sprites/unit/knight.gif'-buy_knight,
+        baron-'/resources/sprites/unit/baron.gif'-buy_baron
+    ],
+
+    % List of buildings with respective actions
+    BuildingActions = [
+        farm-'/resources/sprites/building/farm.gif'-buy_farm,
+        tower-'/resources/sprites/building/tower.gif'-buy_tower,
+        strongtower-'/resources/sprites/building/strong_tower.gif'-buy_strongtower,
+        castle-'/resources/sprites/building/castle.gif'-buy_castle
+    ],
+
+    % Create and display unit icons
+    findall(_, (
+        nth1(Index, UnitActions, Action-ImagePath-Callback),
+        X is (Index - 1) * IconSpacing,
+        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
+    ), _),
+
+    % Create and display building icons
+    length(UnitActions, UnitCount),
+    findall(_, (
+        nth1(Index, BuildingActions, Action-ImagePath-Callback),
+        X is (UnitCount + Index - 1) * IconSpacing,
+        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
+    ), _).
+
+
+% Predicate to create an icon
+create_icon(Window, ImagePath, Action, BaseX, BaseY, IconSize):-
+    new(Icon, bitmap(ImagePath)),
+    get(Icon, size, size(ImgWidth, ImgHeight)),
+    % Calculate center based on icon size
+    CenterX is BaseX + (IconSize - ImgWidth) / 2,
+    CenterY is BaseY + (IconSize - ImgHeight) / 2,
+    send(Window, display, Icon, point(CenterX, CenterY)),
+    send(Icon, recogniser,
+         click_gesture(left, '', single,
+                       message(@prolog, Action))).
+
+
+skip_turn_action:-
+    % Implementa l'azione desiderata per "Skip Turn"
+    format('Turn Skipped...').
+
+% Actions for buy units TODO
+buy_peasant:- format('Peasant bought.~n').
+buy_spearman:- format('Spearman bought.~n').
+buy_knight:- format('Knight bought.~n').
+buy_baron:- format('Baron bought.~n').
+
+% Actions for buy buildings TODO
+buy_farm:- format('Farm bought.~n').
+buy_tower:- format('Tower bought.~n').
+buy_strongtower:- format('Strong tower bought.~n').
+buy_castle:- format('Castle bought.~n').
+
     
 
 on_box_select(Box) :-
