@@ -1,12 +1,11 @@
-% :- module(gui, [draw_map/1]).
+:- module(gui, [gui/1]).
 :- use_module([map, hex, province, utils]).
 :- use_module(library(pce)).
 :- dynamic selected_unit/4.
 
-gui():-
+test_gui:-
     % map generation:
-    generate_random_map(_, true),
-    % Manually populating the map
+    generate_random_map(_, false),
     RedHexes=[[0,0],[1,0],[1,1],[1,2],[0,2]],
     BlueHexes=[[2,2],[3,2],[3,3],[3,4],[4,3]],
     Buildings=[[2,2]-farm],
@@ -18,6 +17,12 @@ gui():-
     map(Map),
     print_map(Map),
 
+
+    gui(Map).
+
+gui(Map):-
+    free(@window),
+
     % resources:
     new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
     new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
@@ -27,31 +32,50 @@ gui():-
     new(FarmImage, image('resources/sprites/building/farm1.gif')),
     new(TowerImage, image('resources/sprites/building/tower1.gif')),
     new(StrongTowerImage, image('resources/sprites/building/strong_tower1.gif')),
+    new(SeaImage, image('resources/sprites/sea/idle_dark_small_2.gif')),
+    new(FreeImage, image('resources/sprites/grass/grass.gif')),
+    new(RedImage, image('resources/sprites/grass/grass_red.gif')),
+    new(BlueImage, image('resources/sprites/grass/grass_blue.gif')),
+    new(YellowImage, image('resources/sprites/grass/grass_yellow.gif')),
+
     % parameters:
     MapSize = 7,
     HexSize = 100,
     TotalSize = MapSize* HexSize + HexSize,
 
-    new(Finestra, picture('Antiyomacy')),
-    send(Finestra, size, size(TotalSize, TotalSize)),
+    new(@window, picture('Antiyomacy')),
+    send(@window, size, size(TotalSize, TotalSize)),
     (   between(0, MapSize, X),
         between(0, MapSize, Y),
         get_hex(Map, [X, Y], hex(_, _, Tile, Owner, Building, Unit)),
-
-        (   sea(Tile)->Color=black
-        ;   nth0(PlayerIndex, [red, blue, none], Owner), nth0(PlayerIndex, [red, blue, grey], Color)
-        ), 
-
-        % Draw the hex
         GX is X * HexSize,
         GY is Y * HexSize,
-        new(M, box(HexSize,HexSize)),
-        send(M, fill_pattern, colour(Color)),
-        send(M, recogniser, click_gesture(left, '', single, message(@prolog, on_box_select, M))),
-        send(Finestra, display, M, point(GY,GX)),
-        
+        (   sea(Tile)
+        ->  % Draw sea tile
+            get(SeaImage, size, size(ImgWidth, ImgHeight)),
+            CenterX is GX + (HexSize - ImgWidth) / 2,
+            CenterY is GY + (HexSize - ImgHeight) / 2,
+            send(@window, display, bitmap(SeaImage), point(CenterY, CenterX))
+        ;   % Draw grass tile
+
+            % Todo, use the following to draw the grass tiles, instead of box
+            nth0(PlayerIndex, [red, blue, none], Owner), nth0(PlayerIndex, [RedImage, BlueImage, FreeImage], Image),
+            get(Image, size, size(ImgWidth, ImgHeight)),
+            CenterX is GX + (HexSize - ImgWidth) / 2,
+            CenterY is GY + (HexSize - ImgHeight) / 2,
+            new(GrassBitmap, bitmap(Image)),
+            send(GrassBitmap, recogniser, click_gesture(left, '', single, message(@prolog, on_box_select, GrassBitmap))),
+            send(@window, display, GrassBitmap, point(CenterY, CenterX))
+
+            % nth0(PlayerIndex, [red, blue, none], Owner), nth0(PlayerIndex, [red, blue, grey], Color),
+            % new(M, box(HexSize,HexSize)),
+            % send(M, fill_pattern, colour(Color)),
+            % send(M, recogniser, click_gesture(left, '', single, message(@prolog, on_box_select, M))),
+            % send(@window, display, M, point(GY,GX))
+        ), 
+
         % Draw the unit
-        % send(Finestra, display, bitmap(Image),point(CenterX,CenterY)),
+        % send(@window, display, bitmap(Image),point(CenterX,CenterY)),
         (   Unit \= none -> 
             (   Unit = peasant -> Image = PeasantImage
             ;   Unit = spearman -> Image = SpearmanImage
@@ -61,7 +85,7 @@ gui():-
             get(Image, size, size(ImgWidth, ImgHeight)),
             CenterX is GX + (HexSize - ImgWidth) / 2,
             CenterY is GY + (HexSize - ImgHeight) / 2,
-            send(Finestra, display, bitmap(Image), point(CenterX, CenterY))
+            send(@window, display, bitmap(Image), point(CenterY, CenterX))
         ;   true
         ),
 
@@ -75,13 +99,13 @@ gui():-
             get(Image, size, size(ImgWidth, ImgHeight)),
             CenterX is GX + (HexSize - ImgWidth) / 2,
             CenterY is GY + (HexSize - ImgHeight) / 2,
-            send(Finestra, display, bitmap(Image), point(CenterX, CenterY))
+            send(@window, display, bitmap(Image), point(CenterY, CenterX ))
         ;   true
         ),
 
         fail ; true
     ),
-    send(Finestra, open),
+    send(@window, open),
     true.
     
 
