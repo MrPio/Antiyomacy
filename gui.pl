@@ -26,7 +26,16 @@ init_gui:-
     % TODO HERE
     % new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
     free(@window),
+    new(@peasant_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/peasant.gif')),
+    new(@spearman_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/spearman.gif')),
+    new(@baron_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/baron.gif')),
+    new(@knight_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/knight.gif')),
+    new(@farm_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/farm.gif')),
+    new(@tower_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/tower.gif')),
+    new(@strongTower_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/strong_tower.gif')),
+    new(@skipTurn_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/skip/skipturn.gif')),
     new(@window, picture('Antiyomacy')).
+
 
 gui:-
     map(Map),
@@ -118,25 +127,17 @@ create_purchase_menu(MapHeight, HexSize):-
     StartY is MapHeight + HexSize / 2, % Position below the map
     IconSpacing = 100, % Spacing between icons
     IconSize = 100, % Standard size for icons in the menu
-    new(PeasantImage, image('/resources/sprites/unit/peasant.gif')),
-    new(SpearmanImage, image('/resources/sprites/unit/spearman.gif')),
-    new(BaronImage, image('C:/resources/sprites/unit/baron.gif')),
-    new(KnightImage, image('/resources/sprites/unit/knight.gif')),
-    new(FarmImage, image('/resources/sprites/building/farm.gif')),
-    new(TowerImage, image('/resources/sprites/building/tower.gif')),
-    new(StrongTowerImage, image('/resources/sprites/building/strong_tower.gif')),
-    new(SkipTurnImage, image('/resources/sprites/skip/skipturn.gif')),
 
     % List of units with respective actions
     ImageActions = [
-        peasant-PeasantImage-buy_peasant,
-        spearman-SpearmanImage-buy_spearman,
-        knight-KnightImage-buy_knight,
-        baron-BaronImage-buy_baron,
-        farm-FarmImage-buy_farm,
-        tower-TowerImage-buy_tower,
-        strongtower-StrongTowerImage-buy_strongtower,
-        skipturn-SkipTurnImage-skip_turn_action
+        peasant-(@peasant_sprite)-buy_peasant,
+        spearman-(@spearman_sprite)-buy_spearman,
+        knight-(@knight_sprite)-buy_knight,
+        baron-(@baron_sprite)-buy_baron,
+        farm-(@farm_sprite)-buy_farm,
+        tower-(@tower_sprite)-buy_tower,
+        strongtower-(@strongTower_sprite)-buy_strongtower,
+        skipturn-(@skipTurn_sprite)-skip_turn_action
     ],
 
     % Create and display unit icons
@@ -146,6 +147,19 @@ create_purchase_menu(MapHeight, HexSize):-
         fail
     ;   true
     ).
+
+  
+% Predicate to create an icon
+create_icon(Window, Image, Action, BaseX, BaseY, IconSize):-
+    new(Icon, bitmap(Image)),
+    get(Icon, size, size(ImgWidth, ImgHeight)),
+    % Calculate center based on icon size
+    CenterX is BaseX + (IconSize - ImgWidth) / 2,
+    CenterY is BaseY + (IconSize - ImgHeight) / 2,
+    send(Window, display, Icon, point(CenterX, CenterY)),
+    send(Icon, recogniser,
+         click_gesture(left, '', single,
+                       message(@prolog, Action))).
 
   
 % Predicate to create an icon
