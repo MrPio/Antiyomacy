@@ -1,7 +1,7 @@
 :- module(gui, [gui/0]).
 :- use_module([map, hex, province, utils]).
 :- use_module(library(pce)).
-:- dynamic([selected_hex/1, selected_unit/4]).
+:- dynamic([selected_item/1, selected_hex/1, selected_unit/4]).
 
 
 test_gui:-
@@ -39,6 +39,7 @@ init_gui:-
 gui:-
     map(Map),
     send(@window, clear),
+    % resources:
     % resources:
     (   new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
         new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
@@ -180,7 +181,10 @@ skip_turn_action:-
     writeln('Turn Skipped...').
 
 % Actions for buy units TODO
-buy_peasant:- format('Peasant bought.~n').
+buy_peasant:-
+    assertz(selected_item(peasant)),
+    format('Peasant selected for placement.~n').
+
 buy_spearman:- format('Spearman bought.~n').
 buy_knight:- format('Knight bought.~n').
 buy_baron:- format('Baron bought.~n').
@@ -192,11 +196,18 @@ buy_strongtower:- format('Strong tower bought.~n').
 
 
     
-on_hex_select(X,Y) :-
-    map(Map),
-    get_hex(Map, [X,Y], Hex),
-    assert(selected_hex(Hex)),
-    gui.
+on_hex_select(X, Y) :-
+    % Check if the user has selected a unit or building to buy
+    (   retract(selected_item(Type))
+    ->  % If yes, place the selected object
+        % TODO buy and place
+        format('Placed ~w at (~w, ~w).~n', [Type, X, Y])
+    ;   % If not, original selection logic
+        map(Map),
+        get_hex(Map, [X, Y], Hex),
+        assert(selected_hex(Hex)),
+        gui  
+    ).
 
 on_box_select(Box) :-
     % Get the position of the box
@@ -221,7 +232,7 @@ on_box_select(Box) :-
         send(SBox, fill_pattern, colour(SOwner))
     ;   % If is the first click, memorize coordinates and owner of the selected unit
         (   Unit \= none ->  % Ensure there is a unit to select
-        assertz(selected_unit(XCoord, YCoord, Owner, Box)),
+            assertz(selected_unit(XCoord, YCoord, Owner, Box)),
             % Change the color of the selected box to yellow
             send(Box, fill_pattern, colour(yellow)),
             format('Unit selected at (~w, ~w) owned by ~w~n', [XCoord, YCoord, Owner])
