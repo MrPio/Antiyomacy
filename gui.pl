@@ -18,23 +18,22 @@ test_gui:-
     map(Map),
     print_map(Map),
     init_gui,
-    
-    % send(@window, kind, popup),
     gui.
 
 init_gui:-
     % TODO HERE
-    % new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
+    new(@frame_peasant, image('resources/sprites/frame/peasant.gif')),
+    new(@frame_spearman, image('resources/sprites/frame/spearman.gif')),
+    new(@frame_baron, image('resources/sprites/frame/baron.gif')),
+    new(@frame_knight, image('resources/sprites/frame/knight.gif')),
+    new(@frame_farm, image('resources/sprites/frame/farm.gif')),
+    new(@frame_tower, image('resources/sprites/frame/tower.gif')),
+    new(@frame_strong_tower, image('resources/sprites/frame/strong_tower.gif')),
+    new(@skip_turn, image('resources/sprites/skip/skipturn_white.gif')),
     free(@window),
-    new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
-    new(@spearman_sprite, image('resources/sprites/unit/spearman.gif')),
-    new(@baron_sprite, image('resources/sprites/unit/baron.gif')),
-    new(@knight_sprite, image('/resources/sprites/unit/knight.gif')),
-    new(@farm_sprite, image('resources/sprites/building/farm.gif')),
-    new(@tower_sprite, image('resources/sprites/building/tower.gif')),
-    new(@strongtower_sprite, image('resources/sprites/building/strong_tower.gif')),
-    new(@skipturn_sprite, image('resources/sprites/skip/skipturn.gif')),
-    new(@window, picture('Antiyomacy')).
+    new(@window, window('Antiyomacy')),
+    send(@window, background, black).
+    % send(@window, kind, popup).
 
 
 gui:-
@@ -58,9 +57,10 @@ gui:-
     % parameters:
     MapSize = 7,
     HexSize = 100,
-    TotalSize = MapSize* HexSize + HexSize,
+    TotalSizeX = MapSize* HexSize + HexSize,
+    TotalSizeY = MapSize* HexSize + 2*HexSize,
 
-    send(@window, size, size(TotalSize, TotalSize)),
+    send(@window, size, size(TotalSizeX, TotalSizeY)),
     (   % Check if there is any selected hex
         (   retract(selected_hex(SelectedHex))
         ->  hex_coord(SelectedHex, SelectedCoord)
@@ -114,30 +114,29 @@ gui:-
 
         fail ; true
     ),
-    send(@window, open),
+    send(@window, open_centered),
     MapHeight = 7 * 100,
-    create_purchase_menu(MapHeight, 100),
-    true.
+    create_purchase_menu(MapHeight, 100).
 
 
 % Predicate to create the purchase menu
 create_purchase_menu(MapHeight, HexSize):-
     MenuHeight = 100, % Height of the menu
     TotalWidth = 7 * HexSize, % map of 7 hexagons width
-    StartY is MapHeight + HexSize / 2, % Position below the map
+    StartY is MapHeight + HexSize, % Position below the map
     IconSpacing = 100, % Spacing between icons
     IconSize = 100, % Standard size for icons in the menu
 
     % List of units with respective actions
     ImageActions = [
-        peasant-(@peasant_sprite)-buy_peasant,
-        spearman-(@spearman_sprite)-buy_spearman,
-        knight-(@knight_sprite)-buy_knight,
-        baron-(@baron_sprite)-buy_baron,
-        farm-(@farm_sprite)-buy_farm,
-        tower-(@tower_sprite)-buy_tower,
-        strongtower-(@strongtower_sprite)-buy_strongtower,
-        skipturn-(@skipturn_sprite)-skip_turn_action
+        peasant-(@frame_peasant)-buy_peasant,
+        spearman-(@frame_spearman)-buy_spearman,
+        knight-(@frame_knight)-buy_knight,
+        baron-(@frame_baron)-buy_baron,
+        farm-(@frame_farm)-buy_farm,
+        tower-(@frame_tower)-buy_tower,
+        strongtower-(@frame_strong_tower)-buy_strongtower,
+        skipturn-(@skip_turn)-skip_turn_action
     ],
 
     % Create and display unit icons
