@@ -187,25 +187,25 @@ buy_peasant:-
 
 buy_spearman:- 
     assertz(selected_item(spearman)),
-    format('Spearman bought.~n').
+    format('Spearman selected for placement.~n').
 
 buy_knight:- 
     assertz(selected_item(knight)),
-    format('Knight bought.~n').
+    format('Knight selected for placement.~n').
 buy_baron:- 
     assertz(selected_item(baron)),
-    format('Baron bought.~n').
+    format('Baron selected for placement.~n').
 
 % Actions for buy buildings 
 buy_farm:- 
     assertz(selected_item(farm)),
-    format('Farm bought.~n').
+    format('Farm selected for placement.~n').
 buy_tower:- 
     assertz(selected_item(tower)),
-    format('Tower bought.~n').
+    format('Tower selected for placement.~n').
 buy_strongtower:- 
     assertz(selected_item(strong_tower)),
-    format('Strong tower bought.~n').
+    format('Strong tower selected for placement.~n').
 
 
     
