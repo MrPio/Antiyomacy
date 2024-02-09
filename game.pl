@@ -207,7 +207,7 @@ game_loop(Board, HumanPlayer, StartPlayer) :-
         change_board_map(NewBoardBeforeIncome, NewMap, NewBoardWithMap),
         change_board_provinces(NewBoardWithMap, NewProvinces, NewBoard)
     ),
-    board_map(NewBoard, MapToPrint),
+    % board_map(NewBoard, MapToPrint),
     % TODO HERE: gui(MapToPrint),
     print_board(NewBoard),
     % Check if the playing player has won the game, if so, end the game

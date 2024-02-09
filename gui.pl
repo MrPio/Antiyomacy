@@ -1,9 +1,18 @@
-:- module(gui, [gui/0]).
+:- module(gui, [update_gui/0]).
 :- use_module([map, hex, province, utils]).
 :- use_module(library(pce)).
-:- dynamic([selected_item/1, selected_hex/1, selected_unit/4]).
+:- dynamic([selected_item/1, selected_tile/1]).
 
-
+tile_size(TileSize):-
+    map_size(MapSize),
+    get(@display, size, size(_ScreenWidth, ScreenHeight)),
+    TruncatedHeight is (ScreenHeight//100)*100,
+    TileSize is min(100, TruncatedHeight/(MapSize + 1)).
+window_size([WindowWidth, WindowHeight]):- 
+    map_size(MapSize),
+    tile_size(TileSize),
+    WindowWidth is (MapSize) * TileSize,
+    WindowHeight is (MapSize + 1) * TileSize.
 test_gui:-
     % map generation:
     generate_random_map(_, false),
@@ -17,11 +26,28 @@ test_gui:-
     foreach(member(Coord-Unit,Units),set_unit(Coord,Unit)),
     map(Map),
     print_map(Map),
+    % update_gui initialization:
     init_gui,
-    gui.
+    update_gui.
 
+% Initialize the gui by instantiating the needed resources
 init_gui:-
-    % TODO HERE
+    % Store the unit images:
+    new(@peasant, image('resources/sprites/unit/peasant.gif')),
+    new(@spearman, image('resources/sprites/unit/spearman.gif')),
+    new(@baron, image('resources/sprites/unit/baron.gif')),
+    new(@knight, image('resources/sprites/unit/knight.gif')),
+    % Store the building images:
+    new(@farm, image('resources/sprites/building/farm.gif')),
+    new(@tower, image('resources/sprites/building/tower.gif')),
+    new(@strong_tower, image('resources/sprites/building/strong_tower.gif')),
+    % Store the tile images:
+    new(@tile_sea, image('resources/sprites/sea/idle.gif')),
+    new(@tile_free, image('resources/sprites/grass/grass.gif')),
+    new(@tile_red, image('resources/sprites/grass/grass_red.gif')),
+    new(@tile_blue, image('resources/sprites/grass/grass_blue.gif')),
+    new(@tile_selected, image('resources/sprites/grass/grass_yellow.gif')),
+    % Store the shop menu images:
     new(@frame_peasant, image('resources/sprites/frame/peasant.gif')),
     new(@frame_spearman, image('resources/sprites/frame/spearman.gif')),
     new(@frame_baron, image('resources/sprites/frame/baron.gif')),
@@ -30,227 +56,100 @@ init_gui:-
     new(@frame_tower, image('resources/sprites/frame/tower.gif')),
     new(@frame_strong_tower, image('resources/sprites/frame/strong_tower.gif')),
     new(@skip_turn, image('resources/sprites/skip/skipturn_white.gif')),
+    % Create the window
     free(@window),
     new(@window, window('Antiyomacy')),
-    send(@window, background, black).
+    send(@window, background, black)
     % send(@window, kind, popup).
+    .
 
 
-gui:-
-    map(Map),
+% Retrive the stored map and redraw the window accordingly
+update_gui:-
     send(@window, clear),
-    % resources:
-    % resources:
-    (   new(PeasantImage, image('resources/sprites/unit/peasant.gif')),
-        new(SpearmanImage, image('resources/sprites/unit/spearman.gif')),
-        new(BaronImage, image('resources/sprites/unit/baron.gif')),
-        new(KnightImage, image('resources/sprites/unit/knight.gif')),
-        new(FarmImage, image('resources/sprites/building/farm.gif')),
-        new(TowerImage, image('resources/sprites/building/tower.gif')),
-        new(StrongTowerImage, image('resources/sprites/building/strong_tower.gif')),
-        new(SeaImage, image('resources/sprites/sea/idle.gif')),
-        new(FreeImage, image('resources/sprites/grass/grass.gif')),
-        new(RedImage, image('resources/sprites/grass/grass_red.gif')),
-        new(BlueImage, image('resources/sprites/grass/grass_blue.gif')),
-        new(YellowImage, image('resources/sprites/grass/grass_yellow.gif'))
-    ),
-
-    % parameters:
-    MapSize = 7,
-    HexSize = 100,
-    TotalSizeX = MapSize* HexSize + HexSize,
-    TotalSizeY = MapSize* HexSize + 2*HexSize,
-
-    send(@window, size, size(TotalSizeX, TotalSizeY)),
+    map(Map), map_size(MapSize), % Get
+    window_size([WindowWidth, WindowHeight]), % Get
+    send(@window, size, size(WindowWidth, WindowHeight)),
+    % Draw map grid =========================================================
     (   % Check if there is any selected hex
-        (   retract(selected_hex(SelectedHex))
+        (   retract(selected_tile(SelectedHex))
         ->  hex_coord(SelectedHex, SelectedCoord)
         ;   true
         ),
-        between(0, MapSize, X),
-        between(0, MapSize, Y),
-        get_hex(Map, [X, Y], Hex),
-        hex_tile(Hex, Tile), % Get
-        hex_owner(Hex, Owner), % Get
-        hex_unit(Hex, Unit), % Get
-        hex_building(Hex, Building), % Get
-        GX is X * HexSize,
-        GY is Y * HexSize,
+        % Loop through the map cells  ---------------------------
+        between(0, MapSize, Y), between(0, MapSize, X),
+        get_hex(Map, [X, Y], hex(_Index, _Coord, Tile, Owner, Building, Unit)),
         
         % Draw the tile
         (   Tile == sea
-        ->  TileImage=SeaImage
+        ->  TileImage = @tile_sea
         ;   SelectedCoord == [X,Y]
-        ->  TileImage=YellowImage
+        ->  TileImage = @tile_selected
         ;   nth0(PlayerIndex, [red, blue, none], Owner), 
-            nth0(PlayerIndex, [RedImage, BlueImage, FreeImage], TileImage)
-        ), 
-        get(TileImage, size, size(TileWidth, TileHeight)),
-        TileX is GX + (HexSize - TileWidth) / 2,
-        TileY is GY + (HexSize - TileHeight) / 2,
-        new(GrassBitmap, bitmap(TileImage)),
-        send(GrassBitmap, recogniser, click_gesture(left, '', single, message(@prolog, on_hex_select, X, Y))),
-        send(@window, display, GrassBitmap, point(TileY, TileX)),
+            nth0(PlayerIndex, [@tile_red, @tile_blue, @tile_free], TileImage)
+        ),
+        display_image(TileImage, [X, Y], on_tile_click(X,Y)),
         % Draw the unit if present
         (   Unit == none
         ->  true
         ;   nth0(UnitIndex, [peasant, spearman, baron, knight], Unit), 
-            nth0(UnitIndex, [PeasantImage, SpearmanImage, BaronImage, KnightImage], UnitImage),
-            get(UnitImage, size, size(UnitWidth, UnitHeight)),
-            UnitX is GX + (HexSize - UnitWidth) / 2,
-            UnitY is GY + (HexSize - UnitHeight) / 2,
-            send(@window, display, bitmap(UnitImage), point(UnitY, UnitX))
+            nth0(UnitIndex, [@peasant, @spearman, @baron, @knight], UnitImage),
+            display_image(UnitImage, [X, Y], @null)
         ),
-
         % Draw the building if present
         (   Building == none
         ->  true
         ;   nth0(BuildingIndex, [farm, tower, strong_tower], Building), 
-            nth0(BuildingIndex, [FarmImage, TowerImage, StrongTowerImage], BuildingImage),
-            get(BuildingImage, size, size(BuildingWidth, BuildingHeight)),
-            BuildingX is GX + (HexSize - BuildingWidth) / 2,
-            BuildingY is GY + (HexSize - BuildingHeight) / 2,
-            send(@window, display, bitmap(BuildingImage), point(BuildingY, BuildingX))
+            nth0(BuildingIndex, [@farm, @tower, @strong_tower], BuildingImage),
+            display_image(BuildingImage, [X, Y], @null)
         ),
-
         fail ; true
     ),
-    send(@window, open_centered),
-    MapHeight = 7 * 100,
-    create_purchase_menu(MapHeight, 100).
+    % Draw the bottom menu ==================================================
+    (    Frames = [
+            peasant-(@frame_peasant),
+            spearman-(@frame_spearman),
+            knight-(@frame_knight),
+            baron-(@frame_baron),
+            farm-(@frame_farm),
+            tower-(@frame_tower),
+            strong_tower-(@frame_strong_tower),
+            skipturn-(@skip_turn)
+        ],
+        % Create and display unit icons
+        (   nth0(Index, Frames, _Resource-FrameImage),
+            display_image(FrameImage, [Index, MapSize], @null),
+            fail; true
+        )
+    ),
+    send(@window, open).
 
+% Display a given image on a given coordinate and assign a left click callback if requested
+% display_image(+Image, +Coord, +LeftClickMessage)
+display_image(Image, [X, Y], LeftClickMessage) :-
+    tile_size(TileSize),
+    get(Image, size, size(Width, Height)),
+    PosX is (X * TileSize) + (TileSize - Width ) / 2,
+    PosY is (Y * TileSize) + (TileSize - Height) / 2,
+    new(Bitmap, bitmap(Image)),
+    (   LeftClickMessage == @null, !
+    ;   LeftClickMessage =.. [Functor| Args],
+        MessageCallback =.. [message, @prolog, Functor | Args],
+        send(Bitmap, recogniser, click_gesture(left, '', single, MessageCallback))
+    ),
+    send(@window, display, Bitmap, point(PosX, PosY)).
 
-% Predicate to create the purchase menu
-create_purchase_menu(MapHeight, HexSize):-
-    MenuHeight = 100, % Height of the menu
-    TotalWidth = 7 * HexSize, % map of 7 hexagons width
-    StartY is MapHeight + HexSize, % Position below the map
-    IconSpacing = 100, % Spacing between icons
-    IconSize = 100, % Standard size for icons in the menu
-
-    % List of units with respective actions
-    ImageActions = [
-        peasant-(@frame_peasant)-buy_peasant,
-        spearman-(@frame_spearman)-buy_spearman,
-        knight-(@frame_knight)-buy_knight,
-        baron-(@frame_baron)-buy_baron,
-        farm-(@frame_farm)-buy_farm,
-        tower-(@frame_tower)-buy_tower,
-        strongtower-(@frame_strong_tower)-buy_strongtower,
-        skipturn-(@skip_turn)-skip_turn_action
-    ],
-
-    % Create and display unit icons
-    (   nth0(Index, ImageActions, Action-Image-Callback),
-        X is Index * IconSpacing,
-        create_icon(@window, Image, Callback, X, StartY, IconSize),
-        fail
-    ;   true
-    ).
-
-  
-% Predicate to create an icon
-create_icon(Window, Image, Action, BaseX, BaseY, IconSize):-
-    new(Icon, bitmap(Image)),
-    get(Icon, size, size(ImgWidth, ImgHeight)),
-    % Calculate center based on icon size
-    CenterX is BaseX + (IconSize - ImgWidth) / 2,
-    CenterY is BaseY + (IconSize - ImgHeight) / 2,
-    send(Window, display, Icon, point(CenterX, CenterY)),
-    send(Icon, recogniser,
-         click_gesture(left, '', single,
-                       message(@prolog, Action))).
-
-  
-% Predicate to create an icon
-create_icon(Window, Image, Action, BaseX, BaseY, IconSize):-
-    new(Icon, bitmap(Image)),
-    get(Icon, size, size(ImgWidth, ImgHeight)),
-    % Calculate center based on icon size
-    CenterX is BaseX + (IconSize - ImgWidth) / 2,
-    CenterY is BaseY + (IconSize - ImgHeight) / 2,
-    send(Window, display, Icon, point(CenterX, CenterY)),
-    send(Icon, recogniser,
-         click_gesture(left, '', single,
-                       message(@prolog, Action))).
-
-
-
-skip_turn_action:-
-    % to do
-    writeln('Turn Skipped...').
-
-% Actions for buy units 
-buy_peasant:-
-    assertz(selected_item(peasant)),
-    format('Peasant selected for placement.~n').
-
-buy_spearman:- 
-    assertz(selected_item(spearman)),
-    format('Spearman selected for placement.~n').
-
-buy_knight:- 
-    assertz(selected_item(knight)),
-    format('Knight selected for placement.~n').
-buy_baron:- 
-    assertz(selected_item(baron)),
-    format('Baron selected for placement.~n').
-
-% Actions for buy buildings 
-buy_farm:- 
-    assertz(selected_item(farm)),
-    format('Farm selected for placement.~n').
-buy_tower:- 
-    assertz(selected_item(tower)),
-    format('Tower selected for placement.~n').
-buy_strongtower:- 
-    assertz(selected_item(strong_tower)),
-    format('Strong tower selected for placement.~n').
-
-
-    
-on_hex_select(X, Y) :-
+on_tile_click(X, Y) :-
+    map(Map),
+    get_hex(Map, [X, Y], Hex),
     % Check if the user has selected a unit or building to buy
     (   retract(selected_item(Type))
-    ->  % If yes, place the selected object
+    ->  % If yes, try to perform a purchase move
         % TODO buy and place
+        retractall(selected_item),
         format('Placed ~w at (~w, ~w).~n', [Type, X, Y])
-    ;   % If not, original selection logic
-        map(Map),
-        get_hex(Map, [X, Y], Hex),
-        assert(selected_hex(Hex)),
-        gui  
+    ;   % If not, try to perform a displace move
+        format('Tile ~w selected.~n', [[X, Y]]),
+        assertz(selected_tile(Hex)),
+        update_gui
     ).
-
-on_box_select(Box) :-
-    % Get the position of the box
-    get(Box, position, point(X, Y)),
-    HexSize = 100,
-    XCoord is Y // HexSize,
-    YCoord is X // HexSize,
-    map(Map),
-    get_hex(Map, [XCoord, YCoord], hex(_, _, _, Owner, _, Unit)),
-    % Check if there is a selected unit
-    (   retract(selected_unit(SX, SY, SOwner, SBox)) ->
-        % If there is a selected unit
-        % Check if the selected box is of the same owner
-        (   Owner = SOwner ->
-            % TODO (qui devo aggiungere il predicato per spostare effettivamente l'unità)
-            format('Unit moved from (~w, ~w) to (~w, ~w)~n', [SX, SY, XCoord, YCoord])
-        ;   % If he destination box is not of the same owner
-            format('The destination box is not of the same owner.~n', []),
-            % Memorize the selected unit for a new attempt
-            assertz(selected_unit(SX, SY, SOwner, SBox))
-        ), 
-        send(SBox, fill_pattern, colour(SOwner))
-    ;   % If is the first click, memorize coordinates and owner of the selected unit
-        (   Unit \= none ->  % Ensure there is a unit to select
-            assertz(selected_unit(XCoord, YCoord, Owner, Box)),
-            % Change the color of the selected box to yellow
-            send(Box, fill_pattern, colour(yellow)),
-            format('Unit selected at (~w, ~w) owned by ~w~n', [XCoord, YCoord, Owner])
-        ;   format('No unit selected.~n', [])
-        )
-    ).
-
-
