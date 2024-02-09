@@ -116,42 +116,39 @@ create_purchase_menu(MapHeight, HexSize):-
     StartY is MapHeight + HexSize / 2, % Position below the map
     IconSpacing = 100, % Spacing between icons
     IconSize = 100, % Standard size for icons in the menu
+    new(PeasantImage, image('/resources/sprites/unit/peasant.gif')),
+    new(SpearmanImage, image('/resources/sprites/unit/spearman.gif')),
+    new(BaronImage, image('C:/resources/sprites/unit/baron.gif')),
+    new(KnightImage, image('/resources/sprites/unit/knight.gif')),
+    new(FarmImage, image('/resources/sprites/building/farm.gif')),
+    new(TowerImage, image('/resources/sprites/building/tower.gif')),
+    new(StrongTowerImage, image('/resources/sprites/building/strong_tower.gif')),
+    new(SkipTurnImage, image('/resources/sprites/skip/skipturn.gif')),
 
     % List of units with respective actions
-    UnitActions = [
-        peasant-'/resources/sprites/unit/peasant.gif'-buy_peasant,
-        spearman-'/resources/sprites/unit/spearman.gif'-buy_spearman,
-        knight-'/resources/sprites/unit/knight.gif'-buy_knight,
-        baron-'/resources/sprites/unit/baron.gif'-buy_baron
-    ],
-
-    % List of buildings with respective actions
-    BuildingActions = [
-        farm-'/resources/sprites/building/farm.gif'-buy_farm,
-        tower-'/resources/sprites/building/tower.gif'-buy_tower,
-        strongtower-'/resources/sprites/building/strong_tower.gif'-buy_strongtower,
-        castle-'/resources/sprites/building/castle.gif'-buy_castle
+    ImageActions = [
+        peasant-PeasantImage-buy_peasant,
+        spearman-SpearmanImage-buy_spearman,
+        knight-KnightImage-buy_knight,
+        baron-BaronImage-buy_baron,
+        farm-FarmImage-buy_farm,
+        tower-TowerImage-buy_tower,
+        strongtower-StrongTowerImage-buy_strongtower,
+        skipturn-SkipTurnImage-skip_turn_action
     ],
 
     % Create and display unit icons
-    findall(_, (
-        nth1(Index, UnitActions, Action-ImagePath-Callback),
-        X is (Index - 1) * IconSpacing,
-        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
-    ), _),
+    (   nth0(Index, ImageActions, Action-Image-Callback),
+        X is Index * IconSpacing,
+        create_icon(@window, Image, Callback, X, StartY, IconSize),
+        fail
+    ;   true
+    ).
 
-    % Create and display building icons
-    length(UnitActions, UnitCount),
-    findall(_, (
-        nth1(Index, BuildingActions, Action-ImagePath-Callback),
-        X is (UnitCount + Index - 1) * IconSpacing,
-        create_icon(@window, ImagePath, Callback, X, StartY, IconSize)
-    ), _).
-
-
+  
 % Predicate to create an icon
-create_icon(Window, ImagePath, Action, BaseX, BaseY, IconSize):-
-    new(Icon, bitmap(ImagePath)),
+create_icon(Window, Image, Action, BaseX, BaseY, IconSize):-
+    new(Icon, bitmap(Image)),
     get(Icon, size, size(ImgWidth, ImgHeight)),
     % Calculate center based on icon size
     CenterX is BaseX + (IconSize - ImgWidth) / 2,
@@ -162,9 +159,10 @@ create_icon(Window, ImagePath, Action, BaseX, BaseY, IconSize):-
                        message(@prolog, Action))).
 
 
+
 skip_turn_action:-
-    % Implementa l'azione desiderata per "Skip Turn"
-    format('Turn Skipped...').
+    % to do
+    writeln('Turn Skipped...').
 
 % Actions for buy units TODO
 buy_peasant:- format('Peasant bought.~n').
@@ -176,7 +174,7 @@ buy_baron:- format('Baron bought.~n').
 buy_farm:- format('Farm bought.~n').
 buy_tower:- format('Tower bought.~n').
 buy_strongtower:- format('Strong tower bought.~n').
-buy_castle:- format('Castle bought.~n').
+
 
     
 on_hex_select(X,Y) :-
