@@ -26,14 +26,14 @@ init_gui:-
     % TODO HERE
     % new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
     free(@window),
-    new(@peasant_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/peasant.gif')),
-    new(@spearman_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/spearman.gif')),
-    new(@baron_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/baron.gif')),
-    new(@knight_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/unit/knight.gif')),
-    new(@farm_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/farm.gif')),
-    new(@tower_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/tower.gif')),
-    new(@strongTower_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/building/strong_tower.gif')),
-    new(@skipTurn_sprite, image('C:/Users/Darlene/Desktop/Magistrale/ProgettoIntelligenza/Antiyomacy/resources/sprites/skip/skipturn.gif')),
+    new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
+    new(@spearman_sprite, image('resources/sprites/unit/spearman.gif')),
+    new(@baron_sprite, image('resources/sprites/unit/baron.gif')),
+    new(@knight_sprite, image('/resources/sprites/unit/knight.gif')),
+    new(@farm_sprite, image('resources/sprites/building/farm.gif')),
+    new(@tower_sprite, image('resources/sprites/building/tower.gif')),
+    new(@strongtower_sprite, image('resources/sprites/building/strong_tower.gif')),
+    new(@skipturn_sprite, image('resources/sprites/skip/skipturn.gif')),
     new(@window, picture('Antiyomacy')).
 
 
@@ -136,8 +136,8 @@ create_purchase_menu(MapHeight, HexSize):-
         baron-(@baron_sprite)-buy_baron,
         farm-(@farm_sprite)-buy_farm,
         tower-(@tower_sprite)-buy_tower,
-        strongtower-(@strongTower_sprite)-buy_strongtower,
-        skipturn-(@skipTurn_sprite)-skip_turn_action
+        strongtower-(@strongtower_sprite)-buy_strongtower,
+        skipturn-(@skipturn_sprite)-skip_turn_action
     ],
 
     % Create and display unit icons
