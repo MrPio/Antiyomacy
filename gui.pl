@@ -23,6 +23,8 @@ test_gui:-
     gui.
 
 init_gui:-
+    % TODO HERE
+    % new(@peasant_sprite, image('resources/sprites/unit/peasant.gif')),
     free(@window),
     new(@window, picture('Antiyomacy')).
 
