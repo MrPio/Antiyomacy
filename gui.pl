@@ -180,19 +180,32 @@ skip_turn_action:-
     % to do
     writeln('Turn Skipped...').
 
-% Actions for buy units TODO
+% Actions for buy units 
 buy_peasant:-
     assertz(selected_item(peasant)),
     format('Peasant selected for placement.~n').
 
-buy_spearman:- format('Spearman bought.~n').
-buy_knight:- format('Knight bought.~n').
-buy_baron:- format('Baron bought.~n').
+buy_spearman:- 
+    assertz(selected_item(spearman)),
+    format('Spearman bought.~n').
 
-% Actions for buy buildings TODO
-buy_farm:- format('Farm bought.~n').
-buy_tower:- format('Tower bought.~n').
-buy_strongtower:- format('Strong tower bought.~n').
+buy_knight:- 
+    assertz(selected_item(knight)),
+    format('Knight bought.~n').
+buy_baron:- 
+    assertz(selected_item(baron)),
+    format('Baron bought.~n').
+
+% Actions for buy buildings 
+buy_farm:- 
+    assertz(selected_item(farm)),
+    format('Farm bought.~n').
+buy_tower:- 
+    assertz(selected_item(tower)),
+    format('Tower bought.~n').
+buy_strongtower:- 
+    assertz(selected_item(strong_tower)),
+    format('Strong tower bought.~n').
 
 
     
