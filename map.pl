@@ -3,8 +3,8 @@
                 generate_random_map/2,
                 empty_map/1,
                 map_size/1,
-                map/1,
-                update_map/1,
+                map/1, last_board/1,
+                update_map/1, update_last_board/1,
                 inside_map/1,
                 get_hex/3,
                 check_tile/3,
@@ -22,7 +22,7 @@
 :- use_module([utils, hex, province]).
 
 % Map parameters
-:- dynamic(map/1).
+:- dynamic([map/1, last_board/1]).
 
 map_size(8).
 smooth(2).
@@ -42,6 +42,10 @@ index2coord(Index, [X, Y]) :-
 update_map(Map) :-
     retractall(map(_)),
     assert(map(Map)).
+% Update the stored board
+update_last_board(Board) :-
+    retractall(last_board(_)),
+    assert(last_board(Board)).
 
 % Generate a matrix Size x Size and fill it with Value
 matrix(Size, Matrix, Value) :-

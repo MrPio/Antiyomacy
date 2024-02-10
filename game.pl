@@ -1,6 +1,7 @@
-:- module(game, [move/2, play/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
+:- module(game, [move/2, play/0, game_step/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
 :- use_module([test, utils, map, hex, province, unit, building, economy, eval, minimax, io, gui]).
 :- use_module(library(pce)).
+:- dynamic([input_mode/1, human_player/1, start_player/1]).
 
 % Asks the user to choose a move for each of their provinces
 % ask_provinces_moves(+board(Map, Provinces, HumanPlayer, _, Conquests), -board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
@@ -159,6 +160,11 @@ play:-
     writeln('Welcome to Antitomacy!'),
     writeln('Choose a game mode:\n1) User vs AI\n2) AI vs AI'),
     ask_choice([user_vs_ai, ai_vs_ai], GameMode), nl,
+    (   GameMode == ai_vs_ai
+    ;   writeln('Choose an input mode:\n1) Terminal mode\n2) GUI mode'),
+        ask_choice([terminal_input, gui_input], InputMode), nl,
+        assert(input_mode(InputMode))
+    ),
     
     % Generate the map and spawn the provinces
     generate_random_map(MapWithoutProvinces, false),
@@ -175,29 +181,36 @@ play:-
     % Determine who will be the first player
     (   GameMode == user_vs_ai
     ->  writeln('Choose a color:\n1) red\n2) blue'),
-        ask_choice([red, blue], HumanPlayer), nl
+        ask_choice([red, blue], HumanPlayer), nl,
+        assert(human_player(HumanPlayer))
     ;   % If the game mode is AI vs AI, there is no human player
         HumanPlayer = none
     ), 
+    assert(start_player(red)),
+    update_last_board(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0])),
+    init_gui,
+    update_gui,
+    % Make a step if it is not the user's turn
+    (HumanPlayer == red, input_mode(gui_input); game_step).
 
-    % TODO HERE: Initialize the gui
-    game_loop(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0]), HumanPlayer, red).
-
-game_loop(Board, HumanPlayer, StartPlayer) :-
+game_step :-
+    last_board(Board), % Get
     board_player(Board, Player), % Get
     format('It is ~w turn: ===========================', Player), nl,
     
     % Depending on the playing player, the minimax searches for a move or the user is asked to commit their move
-    (   Player == HumanPlayer 
+    (   human_player(Player),
+        input_mode(terminal_input)
     ->  % Loop through each province owned by the user
         ask_provinces_moves(Board, NewBoardBeforeIncome)
     ;   % The cpu is playing, so the minimax will be used to choose a move
+        \+ human_player(Player),
         get_time(StartTime), update_start_time(StartTime),
         minimax(Board, [-999999, 999999], 3, [NewBoardBeforeIncome, Val]),
         format('Value = ~w', Val), nl
     ),
     % At the end of both players turn, apply the income on all the provinces
-    (   Player == StartPlayer, !,
+    (   start_player(Player), !,
         NewBoard = NewBoardBeforeIncome
     ;   writeln('Applying income ========================='),
         board_map(NewBoardBeforeIncome, NewMapBeforeIncome), % Get
@@ -207,11 +220,20 @@ game_loop(Board, HumanPlayer, StartPlayer) :-
         change_board_map(NewBoardBeforeIncome, NewMap, NewBoardWithMap),
         change_board_provinces(NewBoardWithMap, NewProvinces, NewBoard)
     ),
-    % board_map(NewBoard, MapToPrint),
-    % TODO HERE: gui(MapToPrint),
+    board_player(NewBoard, NewPlayer), % Get
     print_board(NewBoard),
+    update_last_board(NewBoard),
+    update_gui,
     % Check if the playing player has won the game, if so, end the game
     (   board_state(NewBoard, win) % Check
     ->  format('~w won the game! ---------------------', Player),nl
-    ;   game_loop(NewBoard, HumanPlayer, StartPlayer)
+    ;   (   human_player(NewPlayer),
+            input_mode(gui_input),
+            retractall(selected_tile(_)),
+            retractall(selected_resource(_)),
+            retractall(current_province_index(_)),
+            assert(current_province_index(0)),
+            !
+        ;   game_step
+        )
     ), !.

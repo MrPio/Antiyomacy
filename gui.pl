@@ -1,7 +1,7 @@
-:- module(gui, [update_gui/0]).
-:- use_module([map, hex, province, utils]).
+:- module(gui, [init_gui/0, update_gui/0]).
+:- use_module([map, hex, province, utils, building, unit, minimax]).
 :- use_module(library(pce)).
-:- dynamic([selected_item/1, selected_tile/1]).
+:- dynamic([selected_tile/1, selected_resource/1, current_province_index/1]).
 
 tile_size(TileSize):-
     map_size(MapSize),
@@ -12,7 +12,7 @@ window_size([WindowWidth, WindowHeight]):-
     map_size(MapSize),
     tile_size(TileSize),
     WindowWidth is (MapSize) * TileSize,
-    WindowHeight is (MapSize + 1) * TileSize.
+    WindowHeight is truncate((MapSize + 1.25) * TileSize).
 test_gui:-
     % map generation:
     generate_random_map(_, false),
@@ -46,7 +46,8 @@ init_gui:-
     new(@tile_free, image('resources/sprites/grass/grass.gif')),
     new(@tile_red, image('resources/sprites/grass/grass_red.gif')),
     new(@tile_blue, image('resources/sprites/grass/grass_blue.gif')),
-    new(@tile_selected, image('resources/sprites/grass/grass_yellow.gif')),
+    new(@tile_current_province, image('resources/sprites/grass/grass_yellow.gif')),
+    new(@tile_selected, image('resources/sprites/grass/grass_yellow_light.gif')),
     % Store the shop menu images:
     new(@frame_peasant, image('resources/sprites/frame/peasant.gif')),
     new(@frame_spearman, image('resources/sprites/frame/spearman.gif')),
@@ -59,7 +60,8 @@ init_gui:-
     % Create the window
     free(@window),
     new(@window, window('Antiyomacy')),
-    send(@window, background, black)
+    send(@window, background, black),
+    send(@window, foreground, white)
     % send(@window, kind, popup).
     .
 
@@ -67,9 +69,16 @@ init_gui:-
 % Retrive the stored map and redraw the window accordingly
 update_gui:-
     send(@window, clear),
-    map(Map), map_size(MapSize), % Get
+    last_board(board(Map, Provinces, _Player, _, _)), map_size(MapSize), % Get
     window_size([WindowWidth, WindowHeight]), % Get
     send(@window, size, size(WindowWidth, WindowHeight)),
+    % Get the current playing user province if any
+    human_provinces(_HumanProvinces, HumanProvince),
+    (   var(HumanProvince), CurrentCoord = [], !
+    ;   province_hexes(HumanProvince, HumanProvinceHexes), % Get
+        maplist(hex_coord, HumanProvinceHexes, CurrentCoord)
+    )
+    
     % Draw map grid =========================================================
     (   % Check if there is any selected hex
         (   retract(selected_tile(SelectedHex))
@@ -78,35 +87,42 @@ update_gui:-
         ),
         % Loop through the map cells  ---------------------------
         between(0, MapSize, Y), between(0, MapSize, X),
-        get_hex(Map, [X, Y], hex(_Index, _Coord, Tile, Owner, Building, Unit)),
+        get_hex(Map, [Y, X], hex(_Index, _Coord, Tile, Owner, Building, Unit)),
         
         % Draw the tile
         (   Tile == sea
-        ->  TileImage = @tile_sea
+        ->  TileImage = @tile_sea,
+            [OnClick, Cursor] = [@null, @null]
         ;   SelectedCoord == [X,Y]
-        ->  TileImage = @tile_selected
+        ->  TileImage = @tile_selected,
+            [OnClick, Cursor] = [@null, @null]
+        ;   member(SelectedCoord, CurrentCoord)
+        ->  TileImage = @tile_current_province,
+            [OnClick, Cursor] = [on_tile_click(X,Y), hand1]
         ;   nth0(PlayerIndex, [red, blue, none], Owner), 
-            nth0(PlayerIndex, [@tile_red, @tile_blue, @tile_free], TileImage)
+            nth0(PlayerIndex, [@tile_red, @tile_blue, @tile_free], TileImage),
+            (selected_tile(_) -> [OnClick, Cursor] = [on_tile_click(X,Y), hand1]; [OnClick, Cursor] = [@null, @null])
         ),
-        display_image(TileImage, [X, Y], on_tile_click(X,Y)),
+        display_image(TileImage, [X, Y], OnClick, Cursor),
         % Draw the unit if present
         (   Unit == none
         ->  true
         ;   nth0(UnitIndex, [peasant, spearman, baron, knight], Unit), 
             nth0(UnitIndex, [@peasant, @spearman, @baron, @knight], UnitImage),
-            display_image(UnitImage, [X, Y], @null)
+            display_image(UnitImage, [X, Y], @null, @null)
         ),
         % Draw the building if present
         (   Building == none
         ->  true
         ;   nth0(BuildingIndex, [farm, tower, strong_tower], Building), 
             nth0(BuildingIndex, [@farm, @tower, @strong_tower], BuildingImage),
-            display_image(BuildingImage, [X, Y], @null)
+            display_image(BuildingImage, [X, Y], @null, @null)
         ),
         fail ; true
     ),
     % Draw the bottom menu ==================================================
-    (    Frames = [
+    (   human_player(none)
+    ;   Frames = [
             peasant-(@frame_peasant),
             spearman-(@frame_spearman),
             knight-(@frame_knight),
@@ -117,16 +133,24 @@ update_gui:-
             skipturn-(@skip_turn)
         ],
         % Create and display unit icons
-        (   nth0(Index, Frames, _Resource-FrameImage),
-            display_image(FrameImage, [Index, MapSize], @null),
+        (   nth0(Index, Frames, ResourceName-FrameImage),
+            display_image(FrameImage, [Index, MapSize], on_frame_click(ResourceName), hand1),
+            LabelY is MapSize + 1,
+            % TODO here: province needed
+            % (   building_cost(ResourceName, Cost),
+            %     display_label(string(' %s$', Cost), [Index, LabelY])
+            % ;   unit_cost(ResourceName, Cost),
+            %     display_label(string(' %s$', Cost), [Index, LabelY])
+            % ; true
+            % ),
             fail; true
         )
     ),
     send(@window, open).
 
 % Display a given image on a given coordinate and assign a left click callback if requested
-% display_image(+Image, +Coord, +LeftClickMessage)
-display_image(Image, [X, Y], LeftClickMessage) :-
+% display_image(+Image, +Coord, +LeftClickMessage, +Cursor)
+display_image(Image, [X, Y], LeftClickMessage, Cursor) :-
     tile_size(TileSize),
     get(Image, size, size(Width, Height)),
     PosX is (X * TileSize) + (TileSize - Width ) / 2,
@@ -137,19 +161,61 @@ display_image(Image, [X, Y], LeftClickMessage) :-
         MessageCallback =.. [message, @prolog, Functor | Args],
         send(Bitmap, recogniser, click_gesture(left, '', single, MessageCallback))
     ),
+    (   Cursor == @null, !
+    ;   send(Bitmap, cursor, Cursor)
+    ),
     send(@window, display, Bitmap, point(PosX, PosY)).
 
+% Display a label at a given coordinate
+% display_image(+Label, +Coord)
+display_label(Text, [X, Y]) :-
+    tile_size(TileSize),
+    PosX is (X * TileSize),
+    PosY is (Y * TileSize),
+    send(@window, display, text(Text, center, @courier_bold_18), point(PosX, PosY)).
+
+% Note: this is called only tiles that are part of the current human player playing province
 on_tile_click(X, Y) :-
-    map(Map),
+    last_board(board(Map, Provinces, _Player, _, _)), % Get
+    human_provinces(_HumanProvinces, HumanProvince),
     get_hex(Map, [X, Y], Hex),
-    % Check if the user has selected a unit or building to buy
-    (   retract(selected_item(Type))
-    ->  % If yes, try to perform a purchase move
-        % TODO buy and place
-        retractall(selected_item),
+    % Check if the user has selected a resource to buy
+    (   retract(selected_resource(Type))
+    ->  % Purchase move
         format('Placed ~w at (~w, ~w).~n', [Type, X, Y])
-    ;   % If not, try to perform a displace move
+        % TODO here, like ask_province_move
+    ;   % Displace move
         format('Tile ~w selected.~n', [[X, Y]]),
-        assertz(selected_tile(Hex)),
-        update_gui
+        (   retract(selected_tile(HexFrom))
+        ->  get_hex(Map, [X, Y], DestHex),
+            % TODO here, like io.pl, call unit_placement to check for validity
+            displace_unit(Map, Provinces, Province, HexFrom, DestHex, NewUnitName, NewMap, NewProvinces, _)
+        ;   assert(selected_tile(Hex))
+        )
+    ), update_gui.
+
+% TODO prima di chiamare il step, fai retract di current_province_index(_)
+
+
+on_frame_click(ResourceName):-
+    assert(selected_resource(ResourceName)),
+    last_board(board(Map, Provinces, Player, State, Conquests)), % Get
+    human_player(HumanPlayer),
+    include([In]>>(province_owner(In, HumanPlayer)), Provinces, HumanProvinces),
+    other_player(Player, Enemy),
+    (   unit(ResourceName, _, _, _, _)
+    ->  true
+    ;   building(ResourceName, _, _, _)
+    ->  true
+    ;   % Skip turn
+        true
     ).
+% Returns the list of the human player provinces and its currently playing province, if any
+human_provinces(HumanProvinces, HumanProvince):-
+    last_board(Board),
+    board_provinces(Board, Provinces), % Get
+    human_player(HumanPlayer),
+    include([In]>>(province_owner(In, HumanPlayer)), Provinces, HumanProvinces),
+    (   current_province_index(HumanIndex), !
+    ;   nth0(HumanIndex, HumanProvinces, HumanProvince)
+    )
