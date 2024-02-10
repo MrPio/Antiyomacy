@@ -136,7 +136,7 @@ update_gui:-
             [OnClick, Cursor] = [@null, @null]
         ;   member([Y, X], CurrentCoords), input_mode(gui_input), human_player(Player)
         ->  TileImage = @tile_current_province,
-            (Unit \= none -> [OnClick, Cursor] = [on_tile_click(X,Y), hand1]; [OnClick, Cursor] = [@null, @null])
+            (Owner = Player, Unit \= none -> [OnClick, Cursor] = [on_tile_click(X,Y), hand1]; [OnClick, Cursor] = [@null, @null])
         ;   nth0(PlayerIndex, [red, blue, none], Owner), 
             nth0(PlayerIndex, [@tile_red, @tile_blue, @tile_free], TileImage),
             [OnClick, Cursor] = [@null, @null]
@@ -171,8 +171,8 @@ update_gui:-
         Frames = [
             peasant-(@peasant),
             spearman-(@spearman),
-            knight-(@knight),
             baron-(@baron),
+            knight-(@knight),
             farm-(@farm),
             tower-(@tower),
             strong_tower-(@strong_tower)
@@ -194,7 +194,8 @@ update_gui:-
         ),
         % Display skip turn icon
         SkipTurnX is 8 - 1,
-        display_image(@skip_turn, [SkipTurnX, 8], on_frame_click(skip_turn), hand1, 1, 1)
+        display_image(@skip_turn, [SkipTurnX, 8], on_frame_click(skip_turn), hand1, 1, 1),
+        display_label(string('[%s$]', HumanProvinceMoney), [SkipTurnX, 9])
         % TODO here: show current province money
     ),
     send(@window, flush).
@@ -294,7 +295,6 @@ human_provinces(HumanProvinces, HumanProvince):-
 
 % Move the input to the next human province if any, otherwise make a game step
 end_province_move(NewMap, NewProvinces, NewConquests):-
-    writeln("END"),
     last_board(board(_Map, _Provinces, Player, State, _Conquests)),
     human_provinces(HumanProvinces, _),
     length(HumanProvinces, HumanProvncesCount),
@@ -314,7 +314,6 @@ end_province_move(NewMap, NewProvinces, NewConquests):-
         game_step
     ;   % There are other human provinces that need to move
         NewIndex is CurrentProvinceIndex + 1,
-        writeln("+ 1"),
         assertz(current_province_index(NewIndex)),
         assertz(last_board(board(NewMap, NewProvinces, Player, State, NewConquests))),
         update_gui

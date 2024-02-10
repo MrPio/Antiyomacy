@@ -1,7 +1,7 @@
 :- module(game, [input_mode/1, human_player/1, start_player/1, move/2, play/0, game_step/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
 :- use_module([gui, test, utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 :- use_module(library(pce)).
-:- dynamic([input_mode/1, human_player/1, start_player/1]).
+:- dynamic([input_mode/1, human_player/1, start_player/1, minimax_depth/1]).
 
 % Asks the user to choose a move for each of their provinces
 % ask_provinces_moves(+board(Map, Provinces, HumanPlayer, _, Conquests), -board(NewMap, NewProvinces, NewPlayer, NewState, NewConquests)):-
@@ -171,6 +171,7 @@ play:-
     ask_choice([8, 16], MapSize), nl,
     retractall(map_size(_)),
     assertz(map_size(MapSize)),
+    (MapSize==8-> assertz(minimax_depth(3)); assertz(minimax_depth(2))),
     
     % Generate the map and spawn the provinces
     generate_random_map(MapWithoutProvinces, false),
@@ -212,7 +213,8 @@ game_step :-
     ;   % The cpu is playing, so the minimax will be used to choose a move
         \+ human_player(Player),
         get_time(StartTime), update_start_time(StartTime),
-        minimax(Board, [-999999, 999999], 3, [NewBoardBeforeIncome, Val]),
+        minimax_depth(MinimaxDepth),
+        minimax(Board, [-999999, 999999], MinimaxDepth, [NewBoardBeforeIncome, Val]),
         format('Value = ~w', Val), nl
     ),
     % At the end of both players turn, apply the income on all the provinces

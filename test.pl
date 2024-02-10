@@ -3,6 +3,7 @@
 
 % Run all the tests
 test:-
+    retractall(map_size(_)), assertz(map_size(5)),
     test_province,
     test_placements,
     test_purchases,
@@ -126,7 +127,7 @@ test_province:-
 
     % Test: get_income
     write('Testing province income calculation... '),
-    get_income(ProvinceBlue, 4),
+    get_income(ProvinceBlue, 2),
     writeln('Ok!').
 
 test_placements:-
@@ -254,7 +255,7 @@ test_end_turn:-
     province_count(ProvinceRed4, peasant, 0), % Check
     province_count(ProvinceRed4, spearman, 0), % Check
     province_money(ProvinceRed4, 0), % Check
-    get_income(ProvinceRed4, 5), % Check
+    get_income(ProvinceRed4, 3), % Check
     writeln('Ok!').
 
 test_destroy_tower :-
@@ -308,7 +309,9 @@ test_share_money:-
     buy_and_place(Map, [ProvinceBlue1, ProvinceRedEst1, ProvinceRedWest1], ProvinceRedWest1, baron, RedAttackHex, Map2, NewProvinces, _),
     same_elements(NewProvinces,[
         province(red,
-            [ hex(12,[2,2],_,red,none,baron),
+            [   hex(12,[2,2],_,red,none,baron),
+                hex(13,[2,3],_,red,none,none),
+                hex(14,[2,4],_,red,none,none),
                 hex(15,[3,0],_,red,none,none),
                 hex(16,[3,1],_,red,none,none),
                 hex(20,[4,0],_,red,none,none)

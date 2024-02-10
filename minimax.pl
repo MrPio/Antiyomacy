@@ -45,7 +45,7 @@ change_board_player(board(Map, Provinces, _, State, Conquests), NewPlayer, board
 minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
     start_time(T1), get_time(T2),
-    T is T2-T1, T < 3,
+    T is T2-T1, T < 4,
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
 
     % Print the number of possible moves

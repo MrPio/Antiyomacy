@@ -388,8 +388,8 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     set_building(MapWithUnitOwned, Coord, none, NewMap1),
     
     % Update the player province
-    % update_province(NewMap1, Province, NewProvince),
-    refresh_province(NewMap1, Province, [Coord], NewProvince),
+    update_province(NewMap1, Province, NewProvince),
+    % refresh_province(NewMap1, Province, [Coord], NewProvince),
     
     % Check for player merge in case of conquest or invasion
     (   (OwnerBefore == none; OwnerBefore \= Player)
