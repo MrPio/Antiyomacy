@@ -22,7 +22,7 @@
 :- use_module([utils, hex, province]).
 
 % Map parameters
-:- dynamic([map/1, last_board/1]).
+:- dynamic([map/1, last_board/1, map_size/1]).
 
 map_size(8).
 smooth(2).
@@ -41,11 +41,11 @@ index2coord(Index, [X, Y]) :-
 % Update the stored map
 update_map(Map) :-
     retractall(map(_)),
-    assert(map(Map)).
+    assertz(map(Map)).
 % Update the stored board
 update_last_board(Board) :-
     retractall(last_board(_)),
-    assert(last_board(Board)).
+    assertz(last_board(Board)).
 
 % Generate a matrix Size x Size and fill it with Value
 matrix(Size, Matrix, Value) :-
@@ -253,6 +253,7 @@ destroy_units(Map, [Hex|Tail], NewMap) :-
 % Randomly spawns a red and a blue province
 % spawn_provinces(+Map, -NewMap)
 spawn_provinces(Map, NewMap):-
+    map_size(MapSize),
     % Select all the coords of hexes with terrain on the map
     findall([X, Y],
     (   get_hex(Map, [X, Y], Hex),
@@ -261,6 +262,11 @@ spawn_provinces(Map, NewMap):-
     % Select the first and the last hexes as a spawn point for the two provinces
     nth0(0, CoordsWithTerrain, [RedX,RedY]),
     last(CoordsWithTerrain, [BlueX,BlueY]),
+    SecondProvinceRed is MapSize -2,
+    length(CoordsWithTerrain, CoordsWithTerrainLength),
+    SecondProvinceBlue is CoordsWithTerrainLength - SecondProvinceRed,
+    nth0(SecondProvinceRed, CoordsWithTerrain, [RedX2,RedY2]),
+    nth0(SecondProvinceBlue, CoordsWithTerrain, [BlueX2,BlueY2]),
     % Define the Random Walker action to be invoked at each step
     % Note: the yall library is used here to define a lambda expression
     StepAction = [Player, Action] >>
@@ -283,12 +289,19 @@ spawn_provinces(Map, NewMap):-
         ),
     % Use the Random Walker algorithm to spawn the red province
     call(StepAction, red, RedStepAction),
-    random_between(2, 4, RedSteps),
+    random_between(2, 4, RedSteps), random_between(2, 4, RedSteps2),
     walk(Map, [RedX,RedY], RedStepAction, WalkableCoordCondition, RedSteps, NewMapWithRed),
     % Use the Random Walker algorithm to spawn the blue province
     call(StepAction, blue, BlueStepAction),
-    random_between(2, 4, BlueSteps),
-    walk(NewMapWithRed, [BlueX,BlueY], BlueStepAction, WalkableCoordCondition, BlueSteps, NewMap),
+    random_between(2, 4, BlueSteps), random_between(2, 4, BlueSteps2),
+    walk(NewMapWithRed, [BlueX,BlueY], BlueStepAction, WalkableCoordCondition, BlueSteps, NewMap1),
+
+    (   MapSize > 8
+    ->  walk(NewMap1, [RedX2,RedY2], RedStepAction, WalkableCoordCondition, RedSteps2, NewMap2),
+        walk(NewMap2, [BlueX2,BlueY2], BlueStepAction, WalkableCoordCondition, BlueSteps2, NewMap)
+    ;   NewMap = NewMap1
+    ),
+
     update_map(NewMap),!.
 
 % Sets the specified hexes unit, building and owner in the hex list to none

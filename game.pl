@@ -1,5 +1,5 @@
-:- module(game, [move/2, play/0, game_step/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
-:- use_module([test, utils, map, hex, province, unit, building, economy, eval, minimax, io, gui]).
+:- module(game, [input_mode/1, human_player/1, start_player/1, move/2, play/0, game_step/0, province_move/7, unit_move/9, resource_buy/9, ask_province_move/7]).
+:- use_module([gui, test, utils, map, hex, province, unit, building, economy, eval, minimax, io]).
 :- use_module(library(pce)).
 :- dynamic([input_mode/1, human_player/1, start_player/1]).
 
@@ -160,34 +160,40 @@ play:-
     writeln('Welcome to Antitomacy!'),
     writeln('Choose a game mode:\n1) User vs AI\n2) AI vs AI'),
     ask_choice([user_vs_ai, ai_vs_ai], GameMode), nl,
-    (   GameMode == ai_vs_ai
+    (   GameMode == ai_vs_ai, assertz(human_player(none)),!
     ;   writeln('Choose an input mode:\n1) Terminal mode\n2) GUI mode'),
         ask_choice([terminal_input, gui_input], InputMode), nl,
-        assert(input_mode(InputMode))
+        assertz(input_mode(InputMode))
     ),
+    
+    % Choose map size
+    writeln('Choose the map size:\n1) Small\n2) Big'),
+    ask_choice([8, 16], MapSize), nl,
+    retractall(map_size(_)),
+    assertz(map_size(MapSize)),
     
     % Generate the map and spawn the provinces
     generate_random_map(MapWithoutProvinces, false),
     spawn_provinces(MapWithoutProvinces, Map),
     print_map(Map),
-    find_provinces(Map, [ProvinceRed, ProvinceBlue]),
-
+    find_provinces(Map, Provinces),
     % Assign start money
-    change_province_money(ProvinceRed, 12, ProvinceRed2),
-    change_province_money(ProvinceBlue, 12, ProvinceBlue2),
-
+    maplist([In, Out]>>(change_province_money(In, 12, Out)), Provinces, NewProvinces),
     % test_map4(Map, Provinces),
 
     % Determine who will be the first player
     (   GameMode == user_vs_ai
-    ->  writeln('Choose a color:\n1) red\n2) blue'),
+    ->  writeln('Choose a color:\n1) red (<-- first to play)\n2) blue'),
         ask_choice([red, blue], HumanPlayer), nl,
-        assert(human_player(HumanPlayer))
+        assertz(human_player(HumanPlayer))
     ;   % If the game mode is AI vs AI, there is no human player
         HumanPlayer = none
     ), 
-    assert(start_player(red)),
-    update_last_board(board(Map, [ProvinceRed2, ProvinceBlue2], red, play, [0, 0])),
+    assertz(start_player(red)),
+    update_last_board(board(Map, NewProvinces, red, play, [0, 0])),
+    include([In]>>(province_owner(In, HumanPlayer)), NewProvinces, HumanProvinces),
+    assertz(human_provinces_to_play(HumanProvinces)),
+    (\+ human_player(red),!; assertz(current_province_index(0))),
     init_gui,
     update_gui,
     % Make a step if it is not the user's turn
@@ -223,17 +229,21 @@ game_step :-
     board_player(NewBoard, NewPlayer), % Get
     print_board(NewBoard),
     update_last_board(NewBoard),
-    update_gui,
+    retractall(current_province_index(_)),
+    retractall(human_provinces_to_play(_)),
     % Check if the playing player has won the game, if so, end the game
     (   board_state(NewBoard, win) % Check
-    ->  format('~w won the game! ---------------------', Player),nl
+    ->  format('~w won the game! ---------------------', Player),nl, update_gui
     ;   (   human_player(NewPlayer),
             input_mode(gui_input),
             retractall(selected_tile(_)),
             retractall(selected_resource(_)),
-            retractall(current_province_index(_)),
-            assert(current_province_index(0)),
+            assertz(current_province_index(0)),
+            board_provinces(NewBoard, NewProvinces1),
+            include([In]>>(province_owner(In, NewPlayer)), NewProvinces1, HumanProvinces),
+            assertz(human_provinces_to_play(HumanProvinces)),
+            update_gui,
             !
-        ;   game_step
+        ;   update_gui, game_step 
         )
     ), !.
