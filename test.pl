@@ -76,7 +76,7 @@ test_map3(Map, [ProvinceRed, ProvinceBlue]):-
 % Generate the following test map
 %    0 1 2 3 4
 % 0 |r| | | | |
-% 1 |r| | | | |
+% 1 |r| | | | |     
 % 2 | | | | | |
 % 3 | | | | |b|
 % 4 | | | | |b|
@@ -176,7 +176,7 @@ test_purchases:-
     write('Testing unit displacement action... '),
     get_hex(Map2, [0,0], UnitDisplaceFrom),
     get_hex(Map2, [2,0], UnitDisplaceTo),
-    displace_unit(Map2, [ProvinceRed2, ProvinceBlue2], ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, peasant, Map3, _, ProvinceRed4),
+    displace_unit(Map2, [ProvinceRed3, ProvinceBlue2], ProvinceRed3, UnitDisplaceFrom, UnitDisplaceTo, peasant, Map3, _, ProvinceRed4),
     province_hexes(ProvinceRed4,ProvinceRed4Hexes),
     same_elements(ProvinceRed4Hexes, [hex(10,[2,0],_,red,none,peasant),hex(0,[0,0],_,red,none,none),hex(5,[1,0],_,red,none,none),hex(1,[0,1],_,red,none,peasant),hex(6,[1,1],_,red,none,none),hex(2,[0,2],_,red,none,none),hex(7,[1,2],_,red,none,none)]),
     writeln('Ok!'),
@@ -301,6 +301,7 @@ test_share_money:-
     test_map2(Map, [ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
     print_map(Map),
 
+    print_provinces([ProvinceBlue, ProvinceRedEst, ProvinceRedWest]),
     writeln('testing attack with provinces merge + split'),
     change_province_money(ProvinceBlue, 13, ProvinceBlue1),
     change_province_money(ProvinceRedEst, 17, ProvinceRedEst1),
@@ -330,6 +331,7 @@ test_share_money:-
         5)
     ]),
     print_map(Map2),
+    print_provinces(NewProvinces),
     writeln('Ok!').
 
 test_manhattan_distance:-

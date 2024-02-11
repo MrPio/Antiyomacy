@@ -46,11 +46,12 @@ minimax(Board, AlphaBeta, Depth, [BestBoard, Val]) :-
     Depth > 0,
     start_time(T1), get_time(T2),
     T is T2-T1, T < 4,
+    % TODO-> REMOVE MAP FROM BOARD TO HUGELY REDUCE RAM USAGE, assert the first map without provinces
     setof(NextBoard, move(Board, NextBoard), NextBoards), !,
 
     % Print the number of possible moves
     % length(NextBoards, NextBoardsLength),
-    %format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
+    % format('(~w) Found ~w moves.',[Depth, NextBoardsLength]),nl,
     
     % Update the count
     % count(Count),NewCount is Count + NextBoardsLength,update_count(NewCount),

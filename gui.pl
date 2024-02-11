@@ -14,7 +14,7 @@ window_size([WindowWidth, WindowHeight]):-
     MapSize=8,
     tile_size(TileSize),
     WindowWidth is (MapSize) * TileSize,
-    ((input_mode(terminal_input); human_player(none); human_provinces_to_play([]))->HeightAdd =0; HeightAdd =1.25),
+    ((input_mode(terminal_input); human_player(none); human_provinces_to_play([]))->HeightAdd =0; HeightAdd =1.65),
     WindowHeight is truncate((MapSize + HeightAdd) * TileSize).
 test_gui:-
     % map generation:
@@ -168,6 +168,7 @@ update_gui:-
     (   (input_mode(terminal_input); human_player(none); \+ human_player(Player); var(HumanProvince))
     ;   human_provinces(_, HumanProvince),
         province_money(HumanProvince, HumanProvinceMoney),
+        get_income(HumanProvince, HumanProvinceIncome),
         Frames = [
             peasant-(@peasant),
             spearman-(@spearman),
@@ -189,14 +190,13 @@ update_gui:-
             ),
             display_image(FrameImage, [Index, 8], @null, @null, 1, 1),
             display_image(ResourceImage, [Index, 8], OnClick, Cursor, 1, 1),
-            display_label(string(' %s$', Cost), [Index, LabelY]),
+            display_label(string(' %s$', Cost), [Index, LabelY],@courier_roman_18),
             fail; true
         ),
         % Display skip turn icon
         SkipTurnX is 8 - 1,
         display_image(@skip_turn, [SkipTurnX, 8], on_frame_click(skip_turn), hand1, 1, 1),
-        display_label(string('[%s$]', HumanProvinceMoney), [SkipTurnX, 9])
-        % TODO here: show current province money
+        display_label(string(' %s$\n+%s', HumanProvinceMoney, HumanProvinceIncome), [SkipTurnX, 9], @courier_bold_18)
     ),
     send(@window, flush).
 
@@ -220,11 +220,13 @@ display_image(Image, [X, Y], LeftClickMessage, Cursor, Scale, InnerScale) :-
 
 % Display a label at a given coordinate
 % display_image(+Label, +Coord)
-display_label(Text, [X, Y]) :-
+display_label(Text, [X, Y], Font) :-
     tile_size(TileSize),
     PosX is (X * TileSize),
     PosY is (Y * TileSize),
-    send(@window, display, text(Text, center, @courier_bold_18), point(PosX, PosY)).
+    new(Label, text(Text, center, Font)),
+    send(Label, size, size(TileSize, TileSize)),
+    send(@window, display, Label, point(PosX, PosY)).
 
 % Note: this is called only by tiles that are part of the current human player playing province
 on_tile_click(_,_):- input_mode(terminal_input), !.
@@ -238,7 +240,7 @@ on_tile_click(X, Y) :-
         format('Placed ~w at (~w, ~w).~n', [ResName, X, Y]),
         check_buy(HumanProvince, ResName, _),
         % Prevent a unit merge on purchase
-        \+ (hex_owner(Hex, Player), \+ hex_unit(Hex, none)),
+        % \+ (hex_owner(Hex, Player), \+ hex_unit(Hex, none)),
         % Check if the placement is valid based on the resource type
         (   building(ResName, _, _, _)
         ->  building_placement(Map, HumanProvince, ResName, Hex)
@@ -316,5 +318,10 @@ end_province_move(NewMap, NewProvinces, NewConquests):-
         NewIndex is CurrentProvinceIndex + 1,
         assertz(current_province_index(NewIndex)),
         assertz(last_board(board(NewMap, NewProvinces, Player, State, NewConquests))),
-        update_gui
+        human_provinces(_HumanProvinces, NewHumanProvince),
+        (   \+ member(NewHumanProvince, NewProvinces), !,
+            end_province_move(NewMap, NewProvinces, NewConquests)
+        ;   print_provinces(NewProvinces),
+            update_gui
+        )
     ).

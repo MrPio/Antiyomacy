@@ -47,12 +47,6 @@ eval(Board, Score) :-
     sum_list(MINIncomes, MINTotalIncome),
 
     % Calculate the resources
-    province_counts(ProvincesOfMAX, [farm], MAXFarmCount),
-    province_counts(ProvincesOfMIN, [farm], MINFarmCount),
-
-    province_counts(ProvincesOfMAX, [tower], MAXTowerCount),
-    province_counts(ProvincesOfMIN, [tower], MINTowerCount),
-
     province_counts(ProvincesOfMAX, [peasant], MAXPaesantCount),
     province_counts(ProvincesOfMIN, [peasant], MINPaesantCount),
 
@@ -65,6 +59,9 @@ eval(Board, Score) :-
     province_counts(ProvincesOfMAX, [knight], MAXKnightCount),
     province_counts(ProvincesOfMIN, [knight], MINKnightCount),
     
+    MAXStrength is MAXPaesantCount * 1 + MAXSpearmanCount *3 + MAXBaronCount * 8 + MAXKnightCount * 20,
+    MINStrength is MINPaesantCount * 1 + MINSpearmanCount *3 + MINBaronCount * 8 + MINKnightCount * 20,
+
     % Check if MAX wins and assign a score of 99999
     (   State == win, Player == MIN 
     ->  Score = 99999, !
@@ -73,25 +70,15 @@ eval(Board, Score) :-
     ->  Score = -99999, !
     ;   % If the game is not in a win state, calculate the evaluation score
         Score is (
-            MAXConquests     * 100 +
-            MAXMoneyScore    * 20 +
-            MAXTotalSize     * 90 +
-            MAXTotalIncome   * 10 +
-            MAXFarmCount     * 2 +
-            MAXTowerCount    * 3 +
-            MAXPaesantCount  * 1 +
-            MAXSpearmanCount * 2 +
-            MAXBaronCount    * 6 +
-            MAXKnightCount   * 10) 
+            MAXConquests     * 3 +
+            MAXMoneyScore    * 1 +
+            MAXTotalIncome   * 1 +
+            MAXTotalSize     * 1 +
+            MAXStrength      * 1 ) 
             - (
-            MINConquests     * 100 +
-            MINMoneyScore    * 20 +
-            MINTotalSize     * 90 +
-            MINTotalIncome   * 10 +
-            MINFarmCount     * 2 +
-            MINTowerCount    * 3 +
-            MINPaesantCount  * 1 +
-            MINSpearmanCount * 2 +
-            MINBaronCount    * 6 +
-            MINKnightCount   * 10)
+            MINConquests     * 3 +
+            MINMoneyScore    * 1 +
+            MINTotalIncome   * 1 +
+            MINTotalSize     * 1 +
+            MINStrength      * 1 )
     ).

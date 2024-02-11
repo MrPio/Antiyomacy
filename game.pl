@@ -20,6 +20,9 @@ ask_provinces_moves(board(Map, Provinces, HumanPlayer, _, Conquests), board(NewM
 
 % Asks the user for a move for a specific province
 % ask_province_move(+Map, +Provinces, +[RedConq, BlueConq], +Province, -NewMap, -NewProvinces, -[NewRedConq, NewBlueConq]):-
+ask_province_move(Map, Provinces, Conquests, Province, Map, Provinces, Conquests):-
+    % If there has been a merge on the previous province's move with the current province, do not move
+    \+ member(Province, Provinces).
 ask_province_move(Map, Provinces, [RedConq, BlueConq], Province, NewMap, NewProvinces, [NewRedConq, NewBlueConq]):-
     % Print province information
     print_provinces([Province]),
@@ -77,6 +80,9 @@ move(board(Map, Provinces, Player, _, Conquests), board(NewMap, NewProvinces, Ne
 
 % Get one possible move for a given province (❓non-deterministic❓)
 % province_move(+Map, +Provinces, +Province, -NewMap, -NewProvinces)
+province_move(Map, Provinces, Conquests, Province, Map, Provinces, Conquests):-
+    % If there has been a merge on the previous province's move with the current province, do not move
+    \+ member(Province, Provinces).
 province_move(Map, Provinces, Conquests, Province, NewMap, NewProvinces, NewConquests):-
     (   % Choose one possible displace move for one owned unit =======================================
         province_hexes(Province, Hexes), % Get
@@ -171,16 +177,27 @@ play:-
     ask_choice([8, 16], MapSize), nl,
     retractall(map_size(_)),
     assertz(map_size(MapSize)),
-    (MapSize==8-> assertz(minimax_depth(3)); assertz(minimax_depth(2))),
     
     % Generate the map and spawn the provinces
     generate_random_map(MapWithoutProvinces, false),
     spawn_provinces(MapWithoutProvinces, Map),
     print_map(Map),
     find_provinces(Map, Provinces),
-    % Assign start money
-    maplist([In, Out]>>(change_province_money(In, 12, Out)), Provinces, NewProvinces),
-    % test_map4(Map, Provinces),
+
+    % Assign start money and the minimax depth
+    include([In]>>(province_owner(In, red)), Provinces, RedProvinces),
+    include([In]>>(province_owner(In, blue)), Provinces, BlueProvinces),
+    length(RedProvinces, RedCount), length(BlueProvinces, BlueCount),
+    (   MapSize==8
+    ->  assertz(minimax_depth(3)),
+        maplist([In, Out]>>(change_province_money(In, 12, Out)), Provinces, NewProvinces)
+    ;   assertz(minimax_depth(2)),
+        RedMoney is 24/RedCount,
+        maplist([In, Out]>>(change_province_money(In, RedMoney, Out)), RedProvinces, NewRedProvinces),
+        BlueMoney is 24/BlueCount,
+        maplist([In, Out]>>(change_province_money(In, BlueMoney, Out)), BlueProvinces, NewBlueProvinces),
+        append(NewRedProvinces, NewBlueProvinces, NewProvinces)
+    ),
 
     % Determine who will be the first player
     (   GameMode == user_vs_ai
@@ -218,7 +235,7 @@ game_step :-
         format('Value = ~w', Val), nl
     ),
     % At the end of both players turn, apply the income on all the provinces
-    (   start_player(Player), !,
+    (   start_player(Player), \+ input_mode(gui_input), !,
         NewBoard = NewBoardBeforeIncome
     ;   writeln('Applying income ========================='),
         board_map(NewBoardBeforeIncome, NewMapBeforeIncome), % Get
@@ -229,13 +246,14 @@ game_step :-
         change_board_provinces(NewBoardWithMap, NewProvinces, NewBoard)
     ),
     board_player(NewBoard, NewPlayer), % Get
+    writeln(NewPlayer),
     print_board(NewBoard),
     update_last_board(NewBoard),
     retractall(current_province_index(_)),
     retractall(human_provinces_to_play(_)),
     % Check if the playing player has won the game, if so, end the game
     (   board_state(NewBoard, win) % Check
-    ->  format('~w won the game! ---------------------', Player),nl, update_gui
+    ->  format('~w won the game! ---------------------', Player),nl, update_gui,!
     ;   (   human_player(NewPlayer),
             input_mode(gui_input),
             retractall(selected_tile(_)),

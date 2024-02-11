@@ -312,19 +312,23 @@ inner_border(Map, province(_, Hexes, _), InnerBorder) :-
 % Purchase a building or a unit and place it on the map at the given location
 % buy_and_place(+Map, +Provinces, +Province, +ResourceName, +DestHex, -NewMap, -NewProvinces, -NewProvince)
 buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvinces, NewProvince) :-
+    % Check if there has been a merge on the previous province's move with the current province
+    member(Province, Provinces),
     % Prevent a unit merge on purchase
-    hex_unit(DestHex, none),
+    % hex_unit(DestHex, none),
+
     % Check if the purchase is economically valid
     check_buy(Province, ResourceName, LeftMoney), % Get LeftMoney
     % Subtract the cost from the province's money (also in the provinces list)
     change_province_money(Province, LeftMoney, ProvinceWithNewMoney),
     op_list(Provinces, [In, Out] >> (In == Province, province:change_province_money(In, LeftMoney, Out)), ProvincesWithMoney),
-    
     % Check if DestHex is a valid placement destination
     hex_coord(DestHex, [X, Y]), % Get
     (   % The resource to be placed is a unit:
         unit(ResourceName, _, _, _, _), % Check
-        place_unit(Map, ProvincesWithMoney, ProvinceWithNewMoney, ResourceName, DestHex, NewMap, NewProvinces, NewProvince)
+        % Check for unit merging
+        unit_placement(Map, Province, ResourceName, DestHex, NewUnitName),
+        place_unit(Map, ProvincesWithMoney, ProvinceWithNewMoney, NewUnitName, DestHex, NewMap, NewProvinces, NewProvince)
     ;   % The resource to be placed is a building:
         building(ResourceName, _, _, _), % Check
         % (It is assumed the caller has already made this check)
@@ -349,6 +353,9 @@ buy_and_place(Map, Provinces, Province, ResourceName, DestHex, NewMap, NewProvin
 % Displace a unit on a given valid hex
 % displace_unit(+Map, +Provinces, +Province, +FromHex, +ToHex, +NewUnitName, -NewMap, -NewProvinces, -NewProvince)
 displace_unit(Map, Provinces, Province, FromHex, ToHex, NewUnitName, NewMap, NewProvinces, NewProvince) :-
+    % Check if there has been a merge on the previous province's move with the current province
+    member(Province, Provinces),
+
     % Check if the FromHex contains a unit
     \+ hex_unit(FromHex, none),
 
@@ -364,8 +371,8 @@ displace_unit(Map, Provinces, Province, FromHex, ToHex, NewUnitName, NewMap, New
     refresh_province(NewMapWithoutFromUnit, Province, [[FromX, FromY]], ProvinceWithoutFromUnit),
     subtract(Provinces, [Province], ProvincesWithoutRefreshedProvince),
     append(ProvincesWithoutRefreshedProvince, [ProvinceWithoutFromUnit], Provinces1),
-    
-    place_unit(NewMapWithoutFromUnit, Provinces1, ProvinceWithoutFromUnit, NewUnitName, ToHex, NewMap, NewProvinces, NewProvince).
+    place_unit(NewMapWithoutFromUnit, Provinces1, ProvinceWithoutFromUnit, NewUnitName, ToHex, NewMap, NewProvinces, NewProvince),
+    !.
 
 % Place a unit on a given hex after checking the validity of the move
 % Note: this centralises the logic for both placing and displacing unit moves
@@ -375,7 +382,6 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     hex_coord(Hex, Coord), % Get
     province_owner(Province, Player), % Get
     hex_owner(Hex, OwnerBefore), % Get
-
     % Check if the placement is valid
     % (It is assumed the caller has already made this check and the provided UnitName takes any unit merge into consideration)
     % unit_placement(Map, Province, UnitName, Hex, NewUnitName), % Check & Get
@@ -386,11 +392,10 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     set_owner(MapWithUnit, Coord, Player, MapWithUnitOwned),
     % Destroy any enemy building in the destination hex.
     set_building(MapWithUnitOwned, Coord, none, NewMap1),
-    
     % Update the player province
     update_province(NewMap1, Province, NewProvince),
+    % print_map(NewMap1),print_provinces([Province]),print_provinces([NewProvince]),
     % refresh_province(NewMap1, Province, [Coord], NewProvince),
-    
     % Check for player merge in case of conquest or invasion
     (   (OwnerBefore == none; OwnerBefore \= Player)
     ->  check_for_merge(NewMap1, Provinces, NewProvince, Hex, NewProvincesMerge)
@@ -420,21 +425,21 @@ check_for_merge(_Map, OldProvinces, NewProvince, Hex, NewProvinces):-
     Left is X-1, Right is X+1, Down is Y-1, Up is Y+1,
     findall([X1,Y1], (between(Left, Right, X1), between(Down, Up, Y1)), NearbyCoords),
     findall(Province, 
-        (   % member(NearHex, NearHexes),
-            member(Province, OldProvinces),
+        (   member(Province, OldProvinces),
             province_owner(Province, Player), % Check
             province_hexes(Province, ProvinceHexes), % Get
-            maplist(hex_coord,ProvinceHexes, ProvinceCoords), % Get
+            maplist(hex_coord, ProvinceHexes, ProvinceCoords), % Get
             member(ProvinceCoord, ProvinceCoords),
             member(ProvinceCoord, NearbyCoords)
-            % hex_index(NearHex, Index), % Get
-            % member(ToCheckHex, ProvinceHexes),
-            % hex_index(ToCheckHex, Index) % Check
         ), ProvincesToRemove),
+    % length(ProvincesToRemove, ProvincesToRemoveLenght),
+    % write('ProvincesToRemoveLenght: '), writeln(ProvincesToRemoveLenght),
 
     % Remove the duplicates
     % Time: ~ 6 micro
     filter(ProvincesToRemove, [In, Partial] >> (\+ member(In, Partial)), ProvincesToRemoveFiltered),
+    % length(ProvincesToRemoveFiltered, ProvincesToRemoveLenght2),
+    % write('ProvincesToRemoveLenght2: '), writeln(ProvincesToRemoveLenght2),
 
     % Add money to new province from provinces to remove
     % Time: ~ 6 micro

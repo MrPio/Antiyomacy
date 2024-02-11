@@ -119,7 +119,7 @@ filter_([H|T], Condition, Temp, Sol) :-
 % of the previous step as input at each step, and returning
 % the output as the input for the next step. (⬆️higher-order⬆️)
 % pipe(:Functor, +InputList, +List, -LastOutput)
-pipe(_, Out, [], Out).
+pipe(_, Out, [], Out):-!.
 pipe(Op, In, [H|T], Out):-
     % Instantiate the list of output vars
     length(Out, OutLength), length(Out1, OutLength),
