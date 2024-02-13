@@ -34,6 +34,7 @@ test_gui:-
     update_gui.
 
 % Initialize the gui by instantiating the needed resources
+init_gui:- input_mode(terminal_input), !.
 init_gui:-
     % Store the unit images:
     new(@peasant, image('resources/sprites/unit/peasant.gif')),
@@ -80,6 +81,7 @@ init_gui:-
 
 
 % Retrive the stored map and redraw the window accordingly
+update_gui:- input_mode(terminal_input), !.
 update_gui:-
     send(@window, clear),
     send(@window, flush),
