@@ -17,11 +17,11 @@ update_start_time(Time):-
 
 % Board struct ====================================================================
 board(_Map, Provinces, Player, State, Conquests) :-
-    player(Player),
     is_list(Provinces),
+    player(Player),
     state(State),
     Conquests = [_RedConquests, _BlueConquests].
-state(X) :- member(X, [play, win]).
+state(X)  :- member(X, [play, win]).
 % Check/Get hex Map
 board_map(board(Map, _, _, _, _),Map).
 change_board_map(board(_, Provinces, Player, State, Conquests),NewMap,board(NewMap, Provinces, Player, State, Conquests)).

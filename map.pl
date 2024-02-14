@@ -127,7 +127,7 @@ random_walkers(Map, [MaxX, MaxY], Count, ResultMap) :-
 
 % Simulate a walker random walk
 % walk(+Map, +Coord, :StepAction, :WalkableCoordCondition, +Count, -NewMap)
-walk(Map, _, _, _, Count, Map) :- Count=<0.
+walk(Map, _, _, _, Count, Map) :- Count =< 0.
 walk(Map, [X, Y], StepAction, WalkableCoordCondition, Count, NewMap) :-
     % Invoke the action on the current coordinate
     call(StepAction, Map, [X, Y], UpdatedMap),
@@ -137,7 +137,7 @@ walk(Map, [X, Y], StepAction, WalkableCoordCondition, Count, NewMap) :-
         inside_map([NewX, NewY]),
         (   call(WalkableCoordCondition, UpdatedMap, [NewX,NewY])
         ->  % If the next step falls on a walkable tile, decrease the walker lifespan
-            NewCount is Count-1
+            NewCount is Count - 1
         ;   sea_in_map(Map)
         ->  % Else if there is at least one sea tile, do not decrease the walker lifespan
             NewCount=Count
@@ -284,7 +284,7 @@ spawn_provinces(Map, NewMap):-
     WalkableCoordCondition = [ActionMap, ActionCoord] >>
         (   check_tile(ActionMap, ActionCoord, terrain),
             get_hex(ActionMap, ActionCoord, Hex),
-            hex_owner(Hex, none)
+            hex_owner(Hex, none) % Check
         ),
     % Use the Random Walker algorithm to spawn the red province
     call(StepAction, red, RedStepAction),

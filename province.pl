@@ -241,30 +241,31 @@ find_province(Map, [X,Y], Province) :-
     Province=province(Owner,Hexes,0),!.
 
 % Find a province from a start hex using Breadth-first-like search
-province_bfs(_,_,[],Hexes,Hexes) :-!.
+% province_bfs(+Map, +Owner, +StartHexes, [], -FoundHexes)
+province_bfs(_, _, [], Hexes, Hexes) :- !.
 province_bfs(Map, Owner, [Hex|Tail], Visited, Hexes) :-
     % Stop this branch if the hex is not owned by the player
     hex_owner(Hex, Owner), % Check
     hex_coord(Hex, [X,Y]), % Get
     % Scan the neighbor hexes
     % Note: We use near8/4 instead of near4/4 because units can move in the outer border
-    %       and we don't want to create a new province after a unit has moved.
-    near8(Map, [X, Y], NeighborHexes),
+    %       and a player should never split any of their provinces after a move
+    near8(Map, [X,Y], NeighborHexes),
     % Filter only the valid neighbor hexes
-    findall(NeighborHex,(
-                % Pick one neighbor hex to validate
-                member(NeighborHex, NeighborHexes),
-                % To be part of the province, the hex needs to be owned by the same owner
-                hex_owner(NeighborHex, Owner),
-                % Check that the hex has no already been visited
-                \+ member(NeighborHex, Visited),
-                % Check that the hex has no already been added to the ToVisit list
-                \+ member(NeighborHex, Tail)
-            ),
-            ValidNeighborHexes),
+    findall(NeighborHex, 
+        (   % Pick one neighbor hex to validate
+            member(NeighborHex, NeighborHexes),
+            % To be part of the province, the hex needs to be owned by the same owner
+            hex_owner(NeighborHex, Owner),
+            % Check that the hex has no already been visited
+            \+ member(NeighborHex, Visited),
+            % Check that the hex has no already been added to the ToVisit list
+            \+ member(NeighborHex, Tail)
+        ),
+        ValidNeighborHexes),
     % All the valid neighbour hexes need to be expanded further
-    append(Tail,ValidNeighborHexes,ToVisit),
-    province_bfs(Map,Owner,ToVisit, [Hex|Visited],Hexes).
+    append(Tail, ValidNeighborHexes, ToVisit),
+    province_bfs(Map, Owner, ToVisit, [Hex|Visited], Hexes).
 
 % Checks if an hex is a terrain and has an owner
 % hex_owned(+Map, +Coord, -Owner, -Hex)
@@ -394,7 +395,6 @@ place_unit(Map, Provinces, Province, NewUnitName, Hex, NewMap, NewProvinces, New
     set_building(MapWithUnitOwned, Coord, none, NewMap1),
     % Update the player province
     update_province(NewMap1, Province, NewProvince),
-    % print_map(NewMap1),print_provinces([Province]),print_provinces([NewProvince]),
     % refresh_province(NewMap1, Province, [Coord], NewProvince),
     % Check for player merge in case of conquest or invasion
     (   (OwnerBefore == none; OwnerBefore \= Player)

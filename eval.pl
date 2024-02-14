@@ -58,9 +58,18 @@ eval(Board, Score) :-
 
     province_counts(ProvincesOfMAX, [knight], MAXKnightCount),
     province_counts(ProvincesOfMIN, [knight], MINKnightCount),
+
+    province_counts(ProvincesOfMAX, [tower], MAXTowerCount),
+    province_counts(ProvincesOfMIN, [tower], MINTowerCount),
+
+    province_counts(ProvincesOfMAX, [strong_tower], MAXStrongTowerCount),
+    province_counts(ProvincesOfMIN, [strong_tower], MINStrongTowerCount),
     
-    MAXStrength is MAXPaesantCount * 1 + MAXSpearmanCount *3 + MAXBaronCount * 8 + MAXKnightCount * 20,
-    MINStrength is MINPaesantCount * 1 + MINSpearmanCount *3 + MINBaronCount * 8 + MINKnightCount * 20,
+    MAXStrength is MAXPaesantCount * 1 + MAXSpearmanCount * 3 + MAXBaronCount * 8 + MAXKnightCount * 20,
+    MINStrength is MINPaesantCount * 1 + MINSpearmanCount * 3 + MINBaronCount * 8 + MINKnightCount * 20,
+
+    MAXDefence is MAXTowerCount * 8 + MAXStrongTowerCount * 24,
+    MINDefence is MINTowerCount * 8 + MINStrongTowerCount * 24,
 
     % Check if MAX wins and assign a score of 99999
     (   State == win, Player == MIN 
@@ -74,11 +83,13 @@ eval(Board, Score) :-
             MAXMoneyScore    * 1 +
             MAXTotalIncome   * 1 +
             MAXTotalSize     * 1 +
-            MAXStrength      * 1 ) 
+            MAXStrength      * 1 +
+            MAXDefence       * 0.5) 
             - (
             MINConquests     * 3 +
             MINMoneyScore    * 1 +
             MINTotalIncome   * 1 +
             MINTotalSize     * 1 +
-            MINStrength      * 1 )
+            MINStrength      * 1 +
+            MINDefence       * 0.5)
     ).
