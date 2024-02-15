@@ -30,7 +30,7 @@ In Antiyomacy, however, the list of possible moves for each turn has been reduce
 
 | Move  | How many times it can be made |  
 |---|---:|
-|***Buy a unit or building*** | for each province, if any displacement has taken place, once  |
+|***Buy a unit or building*** | for each province, if no displacement has taken place, once  |
 |***Displace a unit***   |  for each province, if no purchase has taken place, once | 
     
 
