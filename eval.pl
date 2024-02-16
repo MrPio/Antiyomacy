@@ -84,12 +84,12 @@ eval(Board, Score) :-
             MAXTotalIncome   * 1 +
             MAXTotalSize     * 1 +
             MAXStrength      * 1 +
-            MAXDefence       * 0.5) 
+            MAXDefence       * 0.15) 
             - (
             MINConquests     * 3 +
             MINMoneyScore    * 1 +
             MINTotalIncome   * 1 +
             MINTotalSize     * 1 +
             MINStrength      * 1 +
-            MINDefence       * 0.5)
+            MINDefence       * 0.15)
     ).
