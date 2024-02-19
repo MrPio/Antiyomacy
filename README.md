@@ -1,6 +1,13 @@
 # **Antiyomacy**
 An implementation of a strategy game heavily inspired by Antiyoy. The project is focused on developing AI software that manages to play the game using the minimax algorithm.
 
+## Thesis and presentation
+The code has been fully documented and below are the thesis and presentation used to expose this project on the day of the exam.
+- <a href="https://github.com/MrPio/Antiyomacy/blob/main/Antiyomacy%20-%20Valerio%20Morelli%20Federica%20Paganica%20Federico%20Staffolani.pdf">Thesis</a>
+- <a href="https://github.com/MrPio/Antiyomacy/blob/main/Antiyomacy.pdf">Presentation</a>
+---
+
+
 ![Screenshot_2024-02-10_18-01-59](https://github.com/MrPio/Antiyomacy/assets/22773005/1df1860a-fed6-443b-b8d7-4bee1bbe2241)
 ![Screenshot_2024-02-10_18-01-14](https://github.com/MrPio/Antiyomacy/assets/22773005/0ddc6c12-8525-4595-b830-cb8408b9de12)
 
